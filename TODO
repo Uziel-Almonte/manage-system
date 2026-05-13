@@ -10,13 +10,13 @@
 **Day 1 — Repo & Structure**
 - [x] Create public GitHub repo
 - [ ] Set up branch strategy (main, develop, feature/*)
-- [ ] Add .gitignore, initial README
+- [x] Add .gitignore, initial README
 - [ ] Enable branch protection on main
 
 **Day 2 — Docker Compose (base)**
-- [ ] Write docker-compose.yml with: Flask app, PostgreSQL
-- [ ] Test that both containers start and connect
-- [ ] Add .env file for DB credentials (no hardcoding)
+- [x] Write docker-compose.yml with: Flask app, PostgreSQL
+- [x] Test that both containers start and connect
+- [x] Add .env file for DB credentials (no hardcoding)
 
 **Day 3 — Flask Project Structure**
 - [ ] Initialize Flask app with blueprints (products, stock, auth, reports)
