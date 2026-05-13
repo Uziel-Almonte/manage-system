@@ -1,0 +1,103 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+.env/
+.venv/
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Type checking / linting
+.mypy_cache/
+.ruff_cache/
+
+# =========================
+# Environment variables
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Flask
+# =========================
+instance/
+.webassets-cache/
+
+# =========================
+# Database
+# =========================
+*.db
+*.sqlite3
+
+# PostgreSQL Docker volumes
+postgres_data/
+pgdata/
+
+# =========================
+# Docker
+# =========================
+docker-compose.override.yml
+
+# =========================
+# Alembic
+# =========================
+alembic/versions/__pycache__/
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+
+# =========================
+# Node / Frontend cache
+# (in case you later add tooling)
+# =========================
+node_modules/
+
+# =========================
+# Playwright
+# =========================
+playwright-report/
+test-results/
+
+# =========================
+# IDEs / Editors
+# =========================
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# =========================
+# Coverage / Reports
+# =========================
+coverage.xml
+reports/
+artifacts/
+
+# =========================
+# Grafana / Monitoring temp files
+# =========================
+grafana-data/
+prometheus-data/
+loki-data/
+
+# =========================
+# SonarCloud
+# =========================
+.scannerwork/

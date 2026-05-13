@@ -1,2 +1,9 @@
 # manage-system
-Inventory management system built with Flask, PostgreSQL, Keycloak and Docker, featuring full stack testing, observability with Grafana/OpenTelemetry, and CI/CD pipelines.
+# Running the Project
+
+## Start the Containers
+
+Run the project normally:
+
+```bash
+docker compose up
