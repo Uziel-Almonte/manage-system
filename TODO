@@ -1,0 +1,259 @@
+# 📅 Daily Plan — QAS Final Project (6 Weeks) [Updated: Jinja2 + HTMX Frontend]
+
+> Stack: Python + Flask · PostgreSQL · Jinja2 + HTMX · Keycloak · Docker
+> Pace: ~1-2 hours/day · Build on top of what you did the day before
+
+---
+
+## 🗓️ Week 1 — Foundation & Project Setup
+
+**Day 1 — Repo & Structure**
+- [ ] Create public GitHub repo
+- [ ] Set up branch strategy (main, develop, feature/*)
+- [ ] Add .gitignore, initial README
+- [ ] Enable branch protection on main
+
+**Day 2 — Docker Compose (base)**
+- [ ] Write docker-compose.yml with: Flask app, PostgreSQL
+- [ ] Test that both containers start and connect
+- [ ] Add .env file for DB credentials (no hardcoding)
+
+**Day 3 — Flask Project Structure**
+- [ ] Initialize Flask app with blueprints (products, stock, auth, reports)
+- [ ] Connect SQLAlchemy to PostgreSQL
+- [ ] Verify connection with a /health endpoint
+
+**Day 4 — Database Migrations**
+- [ ] Install and configure Alembic (lightweight, Python-native)
+- [ ] Write first migration: create products table
+- [ ] Write second migration: create stock_movements table
+- [ ] Test migrations run cleanly on fresh DB
+
+**Day 5 — Product Model & Basic CRUD**
+- [ ] Implement Product model (name, SKU, description, category, price, qty, min_stock, status)
+- [ ] Implement GET /products and POST /products
+- [ ] Test manually with curl or Postman
+
+**Day 6 — Complete Product CRUD**
+- [ ] Implement PUT /products/:id and DELETE /products/:id
+- [ ] Add pagination, search, filter, sort to GET /products
+- [ ] Test all endpoints manually
+
+**Day 7 — Rest & Catch Up**
+- [ ] Review and clean up what you built this week
+- [ ] Make sure Docker Compose still works end to end
+- [ ] Commit everything with conventional commit messages
+
+---
+
+## 🗓️ Week 2 — Stock, Audit & API Docs
+
+**Day 8 — Stock Movements**
+- [ ] Implement StockMovement model (date, user, type, prev_qty, new_qty, notes)
+- [ ] Implement POST /stock/movement (entry/exit)
+- [ ] Auto-update product quantity on movement
+
+**Day 9 — Stock Alerts & History**
+- [ ] Implement min-stock alert logic (flag products below min_stock)
+- [ ] Implement GET /stock/history with filters
+- [ ] Implement GET /stock/alerts
+
+**Day 10 — Audit Log**
+- [ ] Install SQLAlchemy-Continuum or write SQLAlchemy event listeners
+- [ ] Track changes on Product and StockMovement models
+- [ ] Implement GET /audit endpoint
+
+**Day 11 — OpenAPI / Swagger**
+- [ ] Install flask-smorest
+- [ ] Add OpenAPI decorators to all existing endpoints
+- [ ] Verify Swagger UI works at /docs
+
+**Day 12 — Reports Endpoint**
+- [ ] Implement GET /reports/critical-stock
+- [ ] Implement GET /reports/top-products
+- [ ] Implement GET /reports/recent-movements
+
+**Day 13 — Unit Tests (Backend)**
+- [ ] Set up pytest + pytest-cov
+- [ ] Write unit tests for product service (add, edit, delete, validate)
+- [ ] Write unit tests for stock logic (movement, alert threshold)
+
+**Day 14 — Rest & Catch Up**
+- [ ] Run all tests, fix any failures
+- [ ] Review API docs in Swagger UI
+- [ ] Push everything, open a PR from develop → main
+
+---
+
+## 🗓️ Week 3 — Security (Keycloak)
+
+**Day 15 — Keycloak Setup**
+- [ ] Add Keycloak to Docker Compose (start-dev mode)
+- [ ] Create a realm for the project
+- [ ] Create a client for the Flask backend
+
+**Day 16 — Permissions & Roles**
+- [ ] Define scopes: product:view, product:manage, stock:view, stock:manage, report:view, user:manage, audit:view
+- [ ] Create roles by combining scopes (not just admin/employee)
+- [ ] Create test users with different roles
+
+**Day 17 — JWT Validation in Flask**
+- [ ] Install PyJWT or python-jose
+- [ ] Write a JWT decode/verify middleware
+- [ ] Protect all API endpoints: check token validity
+
+**Day 18 — Permission Enforcement**
+- [ ] Write a scope-checker decorator (@require_scope)
+- [ ] Apply correct scope to each endpoint (not just role name)
+- [ ] Test with valid and invalid tokens
+
+**Day 19 — OAuth2 Login via Authlib**
+- [ ] Install authlib
+- [ ] Implement OAuth2 redirect login in Flask (/login → Keycloak → /callback)
+- [ ] Store token in Flask session after callback
+- [ ] Implement /logout that clears session and redirects to Keycloak logout
+
+**Day 20 — CORS & Security Hardening**
+- [ ] Configure Flask-CORS properly
+- [ ] Validate all endpoints reject unauthorized requests
+- [ ] Add Keycloak URLs to .env, no hardcoded secrets
+
+**Day 21 — Rest & Catch Up**
+- [ ] Test full auth flow: login → Keycloak → callback → session → protected page
+- [ ] Document Keycloak setup steps in README
+- [ ] Commit and open PR
+
+---
+
+## 🗓️ Week 4 — Frontend (Jinja2 + HTMX)
+
+**Day 22 — Base Layout & HTMX Setup**
+- [ ] Create base.html template (navbar, sidebar, flash messages)
+- [ ] Add HTMX via CDN in base.html (one script tag, no install needed)
+- [ ] Add TailwindCSS via CDN for styling (no build step needed)
+- [ ] Create login.html that redirects to Keycloak
+- [ ] Add a @login_required decorator that checks Flask session
+
+**Day 23 — Dashboard Page**
+- [ ] Create dashboard.html with cards: total products, critical stock count, recent movements, low stock alerts
+- [ ] Wire cards to real data from the reports endpoints
+- [ ] Add a recent movements table at the bottom
+
+**Day 24 — Products List Page**
+- [ ] Create products/index.html with a full table
+- [ ] Add HTMX-powered search (hx-get on input, returns partial template)
+- [ ] Add HTMX-powered pagination (hx-get on page buttons)
+- [ ] Add sort by column headers
+
+**Day 25 — Add / Edit / Delete Products**
+- [ ] Create products/form.html (shared for add and edit)
+- [ ] Add modal using HTMX (hx-target, hx-swap) — no JS needed
+- [ ] Delete with confirmation using hx-confirm attribute
+- [ ] Show success/error flash messages after each action
+
+**Day 26 — Stock & Movement History UI**
+- [ ] Create stock/update.html (entry/exit form)
+- [ ] Create stock/history.html with filterable table
+- [ ] Add HTMX filter by date range and movement type
+- [ ] Show current stock level and alert badge if below min_stock
+
+**Day 27 — Audit & Reports UI**
+- [ ] Create audit/index.html (only rendered if session has audit:view scope)
+- [ ] Create reports/index.html with critical stock and top products tables
+- [ ] Hide nav links based on user scopes in base.html (Jinja2 if blocks)
+- [ ] Make all pages responsive using Tailwind classes
+
+**Day 28 — Rest & Catch Up**
+- [ ] Walk through the full app as each user role
+- [ ] Fix layout issues, missing data, broken links
+- [ ] Commit, open PR, do code review with teammate
+
+---
+
+## 🗓️ Week 5 — Testing (E2E, Security, Performance)
+
+**Day 29 — API Contract Tests**
+- [ ] Install schemathesis
+- [ ] Run schemathesis against your OpenAPI spec automatically
+- [ ] Fix any schema mismatches found
+
+**Day 30 — E2E Tests Setup**
+- [ ] Install Playwright (Python: playwright install)
+- [ ] Write E2E test: login via Keycloak, land on dashboard
+- [ ] Write E2E test: add a product, verify it appears in list
+
+**Day 31 — E2E Tests (Flows)**
+- [ ] Write E2E test: stock entry/exit flow
+- [ ] Write E2E test: user without audit:view scope cannot see audit page
+- [ ] Add screenshot capture on every test failure
+
+**Day 32 — Security Tests**
+- [ ] Add OWASP ZAP to Docker Compose (zaproxy/zap-stable)
+- [ ] Run ZAP baseline scan against staging URL
+- [ ] Run pip-audit for dependency CVEs
+- [ ] Document all findings even if not fixed
+
+**Day 33 — Performance Tests**
+- [ ] Install k6 (single binary, no JVM)
+- [ ] Write k6 load test: GET /products (50 concurrent users)
+- [ ] Write k6 stress test: POST /stock/movement
+- [ ] Collect and save response time + throughput report
+
+**Day 34 — Data & Exploratory Testing**
+- [ ] Write data tests: verify migrations applied in correct order
+- [ ] Test duplicate SKU constraint is enforced
+- [ ] Manual exploratory testing: write 2-3 charters, log bugs found as GitHub Issues
+
+**Day 35 — Rest & Catch Up**
+- [ ] Run full test suite end to end
+- [ ] Fix failing tests
+- [ ] Export all test reports (HTML/XML)
+
+---
+
+## 🗓️ Week 6 — Observability, CI/CD & Final Polish
+
+**Day 36 — Observability Stack**
+- [ ] Add Prometheus, Grafana, Tempo, Loki, Alloy, Alertmanager to Docker Compose
+- [ ] Verify all containers start cleanly
+
+**Day 37 — Instrument Flask**
+- [ ] Install opentelemetry-sdk + opentelemetry-instrumentation-flask
+- [ ] Add traceId, spanId, correlationId, user, endpoint to all logs
+- [ ] Instrument DB queries with OpenTelemetry
+- [ ] Verify traces appear in Grafana Tempo
+
+**Day 38 — Grafana Dashboards & Alerts**
+- [ ] Create infrastructure dashboard (CPU, memory, DB pool)
+- [ ] Create application dashboard (latency, throughput, error rate)
+- [ ] Create business dashboard (products added, stock movements)
+- [ ] Create security dashboard (auth failures, invalid tokens)
+- [ ] Configure Alertmanager alerts (high CPU, high error rate, auth failures)
+- [ ] Export all dashboards as JSON files
+
+**Day 39 — GitHub Actions**
+- [ ] Write .github/workflows/ci.yml
+- [ ] Stages: build → unit tests → integration tests → API tests → E2E → security scan → coverage → Docker build
+- [ ] Connect SonarCloud (free for public repos) to the workflow
+
+**Day 40 — Jenkins Pipeline**
+- [ ] Add Jenkins to Docker Compose
+- [ ] Write Jenkinsfile with all stages matching GitHub Actions
+- [ ] Verify visual pipeline runs and is green
+
+**Day 41 — Staging Environment & Final QA**
+- [ ] Write docker-compose.staging.yml replicating production
+- [ ] Deploy staging and run E2E + OWASP ZAP against the live staging URL
+- [ ] Fix any last issues found
+
+**Day 42 — Documentation & Presentation**
+- [ ] Write requirements document (functional & non-functional)
+- [ ] Write architecture diagrams
+- [ ] Write installation guide (docker compose up and you're done)
+- [ ] Finalize README
+- [ ] Prepare live demo for presentation
+- [ ] Verify both teammates have equitable commits, PRs, and issues
+
+---
+
+## 🏗️ Project Structure
