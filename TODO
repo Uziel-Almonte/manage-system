@@ -8,7 +8,7 @@
 ## 🗓️ Week 1 — Foundation & Project Setup
 
 **Day 1 — Repo & Structure**
-- [ ] Create public GitHub repo
+- [x] Create public GitHub repo
 - [ ] Set up branch strategy (main, develop, feature/*)
 - [ ] Add .gitignore, initial README
 - [ ] Enable branch protection on main
