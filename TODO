@@ -19,15 +19,15 @@
 - [x] Add .env file for DB credentials (no hardcoding)
 
 **Day 3 — Flask Project Structure**
-- [ ] Initialize Flask app with blueprints (products, stock, auth, reports)
-- [ ] Connect SQLAlchemy to PostgreSQL
-- [ ] Verify connection with a /health endpoint
+- [x] Initialize Flask app with blueprints (products, stock, auth, reports)
+- [x] Connect SQLAlchemy to PostgreSQL
+- [x] Verify connection with a /health endpoint
 
 **Day 4 — Database Migrations**
-- [ ] Install and configure Alembic (lightweight, Python-native)
-- [ ] Write first migration: create products table
-- [ ] Write second migration: create stock_movements table
-- [ ] Test migrations run cleanly on fresh DB
+- [x] Install and configure Alembic (lightweight, Python-native)
+- [x] Write first migration: create products table
+- [x] Write second migration: create stock_movements table
+- [x] Test migrations run cleanly on fresh DB
 
 **Day 5 — Product Model & Basic CRUD**
 - [ ] Implement Product model (name, SKU, description, category, price, qty, min_stock, status)
