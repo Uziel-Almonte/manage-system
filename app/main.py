@@ -7,6 +7,7 @@ from app.stock.views import stock_bp
 from app.reports.views import reports_bp
 from app.products.views import products_bp
 from app.auth.views import auth_bp
+from flask_migrate import Migrate
 
 
 load_dotenv()
@@ -16,6 +17,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
+migrate = Migrate(app, db)
 
 app.register_blueprint(stock_bp)
 app.register_blueprint(reports_bp)
