@@ -8,6 +8,8 @@ services:
       - "5000:5000"
     env_file:
       - .env
+    environment:
+      - PYTHONPATH=/app
     depends_on:
       - db
     volumes:
