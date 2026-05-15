@@ -35,9 +35,9 @@
 - [x] Test manually with curl or Postman
 
 **Day 6 — Complete Product CRUD**
-- [ ] Implement PUT /products/:id and DELETE /products/:id
-- [ ] Add pagination, search, filter, sort to GET /products
-- [ ] Test all endpoints manually
+- [x] Implement PUT /products/:id and DELETE /products/:id
+- [x] Add pagination, search, filter, sort to GET /products
+- [x] Test all endpoints manually
 
 **Day 7 — Rest & Catch Up**
 - [ ] Review and clean up what you built this week
