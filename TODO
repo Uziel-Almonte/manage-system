@@ -30,9 +30,9 @@
 - [x] Test migrations run cleanly on fresh DB
 
 **Day 5 — Product Model & Basic CRUD**
-- [ ] Implement Product model (name, SKU, description, category, price, qty, min_stock, status)
-- [ ] Implement GET /products and POST /products
-- [ ] Test manually with curl or Postman
+- [x] Implement Product model (name, SKU, description, category, price, qty, min_stock, status)
+- [x] Implement GET /products and POST /products
+- [x] Test manually with curl or Postman
 
 **Day 6 — Complete Product CRUD**
 - [ ] Implement PUT /products/:id and DELETE /products/:id
