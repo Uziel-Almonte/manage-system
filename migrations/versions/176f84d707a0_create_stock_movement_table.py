@@ -17,8 +17,19 @@ depends_on = None
 
 
 def upgrade():
-    pass
+    op.create_table(
+        'stock_movements',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('product_id', sa.Integer(), sa.ForeignKey('products.id'), nullable=False),
+        sa.Column('user', sa.String(length=100), nullable=True),
+        sa.Column('type', sa.String(length=50), nullable=False),
+        sa.Column('prev_qty', sa.Integer(), nullable=False),
+        sa.Column('new_qty', sa.Integer(), nullable=False),
+        sa.Column('notes', sa.Text(), nullable=True),
+        sa.Column('date', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+        sa.PrimaryKeyConstraint('id')
+    )
 
 
 def downgrade():
-    pass
+    op.drop_table('stock_movements')
