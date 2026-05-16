@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import os
 from app.database import db
 from app.stock.views import stock_bp
-# from app.reports.views import reports_bp
+from app.reports.views import reports_bp
 from app.products.views import products_bp
 from app.auth.views import auth_bp
 from flask_migrate import Migrate
@@ -20,7 +20,7 @@ db.init_app(app)
 migrate = Migrate(app, db)
 
 app.register_blueprint(stock_bp)
-# app.register_blueprint(reports_bp)
+app.register_blueprint(reports_bp)
 app.register_blueprint(products_bp)
 app.register_blueprint(auth_bp)
 
