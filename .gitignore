@@ -87,7 +87,7 @@ Thumbs.db
 # Coverage / Reports
 # =========================
 coverage.xml
-reports/
+/reports/
 artifacts/
 
 # =========================
