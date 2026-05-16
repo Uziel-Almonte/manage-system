@@ -10,6 +10,8 @@ def get_products():
     category = request.args.get('category')
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
+    sort_by = request.args.get('sort_by', 'id')
+    sort_order = request.args.get('sort_order', 'asc')
 
     query = Product.query
     if search:
@@ -18,6 +20,14 @@ def get_products():
 
     if category:
         query = query.filter_by(category=category)
+
+    valid_sort_columns = ['id', 'name', 'sku', 'price', 'qty', 'min_stock']
+    if sort_by in valid_sort_columns:
+        column = getattr(Product, sort_by)
+        if sort_order.lower() == 'desc':
+            query = query.order_by(column.desc())
+        else:
+            query = query.order_by(column.asc())
 
     paginated_products = query.paginate(page=page, per_page=per_page, error_out=False)
 
