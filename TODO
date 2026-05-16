@@ -40,18 +40,18 @@
 - [x] Test all endpoints manually
 
 **Day 7 — Rest & Catch Up**
-- [ ] Review and clean up what you built this week
-- [ ] Make sure Docker Compose still works end to end
-- [ ] Commit everything with conventional commit messages
+- [x] Review and clean up what you built this week
+- [x] Make sure Docker Compose still works end to end
+- [x] Commit everything with conventional commit messages
 
 ---
 
 ## 🗓️ Week 2 — Stock, Audit & API Docs
 
 **Day 8 — Stock Movements**
-- [ ] Implement StockMovement model (date, user, type, prev_qty, new_qty, notes)
-- [ ] Implement POST /stock/movement (entry/exit)
-- [ ] Auto-update product quantity on movement
+- [x] Implement StockMovement model (date, user, type, prev_qty, new_qty, notes)
+- [x] Implement POST /stock/movement (entry/exit)
+- [x] Auto-update product quantity on movement
 
 **Day 9 — Stock Alerts & History**
 - [ ] Implement min-stock alert logic (flag products below min_stock)
