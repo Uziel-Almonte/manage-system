@@ -47,3 +47,35 @@ def add_movement():
     db.session.commit()
 
     return jsonify(movement.to_dict()), 201
+
+@stock_bp.route('/history', methods=['GET'])
+def get_history():
+    product_id = request.args.get('product_id', type=int)
+    movement_type = request.args.get('type')
+    user = request.args.get('user')
+
+    query = StockMovement.query
+
+    if product_id:
+        query = query.filter_by(product_id=product_id)
+    if movement_type:
+        query = query.filter_by(type=movement_type)
+    if user:
+        query = query.filter_by(user=user)
+
+    movements = query.order_by(StockMovement.date.desc()).all()
+    return jsonify([m.to_dict() for m in movements]), 200
+
+
+@stock_bp.route('/alerts', methods=['GET'])
+def get_alerts():
+
+    alert_products = Product.query.filter(
+        Product.qty <= Product.min_stock,
+        Product.status == 'active'
+    ).all()
+
+    return jsonify([{
+        "alert_count": len(alert_products),
+        "products": [p.to_dict() for p in alert_products]
+    }]), 200
