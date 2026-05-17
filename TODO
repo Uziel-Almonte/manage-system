@@ -54,9 +54,9 @@
 - [x] Auto-update product quantity on movement
 
 **Day 9 — Stock Alerts & History**
-- [ ] Implement min-stock alert logic (flag products below min_stock)
-- [ ] Implement GET /stock/history with filters
-- [ ] Implement GET /stock/alerts
+- [x] Implement min-stock alert logic (flag products below min_stock)
+- [x] Implement GET /stock/history with filters
+- [x] Implement GET /stock/alerts
 
 **Day 10 — Audit Log**
 - [ ] Install SQLAlchemy-Continuum or write SQLAlchemy event listeners
