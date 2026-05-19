@@ -1,6 +1,6 @@
-from flask import Blueprint
+from flask_smorest import Blueprint
 
-auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
+auth_bp = Blueprint('auth', 'auth', url_prefix='/auth', description="Authentication routes")
 
 @auth_bp.route('/')
 def auth_index():
