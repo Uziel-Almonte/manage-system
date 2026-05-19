@@ -2,6 +2,17 @@ from flask import request, jsonify
 from app.database import db
 from app.products.models import Product
 from flask_smorest import Blueprint
+from marshmallow import Schema, fields
+
+class ProductSchema(Schema):
+    name = fields.String(required=True)
+    sku = fields.String(required=True)
+    price = fields.Float(required=True)
+    description = fields.String()
+    category = fields.String()
+    qty = fields.Integer()
+    min_stock = fields.Integer()
+    status = fields.String()
 
 products_bp = Blueprint('products', 'products', url_prefix='/products', description="Endpoints for managing products in the inventory")
 
@@ -40,9 +51,8 @@ def get_products():
     }), 200
 
 @products_bp.route('', methods=['POST'])
-def create_product():
-    data = request.get_json()
-
+@products_bp.arguments(ProductSchema)
+def create_product(data):
     if not data or not data.get('name') or not data.get('sku') or not data.get('price'):
         return jsonify({'error': 'Name, SKU, and price are required fields'}), 400
     
@@ -66,12 +76,11 @@ def create_product():
     return jsonify(new_product.to_dict()), 201
 
 @products_bp.route('/<int:product_id>', methods=['PUT'])
-def update_product(product_id):
+@products_bp.arguments(ProductSchema)
+def update_product(data, product_id):
     product = Product.query.get(product_id)
     if not product:
         return jsonify({'error': 'Product not found, try another ID'}), 404
-
-    data = request.get_json()
 
     if 'name' in data:
         product.name = data['name']

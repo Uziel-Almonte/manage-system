@@ -3,13 +3,20 @@ from flask_smorest import Blueprint
 from app.database import db
 from app.stock.models import StockMovement
 from app.products.models import Product
+from marshmallow import Schema, fields
+
+class StockMovementSchema(Schema):
+    product_id = fields.Integer(required=True)
+    type = fields.String(required=True)
+    qty_change = fields.Integer(required=True)
+    notes = fields.String()
+    user = fields.String()
 
 stock_bp = Blueprint('stock', 'stock', url_prefix='/stock', description="Endpoints for stock operations")
 
 @stock_bp.route('/movement', methods=['POST'])
-def add_movement():
-    data =request.get_json()
-
+@stock_bp.arguments(StockMovementSchema)
+def add_movement(data):
     if not data or not data.get('product_id') or not data.get('type') or 'qty_change' not in data:
         return jsonify({"error": "product_id, type, and qty_change are required"}), 400
     

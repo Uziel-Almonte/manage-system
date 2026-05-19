@@ -69,9 +69,9 @@
 - [x] Verify Swagger UI works at /docs
 
 **Day 12 — Reports Endpoint**
-- [ ] Implement GET /reports/critical-stock
-- [ ] Implement GET /reports/top-products
-- [ ] Implement GET /reports/recent-movements
+- [x] Implement GET /reports/critical-stock
+- [x] Implement GET /reports/top-products
+- [x] Implement GET /reports/recent-movements
 
 **Day 13 — Unit Tests (Backend)**
 - [ ] Set up pytest + pytest-cov
