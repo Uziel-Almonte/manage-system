@@ -1,8 +1,9 @@
-from flask import Blueprint, request, jsonify
+from flask import request, jsonify
 from app.database import db
 from app.products.models import Product
+from flask_smorest import Blueprint
 
-products_bp = Blueprint('products', __name__, url_prefix='/products')
+products_bp = Blueprint('products', 'products', url_prefix='/products', description="Endpoints for managing products in the inventory")
 
 @products_bp.route('', methods=['GET'])
 def get_products():

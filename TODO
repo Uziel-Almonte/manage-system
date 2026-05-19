@@ -59,14 +59,14 @@
 - [x] Implement GET /stock/alerts
 
 **Day 10 — Audit Log**
-- [ ] Install SQLAlchemy-Continuum or write SQLAlchemy event listeners
-- [ ] Track changes on Product and StockMovement models
-- [ ] Implement GET /audit endpoint
+- [x] Install SQLAlchemy-Continuum or write SQLAlchemy event listeners
+- [x] Track changes on Product and StockMovement models
+- [x] Implement GET /audit endpoint
 
 **Day 11 — OpenAPI / Swagger**
-- [ ] Install flask-smorest
-- [ ] Add OpenAPI decorators to all existing endpoints
-- [ ] Verify Swagger UI works at /docs
+- [x] Install flask-smorest
+- [x] Add OpenAPI decorators to all existing endpoints
+- [x] Verify Swagger UI works at /docs
 
 **Day 12 — Reports Endpoint**
 - [ ] Implement GET /reports/critical-stock

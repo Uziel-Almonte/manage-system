@@ -4,3 +4,5 @@ psycopg2-binary
 python-dotenv
 Flask-SQLAlchemy
 Flask-Migrate
+flask-smorest
+marshmallow

@@ -1,9 +1,10 @@
-from flask import Blueprint, request, jsonify
+from flask import request, jsonify
+from flask_smorest import Blueprint
 from app.database import db
 from app.stock.models import StockMovement
 from app.products.models import Product
 
-stock_bp = Blueprint('stock', __name__, url_prefix='/stock')
+stock_bp = Blueprint('stock', 'stock', url_prefix='/stock', description="Endpoints for stock operations")
 
 @stock_bp.route('/movement', methods=['POST'])
 def add_movement():

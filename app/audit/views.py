@@ -1,8 +1,9 @@
-from flask import Blueprint, request, jsonify
+from flask import request, jsonify
+from flask_smorest import Blueprint
 from app.database import db
 from app.audit.models import AuditLog
 
-audit_bp = Blueprint('audit', __name__, url_prefix='/audit')
+audit_bp = Blueprint('audit', 'audit', url_prefix='/audit', description="Endpoints for audit logs")
 
 @audit_bp.route('', methods=['GET'])
 def get_audit_logs():
