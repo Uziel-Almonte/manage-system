@@ -74,9 +74,9 @@
 - [x] Implement GET /reports/recent-movements
 
 **Day 13 — Unit Tests (Backend)**
-- [ ] Set up pytest + pytest-cov
-- [ ] Write unit tests for product service (add, edit, delete, validate)
-- [ ] Write unit tests for stock logic (movement, alert threshold)
+- [x] Set up pytest + pytest-cov
+- [x] Write unit tests for product service (add, edit, delete, validate)
+- [x] Write unit tests for stock logic (movement, alert threshold)
 
 **Day 14 — Rest & Catch Up**
 - [ ] Run all tests, fix any failures
