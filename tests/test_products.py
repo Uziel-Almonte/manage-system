@@ -45,7 +45,7 @@ class TestProductCRUD:
             data=json.dumps(payload),
             content_type='application/json'
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_create_product_duplicate_sku(self, app_client):
         """Test: crear producto con SKU duplicado (debe fallar)"""

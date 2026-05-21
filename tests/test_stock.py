@@ -108,7 +108,7 @@ class TestStockMovement:
             data=json.dumps(payload),
             content_type='application/json'
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_movement_invalid_type(self, app_client):
         """Test: tipo de movimiento inválido"""
