@@ -88,9 +88,9 @@
 ## 🗓️ Week 3 — Security (Keycloak)
 
 **Day 15 — Keycloak Setup**
-- [ ] Add Keycloak to Docker Compose (start-dev mode)
-- [ ] Create a realm for the project
-- [ ] Create a client for the Flask backend
+- [x] Add Keycloak to Docker Compose (start-dev mode)
+- [x] Create a realm for the project
+- [x] Create a client for the Flask backend
 
 **Day 16 — Permissions & Roles**
 - [ ] Define scopes: product:view, product:manage, stock:view, stock:manage, report:view, user:manage, audit:view
