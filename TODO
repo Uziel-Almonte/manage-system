@@ -79,9 +79,9 @@
 - [x] Write unit tests for stock logic (movement, alert threshold)
 
 **Day 14 — Rest & Catch Up**
-- [ ] Run all tests, fix any failures
-- [ ] Review API docs in Swagger UI
-- [ ] Push everything, open a PR from develop → main
+- [x] Run all tests, fix any failures
+- [x] Review API docs in Swagger UI
+- [x] Push everything, open a PR from develop → main
 
 ---
 

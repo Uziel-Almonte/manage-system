@@ -14,6 +14,16 @@ class ProductSchema(Schema):
     min_stock = fields.Integer()
     status = fields.String()
 
+class ProductUpdateSchema(Schema):
+    name = fields.String()
+    sku = fields.String()
+    price = fields.Float()
+    description = fields.String()
+    category = fields.String()
+    qty = fields.Integer()
+    min_stock = fields.Integer()
+    status = fields.String()
+
 products_bp = Blueprint('products', 'products', url_prefix='/products', description="Endpoints for managing products in the inventory")
 
 @products_bp.route('', methods=['GET'])
@@ -76,7 +86,7 @@ def create_product(data):
     return jsonify(new_product.to_dict()), 201
 
 @products_bp.route('/<int:product_id>', methods=['PUT'])
-@products_bp.arguments(ProductSchema)
+@products_bp.arguments(ProductUpdateSchema)
 def update_product(data, product_id):
     product = Product.query.get(product_id)
     if not product:
@@ -105,6 +115,13 @@ def update_product(data, product_id):
     db.session.commit()
     return jsonify(product.to_dict()), 200
 
+
+@products_bp.route('/<int:product_id>', methods=['GET'])
+def get_single_product(product_id):
+    product = Product.query.get(product_id)
+    if not product:
+        return jsonify({'error': 'Product not found, try another ID'}), 404
+    return jsonify(product.to_dict()), 200
 
 @products_bp.route('/<int:product_id>', methods=['DELETE'])
 def delete_product(product_id):
