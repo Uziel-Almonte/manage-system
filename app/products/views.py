@@ -1,6 +1,7 @@
 from flask import request, jsonify
 from app.database import db
 from app.products.models import Product
+from app.auth.middleware import require_scope
 from flask_smorest import Blueprint
 from marshmallow import Schema, fields
 
@@ -27,6 +28,7 @@ class ProductUpdateSchema(Schema):
 products_bp = Blueprint('products', 'products', url_prefix='/products', description="Endpoints for managing products in the inventory")
 
 @products_bp.route('', methods=['GET'])
+@require_scope('product:view')
 def get_products():
     search = request.args.get('search')
     category = request.args.get('category')
@@ -61,6 +63,7 @@ def get_products():
     }), 200
 
 @products_bp.route('', methods=['POST'])
+@require_scope('product:manage')
 @products_bp.arguments(ProductSchema)
 def create_product(data):
     if not data or not data.get('name') or not data.get('sku') or not data.get('price'):
@@ -86,6 +89,7 @@ def create_product(data):
     return jsonify(new_product.to_dict()), 201
 
 @products_bp.route('/<int:product_id>', methods=['PUT'])
+@require_scope('product:manage')
 @products_bp.arguments(ProductUpdateSchema)
 def update_product(data, product_id):
     product = Product.query.get(product_id)
@@ -117,6 +121,7 @@ def update_product(data, product_id):
 
 
 @products_bp.route('/<int:product_id>', methods=['GET'])
+@require_scope('product:view')
 def get_single_product(product_id):
     product = Product.query.get(product_id)
     if not product:
@@ -124,6 +129,7 @@ def get_single_product(product_id):
     return jsonify(product.to_dict()), 200
 
 @products_bp.route('/<int:product_id>', methods=['DELETE'])
+@require_scope('product:manage')
 def delete_product(product_id):
     product = Product.query.get(product_id)
     if not product:

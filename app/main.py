@@ -7,15 +7,22 @@ from app.stock.views import stock_bp
 from app.reports.views import reports_bp
 from app.products.views import products_bp
 from app.auth.views import auth_bp
+from app.auth.middleware import require_jwt
 from app.audit.views import audit_bp
 from app.audit.listeners import register_audit_listeners
 from flask_migrate import Migrate
 from flask_smorest import Api
 
 
+from flask_cors import CORS
+
 load_dotenv()
 
 app = Flask(__name__)
+# Enable CORS for the application
+CORS(app, resources={r"/*": {"origins": "*"}})
+
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "super-secret-key")
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -26,6 +33,9 @@ app.config['OPENAPI_URL_PREFIX'] = '/'
 app.config['OPENAPI_SWAGGER_UI_PATH'] = '/docs'
 app.config["OPENAPI_SWAGGER_UI_URL"] = "https://cdn.jsdelivr.net/npm/swagger-ui-dist/"
 
+
+from app.auth.views import init_oauth
+init_oauth(app)
 
 db.init_app(app)
 migrate = Migrate(app, db)
@@ -46,6 +56,7 @@ def index():
     return {"message": "Welcome to the Flask app!"}
 
 @app.route("/health")
+@require_jwt
 def health():
     try:
         db.session.execute(text("SELECT 1"))

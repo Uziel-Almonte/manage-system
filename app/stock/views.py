@@ -3,6 +3,7 @@ from flask_smorest import Blueprint
 from app.database import db
 from app.stock.models import StockMovement
 from app.products.models import Product
+from app.auth.middleware import require_scope
 from marshmallow import Schema, fields
 
 class StockMovementSchema(Schema):
@@ -15,6 +16,7 @@ class StockMovementSchema(Schema):
 stock_bp = Blueprint('stock', 'stock', url_prefix='/stock', description="Endpoints for stock operations")
 
 @stock_bp.route('/movement', methods=['POST'])
+@require_scope('stock:manage')
 @stock_bp.arguments(StockMovementSchema)
 def add_movement(data):
     if not data or not data.get('product_id') or not data.get('type') or 'qty_change' not in data:
@@ -57,6 +59,7 @@ def add_movement(data):
     return jsonify(movement.to_dict()), 201
 
 @stock_bp.route('/history', methods=['GET'])
+@require_scope('stock:view')
 def get_history():
     product_id = request.args.get('product_id', type=int)
     movement_type = request.args.get('type')
@@ -76,6 +79,7 @@ def get_history():
 
 
 @stock_bp.route('/alerts', methods=['GET'])
+@require_scope('stock:view')
 def get_alerts():
 
     alert_products = Product.query.filter(

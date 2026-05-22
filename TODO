@@ -93,35 +93,35 @@
 - [x] Create a client for the Flask backend
 
 **Day 16 — Permissions & Roles**
-- [ ] Define scopes: product:view, product:manage, stock:view, stock:manage, report:view, user:manage, audit:view
-- [ ] Create roles by combining scopes (not just admin/employee)
-- [ ] Create test users with different roles
+- [x] Define scopes: product:view, product:manage, stock:view, stock:manage, report:view, user:manage, audit:view
+- [x] Create roles by combining scopes (not just admin/employee)
+- [x] Create test users with different roles
 
 **Day 17 — JWT Validation in Flask**
-- [ ] Install PyJWT or python-jose
-- [ ] Write a JWT decode/verify middleware
-- [ ] Protect all API endpoints: check token validity
+- [x] Install PyJWT or python-jose
+- [x] Write a JWT decode/verify middleware
+- [x] Protect all API endpoints: check token validity
 
 **Day 18 — Permission Enforcement**
-- [ ] Write a scope-checker decorator (@require_scope)
-- [ ] Apply correct scope to each endpoint (not just role name)
-- [ ] Test with valid and invalid tokens
+- [x] Write a scope-checker decorator (@require_scope)
+- [x] Apply correct scope to each endpoint (not just role name)
+- [x] Test with valid and invalid tokens
 
 **Day 19 — OAuth2 Login via Authlib**
-- [ ] Install authlib
-- [ ] Implement OAuth2 redirect login in Flask (/login → Keycloak → /callback)
-- [ ] Store token in Flask session after callback
-- [ ] Implement /logout that clears session and redirects to Keycloak logout
+- [x] Install authlib
+- [x] Implement OAuth2 redirect login in Flask (/login → Keycloak → /callback)
+- [x] Store token in Flask session after callback
+- [x] Implement /logout that clears session and redirects to Keycloak logout
 
 **Day 20 — CORS & Security Hardening**
-- [ ] Configure Flask-CORS properly
-- [ ] Validate all endpoints reject unauthorized requests
-- [ ] Add Keycloak URLs to .env, no hardcoded secrets
+- [x] Configure Flask-CORS properly
+- [x] Validate all endpoints reject unauthorized requests
+- [x] Add Keycloak URLs to .env, no hardcoded secrets
 
 **Day 21 — Rest & Catch Up**
-- [ ] Test full auth flow: login → Keycloak → callback → session → protected page
-- [ ] Document Keycloak setup steps in README
-- [ ] Commit and open PR
+- [x] Test full auth flow: login → Keycloak → callback → session → protected page
+- [x] Document Keycloak setup steps in README
+- [x] Commit and open PR
 
 ---
 
