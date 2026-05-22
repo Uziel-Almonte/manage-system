@@ -2,10 +2,12 @@ from flask import request, jsonify
 from flask_smorest import Blueprint
 from app.database import db
 from app.audit.models import AuditLog
+from app.auth.middleware import require_scope
 
 audit_bp = Blueprint('audit', 'audit', url_prefix='/audit', description="Endpoints for audit logs")
 
 @audit_bp.route('', methods=['GET'])
+@require_scope('audit:view')
 def get_audit_logs():
     """
     GET /audit?table=products&record_id=1&action=UPDATE&limit=50&offset=0
@@ -37,6 +39,7 @@ def get_audit_logs():
     }), 200
 
 @audit_bp.route('/product/<int:product_id>', methods=['GET'])
+@require_scope('audit:view')
 def get_product_audit(product_id):
     """
     GET /audit/product/1
@@ -61,6 +64,7 @@ def get_product_audit(product_id):
     }), 200
 
 @audit_bp.route('/movement/<int:movement_id>', methods=['GET'])
+@require_scope('audit:view')
 def get_movement_audit(movement_id):
     """
     GET /audit/movement/1

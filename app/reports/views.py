@@ -4,10 +4,12 @@ from sqlalchemy import func, desc
 from app.database import db
 from app.products.models import Product
 from app.stock.models import StockMovement
+from app.auth.middleware import require_scope
 
 reports_bp = Blueprint('reports', 'reports', url_prefix='/reports', description="Endpoints for reports")
 
 @reports_bp.route('/critical-stock', methods=['GET'])
+@require_scope('report:view')
 def get_critical_stock():
     """
     GET /reports/critical-stock
@@ -24,6 +26,7 @@ def get_critical_stock():
     }), 200
 
 @reports_bp.route('/top-products', methods=['GET'])
+@require_scope('report:view')
 def get_top_products():
     """
     Returns the top products based on highest quantity in stock.
@@ -38,6 +41,7 @@ def get_top_products():
     }), 200
 
 @reports_bp.route('/recent-movements', methods=['GET'])
+@require_scope('report:view')
 def get_recent_movements():
     """
     GET /reports/recent-movements?limit=20

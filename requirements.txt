@@ -9,3 +9,8 @@ marshmallow
 pytest
 pytest-cov
 pytest-flask
+PyJWT
+cryptography
+Authlib
+requests
+Flask-CORS
