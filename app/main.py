@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 from sqlalchemy import text
 from dotenv import load_dotenv
 import os
@@ -7,7 +7,7 @@ from app.stock.views import stock_bp
 from app.reports.views import reports_bp
 from app.products.views import products_bp
 from app.auth.views import auth_bp
-from app.auth.middleware import require_jwt
+from app.auth.middleware import require_jwt, login_required
 from app.audit.views import audit_bp
 from app.audit.listeners import register_audit_listeners
 from flask_migrate import Migrate
@@ -18,7 +18,7 @@ from flask_cors import CORS
 
 load_dotenv()
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')
 # Enable CORS for the application
 CORS(app, resources={r"/*": {"origins": "*"}})
 
@@ -52,8 +52,9 @@ api.register_blueprint(auth_bp)
 api.register_blueprint(audit_bp)
 
 @app.route("/")
+@login_required
 def index():
-    return {"message": "Welcome to the Flask app!"}
+    return render_template('index.html')
 
 @app.route("/health")
 @require_jwt

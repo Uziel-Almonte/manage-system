@@ -128,11 +128,11 @@
 ## 🗓️ Week 4 — Frontend (Jinja2 + HTMX)
 
 **Day 22 — Base Layout & HTMX Setup**
-- [ ] Create base.html template (navbar, sidebar, flash messages)
-- [ ] Add HTMX via CDN in base.html (one script tag, no install needed)
-- [ ] Add TailwindCSS via CDN for styling (no build step needed)
-- [ ] Create login.html that redirects to Keycloak
-- [ ] Add a @login_required decorator that checks Flask session
+- [x] Create base.html template (navbar, sidebar, flash messages)
+- [x] Add HTMX via CDN in base.html (one script tag, no install needed)
+- [x] Add TailwindCSS via CDN for styling (no build step needed)
+- [x] Create login.html that redirects to Keycloak
+- [x] Add a @login_required decorator that checks Flask session
 
 **Day 23 — Dashboard Page**
 - [ ] Create dashboard.html with cards: total products, critical stock count, recent movements, low stock alerts

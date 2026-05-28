@@ -1,5 +1,5 @@
 import os
-from flask import redirect, url_for, session, current_app, jsonify, request
+from flask import redirect, url_for, session, current_app, jsonify, request, render_template
 from flask_smorest import Blueprint
 from authlib.integrations.flask_client import OAuth
 
@@ -24,6 +24,11 @@ def init_oauth(app):
             'scope': 'openid profile email'
         }
     )
+
+@auth_bp.route('/login-page')
+def login_page():
+    """Render the login page"""
+    return render_template('login.html')
 
 @auth_bp.route('/login')
 def login():
