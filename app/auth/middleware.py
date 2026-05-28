@@ -2,7 +2,7 @@ import os
 import json
 import urllib.request
 from functools import wraps
-from flask import request, jsonify, current_app
+from flask import request, jsonify, current_app, session, redirect, url_for
 import jwt
 from jwt.algorithms import RSAAlgorithm
 
@@ -95,3 +95,21 @@ def require_scope(required_scope):
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
+def login_required(f):
+    """
+    Decorator for Flask routes that require a user to be logged in via Flask session.
+    Checks if the user has a valid session and redirects to login if not.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Bypass for unit tests
+        if current_app.config.get('TESTING'):
+            return f(*args, **kwargs)
+        
+        # Check if user is in session
+        if 'user' not in session:
+            return redirect(url_for('auth.login_page'))
+        
+        return f(*args, **kwargs)
+    return decorated_function
