@@ -13,7 +13,7 @@ class StockMovementSchema(Schema):
     notes = fields.String()
     user = fields.String()
 
-stock_bp = Blueprint('stock', 'stock', url_prefix='/stock', description="Endpoints for stock operations")
+stock_bp = Blueprint('stock', 'stock', url_prefix='/api/stock', description="Endpoints for stock operations")
 
 @stock_bp.route('/movement', methods=['POST'])
 @require_scope('stock:manage')

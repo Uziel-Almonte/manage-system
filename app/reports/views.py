@@ -6,7 +6,7 @@ from app.products.models import Product
 from app.stock.models import StockMovement
 from app.auth.middleware import require_scope
 
-reports_bp = Blueprint('reports', 'reports', url_prefix='/reports', description="Endpoints for reports")
+reports_bp = Blueprint('reports', 'reports', url_prefix='/api/reports', description="Endpoints for reports")
 
 @reports_bp.route('/critical-stock', methods=['GET'])
 @require_scope('report:view')

@@ -4,7 +4,7 @@ from app.database import db
 from app.audit.models import AuditLog
 from app.auth.middleware import require_scope
 
-audit_bp = Blueprint('audit', 'audit', url_prefix='/audit', description="Endpoints for audit logs")
+audit_bp = Blueprint('audit', 'audit', url_prefix='/api/audit', description="Endpoints for audit logs")
 
 @audit_bp.route('', methods=['GET'])
 @require_scope('audit:view')

@@ -135,9 +135,9 @@
 - [x] Add a @login_required decorator that checks Flask session
 
 **Day 23 — Dashboard Page**
-- [ ] Create dashboard.html with cards: total products, critical stock count, recent movements, low stock alerts
-- [ ] Wire cards to real data from the reports endpoints
-- [ ] Add a recent movements table at the bottom
+- [x] Create dashboard.html with cards: total products, critical stock count, recent movements, low stock alerts
+- [x] Wire cards to real data from the reports endpoints
+- [x] Add a recent movements table at the bottom
 
 **Day 24 — Products List Page**
 - [ ] Create products/index.html with a full table
