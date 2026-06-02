@@ -1,5 +1,5 @@
-from flask import Flask, render_template
-from sqlalchemy import text
+from flask import Flask, render_template, request
+from sqlalchemy import text, or_
 from dotenv import load_dotenv
 import os
 from app.database import db
@@ -45,6 +45,9 @@ api = Api(app)
 # Registrar los event listeners de auditoría
 register_audit_listeners()
 
+from app.products.models import Product
+from app.stock.models import StockMovement
+
 api.register_blueprint(stock_bp)
 api.register_blueprint(reports_bp)
 api.register_blueprint(products_bp)
@@ -54,7 +57,66 @@ api.register_blueprint(audit_bp)
 @app.route("/")
 @login_required
 def index():
-    return render_template('index.html')
+    total_products = Product.query.filter_by(status='active').count()
+    low_stock_count = Product.query.filter(Product.qty <= Product.min_stock, Product.qty > 0, Product.status == 'active').count()
+    critical_stock_count = Product.query.filter(Product.qty == 0, Product.status == 'active').count()
+    total_movements = StockMovement.query.count()
+    
+    recent_movements = StockMovement.query.order_by(StockMovement.date.desc()).limit(5).all()
+
+    return render_template('index.html',
+                           total_products=total_products,
+                           low_stock_count=low_stock_count,
+                           critical_stock_count=critical_stock_count,
+                           total_movements=total_movements,
+                           recent_movements=recent_movements)
+
+@app.route("/products")
+@login_required
+def products_ui():
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    search = request.args.get('search', '')
+    sort_by = request.args.get('sort_by', 'id')
+    sort_order = request.args.get('sort_order', 'desc')
+
+    query = Product.query.filter_by(status='active')
+
+    if search:
+        query = query.filter(or_(
+            Product.name.ilike(f'%{search}%'),
+            Product.sku.ilike(f'%{search}%'),
+            Product.category.ilike(f'%{search}%')
+        ))
+
+    if hasattr(Product, sort_by):
+        column = getattr(Product, sort_by)
+        if sort_order == 'desc':
+            query = query.order_by(column.desc())
+        else:
+            query = query.order_by(column.asc())
+
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    if request.headers.get('HX-Request'):
+        return render_template('products/partials/table.html', pagination=pagination, search=search, sort_by=sort_by, sort_order=sort_order)
+
+    return render_template('products/index.html', pagination=pagination, search=search, sort_by=sort_by, sort_order=sort_order)
+
+@app.route("/stock")
+@login_required
+def stock_ui():
+    return "Stock UI coming soon!"
+
+@app.route("/reports")
+@login_required
+def reports_ui():
+    return "Reports UI coming soon!"
+
+@app.route("/audit")
+@login_required
+def audit_ui():
+    return "Audit UI coming soon!"
 
 @app.route("/health")
 @require_jwt
