@@ -12,7 +12,7 @@ class TestStockMovement:
         # Crear producto primero
         product_payload = {'name': 'Producto Stock', 'sku': 'SKU-STOCK-001', 'price': 100.00, 'qty': 50}
         product_response = app_client.post(
-            '/products',
+            '/api/products',
             data=json.dumps(product_payload),
             content_type='application/json'
         )
@@ -27,7 +27,7 @@ class TestStockMovement:
             'notes': 'Compra'
         }
         response = app_client.post(
-            '/stock/movement',
+            '/api/stock/movement',
             data=json.dumps(payload),
             content_type='application/json'
         )
@@ -41,7 +41,7 @@ class TestStockMovement:
         # Crear producto
         product_payload = {'name': 'Producto Exit', 'sku': 'SKU-EXIT-001', 'price': 100.00, 'qty': 50}
         product_response = app_client.post(
-            '/products',
+            '/api/products',
             data=json.dumps(product_payload),
             content_type='application/json'
         )
@@ -55,7 +55,7 @@ class TestStockMovement:
             'user': 'test_user'
         }
         response = app_client.post(
-            '/stock/movement',
+            '/api/stock/movement',
             data=json.dumps(payload),
             content_type='application/json'
         )
@@ -68,7 +68,7 @@ class TestStockMovement:
         """Test: no permitir salida que dejaría stock negativo"""
         product_payload = {'name': 'Stock Bajo', 'sku': 'SKU-LOW-EXIT', 'price': 100.00, 'qty': 10}
         product_response = app_client.post(
-            '/products',
+            '/api/products',
             data=json.dumps(product_payload),
             content_type='application/json'
         )
@@ -80,7 +80,7 @@ class TestStockMovement:
             'qty_change': 1000
         }
         response = app_client.post(
-            '/stock/movement',
+            '/api/stock/movement',
             data=json.dumps(payload),
             content_type='application/json'
         )
@@ -94,7 +94,7 @@ class TestStockMovement:
             'qty_change': 10
         }
         response = app_client.post(
-            '/stock/movement',
+            '/api/stock/movement',
             data=json.dumps(payload),
             content_type='application/json'
         )
@@ -104,7 +104,7 @@ class TestStockMovement:
         """Test: movimiento sin campos requeridos"""
         payload = {'product_id': 1, 'type': 'entry'}
         response = app_client.post(
-            '/stock/movement',
+            '/api/stock/movement',
             data=json.dumps(payload),
             content_type='application/json'
         )
@@ -114,7 +114,7 @@ class TestStockMovement:
         """Test: tipo de movimiento inválido"""
         product_payload = {'name': 'Producto', 'sku': 'SKU-INVALID-001', 'price': 100.00}
         product_response = app_client.post(
-            '/products',
+            '/api/products',
             data=json.dumps(product_payload),
             content_type='application/json'
         )
@@ -126,7 +126,7 @@ class TestStockMovement:
             'qty_change': 10
         }
         response = app_client.post(
-            '/stock/movement',
+            '/api/stock/movement',
             data=json.dumps(payload),
             content_type='application/json'
         )
@@ -141,7 +141,7 @@ class TestStockHistory:
         # Crear producto y movimientos
         product_payload = {'name': 'Producto History', 'sku': 'SKU-HIST-001', 'price': 100.00}
         product_response = app_client.post(
-            '/products',
+            '/api/products',
             data=json.dumps(product_payload),
             content_type='application/json'
         )
@@ -150,12 +150,12 @@ class TestStockHistory:
         for i in range(3):
             payload = {'product_id': product_id, 'type': 'entry', 'qty_change': 10}
             app_client.post(
-                '/stock/movement',
+                '/api/stock/movement',
                 data=json.dumps(payload),
                 content_type='application/json'
             )
 
-        response = app_client.get('/stock/history')
+        response = app_client.get('/api/stock/history')
         assert response.status_code == 200
         data = json.loads(response.data)
         assert len(data) >= 3
@@ -164,12 +164,12 @@ class TestStockHistory:
         """Test: filtrar historial por producto"""
         # Crear dos productos con movimientos
         product1 = app_client.post(
-            '/products',
+            '/api/products',
             data=json.dumps({'name': 'P1', 'sku': 'SKU-PROD1', 'price': 100.00}),
             content_type='application/json'
         )
         product2 = app_client.post(
-            '/products',
+            '/api/products',
             data=json.dumps({'name': 'P2', 'sku': 'SKU-PROD2', 'price': 100.00}),
             content_type='application/json'
         )
@@ -177,17 +177,17 @@ class TestStockHistory:
         p2_id = json.loads(product2.data)['id']
 
         app_client.post(
-            '/stock/movement',
+            '/api/stock/movement',
             data=json.dumps({'product_id': p1_id, 'type': 'entry', 'qty_change': 10}),
             content_type='application/json'
         )
         app_client.post(
-            '/stock/movement',
+            '/api/stock/movement',
             data=json.dumps({'product_id': p2_id, 'type': 'exit', 'qty_change': 5}),
             content_type='application/json'
         )
 
-        response = app_client.get(f'/stock/history?product_id={p1_id}')
+        response = app_client.get(f'/api/stock/history?product_id={p1_id}')
         assert response.status_code == 200
         data = json.loads(response.data)
         assert len(data) >= 1
@@ -198,24 +198,24 @@ class TestStockHistory:
         """Test: filtrar historial por tipo de movimiento"""
         product_payload = {'name': 'Producto Filter', 'sku': 'SKU-FILTER-001', 'price': 100.00}
         product_response = app_client.post(
-            '/products',
+            '/api/products',
             data=json.dumps(product_payload),
             content_type='application/json'
         )
         product_id = json.loads(product_response.data)['id']
 
         app_client.post(
-            '/stock/movement',
+            '/api/stock/movement',
             data=json.dumps({'product_id': product_id, 'type': 'entry', 'qty_change': 10}),
             content_type='application/json'
         )
         app_client.post(
-            '/stock/movement',
+            '/api/stock/movement',
             data=json.dumps({'product_id': product_id, 'type': 'exit', 'qty_change': 5}),
             content_type='application/json'
         )
 
-        response = app_client.get('/stock/history?type=entry')
+        response = app_client.get('/api/stock/history?type=entry')
         assert response.status_code == 200
         data = json.loads(response.data)
         for movement in data:
@@ -227,7 +227,7 @@ class TestStockAlerts:
 
     def test_get_stock_alerts_empty(self, app_client):
         """Test: obtener alertas cuando no hay productos con stock bajo"""
-        response = app_client.get('/stock/alerts')
+        response = app_client.get('/api/stock/alerts')
         assert response.status_code == 200
 
     def test_get_stock_alerts_with_low_stock(self, app_client):
@@ -242,12 +242,12 @@ class TestStockAlerts:
             'status': 'active'
         }
         app_client.post(
-            '/products',
+            '/api/products',
             data=json.dumps(payload),
             content_type='application/json'
         )
 
-        response = app_client.get('/stock/alerts')
+        response = app_client.get('/api/stock/alerts')
         assert response.status_code == 200
         data = json.loads(response.data)
         assert len(data) > 0
@@ -264,19 +264,19 @@ class TestStockAlerts:
             'status': 'inactive'
         }
         app_client.post(
-            '/products',
+            '/api/products',
             data=json.dumps(payload),
             content_type='application/json'
         )
 
-        response = app_client.get('/stock/alerts')
+        response = app_client.get('/api/stock/alerts')
         assert response.status_code == 200
 
     def test_alert_format(self, app_client):
         """Test: verificar que el formato de la alerta es correcto"""
         # Crear producto con stock bajo
         app_client.post(
-            '/products',
+            '/api/products',
             data=json.dumps({
                 'name': 'Alert Test',
                 'sku': 'SKU-TEST-ALERT',
@@ -287,7 +287,7 @@ class TestStockAlerts:
             content_type='application/json'
         )
 
-        response = app_client.get('/stock/alerts')
+        response = app_client.get('/api/stock/alerts')
         assert response.status_code == 200
         data = json.loads(response.data)
         if len(data) > 0:

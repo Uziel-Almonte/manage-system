@@ -135,15 +135,15 @@
 - [x] Add a @login_required decorator that checks Flask session
 
 **Day 23 — Dashboard Page**
-- [ ] Create dashboard.html with cards: total products, critical stock count, recent movements, low stock alerts
-- [ ] Wire cards to real data from the reports endpoints
-- [ ] Add a recent movements table at the bottom
+- [x] Create dashboard.html with cards: total products, critical stock count, recent movements, low stock alerts
+- [x] Wire cards to real data from the reports endpoints
+- [x] Add a recent movements table at the bottom
 
 **Day 24 — Products List Page**
-- [ ] Create products/index.html with a full table
-- [ ] Add HTMX-powered search (hx-get on input, returns partial template)
-- [ ] Add HTMX-powered pagination (hx-get on page buttons)
-- [ ] Add sort by column headers
+- [x] Create products/index.html with a full table
+- [x] Add HTMX-powered search (hx-get on input, returns partial template)
+- [x] Add HTMX-powered pagination (hx-get on page buttons)
+- [x] Add sort by column headers
 
 **Day 25 — Add / Edit / Delete Products**
 - [ ] Create products/form.html (shared for add and edit)
