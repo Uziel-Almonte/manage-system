@@ -25,7 +25,7 @@ class ProductUpdateSchema(Schema):
     min_stock = fields.Integer()
     status = fields.String()
 
-products_bp = Blueprint('products', 'products', url_prefix='/products', description="Endpoints for managing products in the inventory")
+products_bp = Blueprint('products', 'products', url_prefix='/api/products', description="Endpoints for managing products in the inventory")
 
 @products_bp.route('', methods=['GET'])
 @require_scope('product:view')

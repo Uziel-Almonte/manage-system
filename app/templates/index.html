@@ -4,12 +4,12 @@
 
 {% block content %}
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <!-- Card 1: Productos -->
+    <!-- Card 1: Total Products -->
     <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-gray-600 text-sm font-medium">Productos</p>
-                <p class="text-3xl font-bold text-gray-800 mt-2">0</p>
+                <p class="text-gray-600 text-sm font-medium">Productos Activos</p>
+                <p class="text-3xl font-bold text-gray-800 mt-2">{{ total_products }}</p>
             </div>
             <div class="text-4xl text-blue-500">📦</div>
         </div>
@@ -18,89 +18,99 @@
         </a>
     </div>
 
-    <!-- Card 2: Inventario -->
+    <!-- Card 2: Low Stock (<= min_stock) -->
     <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-gray-600 text-sm font-medium">Inventario</p>
-                <p class="text-3xl font-bold text-gray-800 mt-2">0</p>
+                <p class="text-gray-600 text-sm font-medium">Alertas Stock Bajo</p>
+                <p class="text-3xl font-bold text-gray-800 mt-2">{{ low_stock_count }}</p>
             </div>
-            <div class="text-4xl text-green-500">📊</div>
+            <div class="text-4xl text-yellow-500">⚠️</div>
         </div>
-        <a href="/stock" class="mt-4 inline-block text-blue-600 hover:text-blue-800 text-sm font-medium">
-            Ver detalles →
+        <a href="/stock" class="mt-4 inline-block text-yellow-600 hover:text-yellow-800 text-sm font-medium">
+            Ver alertas →
         </a>
     </div>
 
-    <!-- Card 3: Movimientos -->
+    <!-- Card 3: Critical Stock (0 qty) -->
     <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-gray-600 text-sm font-medium">Movimientos</p>
-                <p class="text-3xl font-bold text-gray-800 mt-2">0</p>
+                <p class="text-gray-600 text-sm font-medium">Stock Crítico (0)</p>
+                <p class="text-3xl font-bold text-gray-800 mt-2">{{ critical_stock_count }}</p>
+            </div>
+            <div class="text-4xl text-red-500">🚨</div>
+        </div>
+        <a href="/reports" class="mt-4 inline-block text-red-600 hover:text-red-800 text-sm font-medium">
+            Ver críticos →
+        </a>
+    </div>
+
+    <!-- Card 4: Total Movements -->
+    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-600 text-sm font-medium">Movimientos Totales</p>
+                <p class="text-3xl font-bold text-gray-800 mt-2">{{ total_movements }}</p>
             </div>
             <div class="text-4xl text-purple-500">🔄</div>
         </div>
-        <a href="/reports" class="mt-4 inline-block text-blue-600 hover:text-blue-800 text-sm font-medium">
-            Ver detalles →
-        </a>
-    </div>
-
-    <!-- Card 4: Reportes -->
-    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-gray-600 text-sm font-medium">Reportes</p>
-                <p class="text-3xl font-bold text-gray-800 mt-2">0</p>
-            </div>
-            <div class="text-4xl text-orange-500">📈</div>
-        </div>
-        <a href="/reports" class="mt-4 inline-block text-blue-600 hover:text-blue-800 text-sm font-medium">
-            Ver detalles →
+        <a href="/reports" class="mt-4 inline-block text-purple-600 hover:text-purple-800 text-sm font-medium">
+            Historial completo →
         </a>
     </div>
 </div>
 
 <!-- Welcome Section -->
-<div class="bg-white rounded-lg shadow-md p-8">
-    <h2 class="text-2xl font-bold text-gray-800 mb-4">Bienvenido, {{ session.get('user', {}).get('name', 'Usuario') }}!</h2>
-    <p class="text-gray-600 mb-4">
-        Sistema de Gestión de Inventario - Versión 1.0
+<div class="bg-white rounded-lg shadow-md p-8 mb-8">
+    <h2 class="text-2xl font-bold text-gray-800 mb-2">Bienvenido, {{ session.get('user', {}).get('name', 'Usuario') }}!</h2>
+    <p class="text-gray-600">
+        Sistema de Gestión de Inventario - Resumen general de la actividad.
     </p>
+</div>
+
+<!-- Recent Movements Table -->
+<div class="bg-white rounded-lg shadow-md p-6">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-gray-800">Movimientos Recientes</h2>
+        <a href="/stock" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Ver todos</a>
+    </div>
     
-    <!-- Quick Actions -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-        <a href="/products" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
-            <span class="text-3xl mr-4">📦</span>
-            <div>
-                <p class="font-semibold text-gray-800">Gestionar Productos</p>
-                <p class="text-sm text-gray-600">Agregar, editar o eliminar productos</p>
-            </div>
-        </a>
-        
-        <a href="/stock" class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition">
-            <span class="text-3xl mr-4">📊</span>
-            <div>
-                <p class="font-semibold text-gray-800">Control de Inventario</p>
-                <p class="text-sm text-gray-600">Monitorear niveles de stock</p>
-            </div>
-        </a>
-        
-        <a href="/reports" class="flex items-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition">
-            <span class="text-3xl mr-4">📈</span>
-            <div>
-                <p class="font-semibold text-gray-800">Generar Reportes</p>
-                <p class="text-sm text-gray-600">Análisis y estadísticas</p>
-            </div>
-        </a>
-        
-        <a href="/audit" class="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition">
-            <span class="text-3xl mr-4">🔍</span>
-            <div>
-                <p class="font-semibold text-gray-800">Auditoría</p>
-                <p class="text-sm text-gray-600">Ver historial de cambios</p>
-            </div>
-        </a>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Antes</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Después</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for movement in recent_movements %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ movement.date.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ movement.product.name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        {% if movement.type == 'entry' %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Entrada</span>
+                        {% else %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Salida</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ movement.prev_qty }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">{{ movement.new_qty }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ movement.user }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="px-6 py-10 text-center text-gray-500">No hay movimientos recientes registrados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
