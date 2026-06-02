@@ -21,7 +21,9 @@ def init_oauth(app):
         userinfo_endpoint=os.getenv('KEYCLOAK_USERINFO_URL', "http://keycloak_auth:8080/realms/inventory-realm/protocol/openid-connect/userinfo"),
         jwks_uri=os.getenv('KEYCLOAK_JWKS_URL', "http://keycloak_auth:8080/realms/inventory-realm/protocol/openid-connect/certs"),
         client_kwargs={
-            'scope': 'openid profile email'
+            'scope': 'openid profile email',
+            # Specify the expected issuer explicitly to handle localhost vs keycloak_auth mismatch
+            'issuer': os.getenv('KEYCLOAK_ISSUER', 'http://localhost:8080/realms/inventory-realm'),
         }
     )
 
@@ -37,7 +39,12 @@ def login():
 
 @auth_bp.route('/callback')
 def callback():
-    token = oauth.keycloak.authorize_access_token()
+    try:
+        token = oauth.keycloak.authorize_access_token()
+    except Exception as e:
+        current_app.logger.error(f"OAuth callback error: {e}")
+        return jsonify({"error": str(e)}), 500
+    
     # Authlib automatically parses the id_token if 'openid' is in scope
     user_info = token.get('userinfo') 
     
