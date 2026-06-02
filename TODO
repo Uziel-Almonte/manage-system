@@ -140,10 +140,10 @@
 - [x] Add a recent movements table at the bottom
 
 **Day 24 — Products List Page**
-- [ ] Create products/index.html with a full table
-- [ ] Add HTMX-powered search (hx-get on input, returns partial template)
-- [ ] Add HTMX-powered pagination (hx-get on page buttons)
-- [ ] Add sort by column headers
+- [x] Create products/index.html with a full table
+- [x] Add HTMX-powered search (hx-get on input, returns partial template)
+- [x] Add HTMX-powered pagination (hx-get on page buttons)
+- [x] Add sort by column headers
 
 **Day 25 — Add / Edit / Delete Products**
 - [ ] Create products/form.html (shared for add and edit)
