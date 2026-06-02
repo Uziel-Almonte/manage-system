@@ -1,5 +1,5 @@
-from flask import Flask, render_template
-from sqlalchemy import text
+from flask import Flask, render_template, request
+from sqlalchemy import text, or_
 from dotenv import load_dotenv
 import os
 from app.database import db
@@ -74,7 +74,34 @@ def index():
 @app.route("/products")
 @login_required
 def products_ui():
-    return "Products UI coming soon!"
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    search = request.args.get('search', '')
+    sort_by = request.args.get('sort_by', 'id')
+    sort_order = request.args.get('sort_order', 'desc')
+
+    query = Product.query.filter_by(status='active')
+
+    if search:
+        query = query.filter(or_(
+            Product.name.ilike(f'%{search}%'),
+            Product.sku.ilike(f'%{search}%'),
+            Product.category.ilike(f'%{search}%')
+        ))
+
+    if hasattr(Product, sort_by):
+        column = getattr(Product, sort_by)
+        if sort_order == 'desc':
+            query = query.order_by(column.desc())
+        else:
+            query = query.order_by(column.asc())
+
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    if request.headers.get('HX-Request'):
+        return render_template('products/partials/table.html', pagination=pagination, search=search, sort_by=sort_by, sort_order=sort_order)
+
+    return render_template('products/index.html', pagination=pagination, search=search, sort_by=sort_by, sort_order=sort_order)
 
 @app.route("/stock")
 @login_required

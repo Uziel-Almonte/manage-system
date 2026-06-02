@@ -1,0 +1,127 @@
+<div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                {% macro sortable_header(column, label) %}
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition"
+                    hx-get="/products?sort_by={{ column }}&sort_order={{ 'desc' if sort_by == column and sort_order == 'asc' else 'asc' }}&search={{ search }}"
+                    hx-target="#table-container"
+                    hx-push-url="true">
+                    <div class="flex items-center space-x-1">
+                        <span>{{ label }}</span>
+                        {% if sort_by == column %}
+                            <span class="text-blue-500">{{ '↓' if sort_order == 'desc' else '↑' }}</span>
+                        {% else %}
+                            <span class="text-gray-300">↕</span>
+                        {% endif %}
+                    </div>
+                </th>
+                {% endmacro %}
+
+                {{ sortable_header('sku', 'SKU') }}
+                {{ sortable_header('name', 'Nombre') }}
+                {{ sortable_header('category', 'Categoría') }}
+                {{ sortable_header('price', 'Precio') }}
+                {{ sortable_header('qty', 'Stock') }}
+                
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for product in pagination.items %}
+            <tr class="hover:bg-gray-50 transition">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.sku }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ product.name }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.category or 'N/A' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${{ "%.2f"|format(product.price) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    {% if product.qty == 0 %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Agotado</span>
+                    {% elif product.qty <= product.min_stock %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">{{ product.qty }} (Bajo)</span>
+                    {% else %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">{{ product.qty }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <!-- Actions will be built in Day 25 -->
+                    <button class="text-indigo-600 hover:text-indigo-900 mr-3">Editar</button>
+                    <button class="text-red-600 hover:text-red-900">Eliminar</button>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="px-6 py-10 text-center text-gray-500">No se encontraron productos.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination Controls -->
+{% if pagination.pages > 1 %}
+<div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4">
+    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+        <div>
+            <p class="text-sm text-gray-700">
+                Mostrando <span class="font-medium">{{ (pagination.page - 1) * pagination.per_page + 1 if pagination.total > 0 else 0 }}</span> a 
+                <span class="font-medium">{{ (pagination.page * pagination.per_page) if (pagination.page * pagination.per_page) < pagination.total else pagination.total }}</span> de 
+                <span class="font-medium">{{ pagination.total }}</span> resultados
+            </p>
+        </div>
+        <div>
+            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <!-- Previous Button -->
+                {% if pagination.has_prev %}
+                <button hx-get="/products?page={{ pagination.prev_num }}&sort_by={{ sort_by }}&sort_order={{ sort_order }}&search={{ search }}"
+                        hx-target="#table-container"
+                        hx-push-url="true"
+                        class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    Anterior
+                </button>
+                {% else %}
+                <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                    Anterior
+                </span>
+                {% endif %}
+
+                <!-- Page Numbers -->
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        {% if pagination.page == page_num %}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-blue-500 bg-blue-50 text-sm font-medium text-blue-600">
+                            {{ page_num }}
+                        </span>
+                        {% else %}
+                        <button hx-get="/products?page={{ page_num }}&sort_by={{ sort_by }}&sort_order={{ sort_order }}&search={{ search }}"
+                                hx-target="#table-container"
+                                hx-push-url="true"
+                                class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            {{ page_num }}
+                        </button>
+                        {% endif %}
+                    {% else %}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                            ...
+                        </span>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- Next Button -->
+                {% if pagination.has_next %}
+                <button hx-get="/products?page={{ pagination.next_num }}&sort_by={{ sort_by }}&sort_order={{ sort_order }}&search={{ search }}"
+                        hx-target="#table-container"
+                        hx-push-url="true"
+                        class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    Siguiente
+                </button>
+                {% else %}
+                <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                    Siguiente
+                </span>
+                {% endif %}
+            </nav>
+        </div>
+    </div>
+</div>
+{% endif %}
