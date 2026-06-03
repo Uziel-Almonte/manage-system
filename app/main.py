@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, flash, redirect, url_for
 from sqlalchemy import text, or_
 from dotenv import load_dotenv
 import os
@@ -102,6 +102,154 @@ def products_ui():
         return render_template('products/partials/table.html', pagination=pagination, search=search, sort_by=sort_by, sort_order=sort_order)
 
     return render_template('products/index.html', pagination=pagination, search=search, sort_by=sort_by, sort_order=sort_order)
+
+@app.route("/products/new")
+@login_required
+def new_product():
+    return render_template('products/form.html', product=None)
+
+@app.route("/products/<int:product_id>/edit")
+@login_required
+def edit_product(product_id):
+    product = Product.query.get(product_id)
+    if not product:
+        flash('Producto no encontrado', 'error')
+        return redirect(url_for('products_ui'))
+    return render_template('products/form.html', product=product)
+
+@app.route("/products", methods=['POST'])
+@login_required
+def create_product():
+    name = request.form.get('name')
+    sku = request.form.get('sku')
+    price = request.form.get('price')
+    description = request.form.get('description')
+    category = request.form.get('category')
+    qty = request.form.get('qty', 0)
+    min_stock = request.form.get('min_stock', 0)
+    status = request.form.get('status', 'active')
+
+    if not name or not sku or not price:
+        flash('Los campos nombre, SKU y precio son obligatorios', 'error')
+        return redirect(url_for('new_product'))
+
+    existing = Product.query.filter_by(sku=sku).first()
+    if existing:
+        flash('Ya existe un producto con este SKU', 'error')
+        return redirect(url_for('new_product'))
+
+    try:
+        new_product_obj = Product(
+            name=name,
+            sku=sku,
+            description=description,
+            category=category,
+            price=float(price),
+            qty=int(qty) if qty else 0,
+            min_stock=int(min_stock) if min_stock else 0,
+            status=status
+        )
+        db.session.add(new_product_obj)
+        db.session.commit()
+        flash(f'Producto "{name}" creado exitosamente', 'success')
+        return redirect(url_for('products_ui'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al crear el producto: {str(e)}', 'error')
+        return redirect(url_for('new_product'))
+
+@app.route("/products/<int:product_id>", methods=['PUT', 'POST'])
+@login_required
+def update_product(product_id):
+    product = Product.query.get(product_id)
+    if not product:
+        flash('Producto no encontrado', 'error')
+        return redirect(url_for('products_ui'))
+
+    name = request.form.get('name')
+    sku = request.form.get('sku')
+    price = request.form.get('price')
+    description = request.form.get('description')
+    category = request.form.get('category')
+    qty = request.form.get('qty')
+    min_stock = request.form.get('min_stock')
+    status = request.form.get('status')
+
+    if not name or not sku or not price:
+        flash('Los campos nombre, SKU y precio son obligatorios', 'error')
+        return redirect(url_for('edit_product', product_id=product_id))
+
+    # Check if SKU is being changed and if the new SKU already exists
+    if sku != product.sku:
+        existing = Product.query.filter_by(sku=sku).first()
+        if existing:
+            flash('Ya existe otro producto con este SKU', 'error')
+            return redirect(url_for('edit_product', product_id=product_id))
+
+    try:
+        product.name = name
+        product.sku = sku
+        product.description = description
+        product.category = category
+        product.price = float(price)
+        product.qty = int(qty) if qty else 0
+        product.min_stock = int(min_stock) if min_stock else 0
+        product.status = status
+
+        db.session.commit()
+        flash(f'Producto "{name}" actualizado exitosamente', 'success')
+        return redirect(url_for('products_ui'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al actualizar el producto: {str(e)}', 'error')
+        return redirect(url_for('edit_product', product_id=product_id))
+
+@app.route("/products/<int:product_id>/delete", methods=['POST'])
+@login_required
+def delete_product(product_id):
+    product = Product.query.get(product_id)
+    if not product:
+        if request.headers.get('HX-Request'):
+            return "", 404
+        flash('Producto no encontrado', 'error')
+        return redirect(url_for('products_ui'))
+
+    try:
+        product_name = product.name
+        db.session.delete(product)
+        db.session.commit()
+        flash(f'Producto "{product_name}" eliminado exitosamente', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al eliminar el producto: {str(e)}', 'error')
+
+    if request.headers.get('HX-Request'):
+        # Return the updated table for HTMX
+        page = request.args.get('page', 1, type=int)
+        per_page = 10
+        search = request.args.get('search', '')
+        sort_by = request.args.get('sort_by', 'id')
+        sort_order = request.args.get('sort_order', 'desc')
+
+        query = Product.query.filter_by(status='active')
+        if search:
+            query = query.filter(or_(
+                Product.name.ilike(f'%{search}%'),
+                Product.sku.ilike(f'%{search}%'),
+                Product.category.ilike(f'%{search}%')
+            ))
+        
+        if hasattr(Product, sort_by):
+            column = getattr(Product, sort_by)
+            if sort_order == 'desc':
+                query = query.order_by(column.desc())
+            else:
+                query = query.order_by(column.asc())
+
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+        return render_template('products/partials/table.html', pagination=pagination, search=search, sort_by=sort_by, sort_order=sort_order)
+    
+    return redirect(url_for('products_ui'))
 
 @app.route("/stock")
 @login_required
