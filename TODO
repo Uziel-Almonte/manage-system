@@ -146,10 +146,10 @@
 - [x] Add sort by column headers
 
 **Day 25 — Add / Edit / Delete Products**
-- [ ] Create products/form.html (shared for add and edit)
-- [ ] Add modal using HTMX (hx-target, hx-swap) — no JS needed
-- [ ] Delete with confirmation using hx-confirm attribute
-- [ ] Show success/error flash messages after each action
+- [x] Create products/form.html (shared for add and edit)
+- [x] Add modal using HTMX (hx-target, hx-swap) — no JS needed
+- [x] Delete with confirmation using hx-confirm attribute
+- [x] Show success/error flash messages after each action
 
 **Day 26 — Stock & Movement History UI**
 - [ ] Create stock/update.html (entry/exit form)

@@ -91,6 +91,41 @@ def capture_deletion(mapper, connection, target):
     )
     db.session.add(audit)
 
+def capture_stock_movement(mapper, connection, target):
+    """Crea automaticamente movimientos de stock cuando cambia qty en productos"""
+    from app.stock.models import StockMovement
+    
+    if target.__tablename__ != 'products':
+        return
+    
+    state = inspect(target)
+    
+    # Si es un UPDATE, detecta cambios en qty
+    if state.persistent:
+        for attr in state.attrs:
+            if attr.key == 'qty' and attr.history.has_changes():
+                old_qty = attr.history.deleted[0] if attr.history.deleted else 0
+                new_qty = attr.value
+                
+                # Determina el tipo de movimiento
+                if new_qty > old_qty:
+                    movement_type = 'entry'
+                    qty_change = new_qty - old_qty
+                else:
+                    movement_type = 'exit'
+                    qty_change = old_qty - new_qty
+                
+                movement = StockMovement(
+                    product_id=target.id,
+                    user=get_current_user(),
+                    type=movement_type,
+                    prev_qty=old_qty,
+                    new_qty=new_qty,
+                    notes=f'Actualización manual de stock'
+                )
+                db.session.add(movement)
+                break
+
 def register_audit_listeners():
     """Registra los listeners en SQLAlchemy"""
     from app.products.models import Product
@@ -98,6 +133,7 @@ def register_audit_listeners():
     
     event.listen(Product, 'after_insert', capture_changes, propagate=True)
     event.listen(Product, 'after_update', capture_changes, propagate=True)
+    event.listen(Product, 'after_update', capture_stock_movement, propagate=True)
     event.listen(Product, 'after_delete', capture_deletion, propagate=True)
     
     event.listen(StockMovement, 'after_insert', capture_changes, propagate=True)
