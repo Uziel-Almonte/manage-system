@@ -5,6 +5,7 @@ from app.stock.models import StockMovement
 from app.products.models import Product
 from app.auth.middleware import require_scope
 from marshmallow import Schema, fields
+from datetime import datetime
 
 class StockMovementSchema(Schema):
     product_id = fields.Integer(required=True)
@@ -65,6 +66,9 @@ def get_history():
     movement_type = request.args.get('type')
     user = request.args.get('user')
 
+    date_from = request.args.get('date_from')
+    date_to = request.args.get('date_to')
+
     query = StockMovement.query
 
     if product_id:
@@ -73,6 +77,16 @@ def get_history():
         query = query.filter_by(type=movement_type)
     if user:
         query = query.filter_by(user=user)
+    if date_from:
+        try:
+            query = query.filter(StockMovement.date >= datetime.strptime(date_from, '%Y-%m-%d'))
+        except ValueError:
+            pass
+    if date_to:
+        try:
+            query = query.filter(StockMovement.date <= datetime.strptime(date_to + ' 23:59:59', '%Y-%m-%d %H:%M:%S'))
+        except ValueError:
+            pass
 
     movements = query.order_by(StockMovement.date.desc()).all()
     return jsonify([m.to_dict() for m in movements]), 200
