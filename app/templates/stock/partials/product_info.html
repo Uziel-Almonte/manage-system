@@ -1,0 +1,55 @@
+{% if selected_product %}
+<div class="bg-white rounded-lg shadow-md p-5 border border-gray-200">
+    <h3 class="text-lg font-bold text-gray-800 mb-4">📦 Información del Producto</h3>
+
+    <div class="space-y-3">
+        <div>
+            <span class="text-xs text-gray-500 uppercase tracking-wider">Nombre</span>
+            <p class="font-medium text-gray-900">{{ selected_product.name }}</p>
+        </div>
+        <div>
+            <span class="text-xs text-gray-500 uppercase tracking-wider">SKU</span>
+            <p class="font-medium text-gray-700">{{ selected_product.sku }}</p>
+        </div>
+        {% if selected_product.category %}
+        <div>
+            <span class="text-xs text-gray-500 uppercase tracking-wider">Categoría</span>
+            <p class="text-gray-700">{{ selected_product.category }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Current stock level with alert badge -->
+        <div class="pt-2 border-t border-gray-100">
+            <span class="text-xs text-gray-500 uppercase tracking-wider">Stock Actual</span>
+            <div class="mt-1 flex items-center space-x-2">
+                {% if selected_product.qty == 0 %}
+                    <span class="text-2xl font-bold text-red-600">0</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">Agotado</span>
+                {% elif selected_product.qty <= selected_product.min_stock %}
+                    <span class="text-2xl font-bold text-yellow-600">{{ selected_product.qty }}</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">⚠ Stock Bajo</span>
+                {% else %}
+                    <span class="text-2xl font-bold text-green-600">{{ selected_product.qty }}</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">OK</span>
+                {% endif %}
+            </div>
+            <p class="text-xs text-gray-400 mt-1">Mínimo requerido: {{ selected_product.min_stock }}</p>
+        </div>
+
+        <!-- Stock level bar -->
+        <div class="pt-1">
+            {% if selected_product.min_stock > 0 %}
+            {% set pct = [(selected_product.qty / (selected_product.min_stock * 3) * 100), 100] | min %}
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="h-2 rounded-full
+                    {% if selected_product.qty == 0 %}bg-red-500
+                    {% elif selected_product.qty <= selected_product.min_stock %}bg-yellow-400
+                    {% else %}bg-green-500{% endif %}"
+                    style="width: {{ pct }}%">
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
