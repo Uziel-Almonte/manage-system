@@ -1,6 +1,7 @@
 import os
 import json
 import urllib.request
+from flask import g
 from functools import wraps
 from flask import request, jsonify, current_app, session, redirect, url_for
 import jwt
@@ -110,6 +111,9 @@ def login_required(f):
         # Check if user is in session
         if 'user' not in session:
             return redirect(url_for('auth.login_page'))
+        
+        user_data = session.get('user', {})
+        g.user = user_data.get('preferred_username') or user_data.get('email') or 'unknown'
         
         return f(*args, **kwargs)
     return decorated_function
