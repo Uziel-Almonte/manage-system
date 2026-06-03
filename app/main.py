@@ -254,7 +254,113 @@ def delete_product(product_id):
 @app.route("/stock")
 @login_required
 def stock_ui():
-    return "Stock UI coming soon!"
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+    movement_type = request.args.get('type', '')
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+    product_id = request.args.get('product_id', type=int)
+
+    query = StockMovement.query
+
+    if movement_type:
+        query = query.filter_by(type=movement_type)
+    if product_id:
+        query = query.filter_by(product_id=product_id)
+    if date_from:
+        try:
+            from datetime import datetime as dt
+            query = query.filter(StockMovement.date >= dt.strptime(date_from, '%Y-%m-%d'))
+        except ValueError:
+            pass
+    if date_to:
+        try:
+            from datetime import datetime as dt
+            query = query.filter(StockMovement.date <= dt.strptime(date_to + ' 23:59:59', '%Y-%m-%d %H:%M:%S'))
+        except ValueError:
+            pass
+
+    pagination = query.order_by(StockMovement.date.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    products = Product.query.filter_by(status='active').order_by(Product.name).all()
+
+    if request.headers.get('HX-Request'):
+        return render_template('stock/partials/history_table.html',
+                               pagination=pagination,
+                               movement_type=movement_type,
+                               date_from=date_from,
+                               date_to=date_to,
+                               product_id=product_id)
+
+    return render_template('stock/history.html',
+                           pagination=pagination,
+                           products=products,
+                           movement_type=movement_type,
+                           date_from=date_from,
+                           date_to=date_to,
+                           product_id=product_id)
+
+@app.route("/stock/update", methods=['GET', 'POST'])
+@login_required
+def stock_update_ui():
+    products = Product.query.filter_by(status='active').order_by(Product.name).all()
+
+    if request.method == 'POST':
+        from flask import flash, redirect, url_for
+        product_id = request.form.get('product_id', type=int)
+        movement_type = request.form.get('type')
+        qty_change = request.form.get('qty_change', type=int)
+        notes = request.form.get('notes', '')
+        user = request.form.get('user', 'system')
+
+        product = Product.query.get(product_id) if product_id else None
+        if not product:
+            from flask import flash
+            flash('Producto no encontrado.', 'error')
+            return render_template('stock/update.html', products=products)
+
+        if not movement_type or movement_type not in ('entry', 'exit'):
+            from flask import flash
+            flash('Tipo de movimiento inválido. Debe ser entrada o salida.', 'error')
+            return render_template('stock/update.html', products=products)
+
+        if not qty_change or qty_change <= 0:
+            from flask import flash
+            flash('La cantidad debe ser un número positivo.', 'error')
+            return render_template('stock/update.html', products=products)
+
+        if movement_type == 'exit' and product.qty < qty_change:
+            from flask import flash
+            flash(f'Stock insuficiente. Stock actual: {product.qty}', 'error')
+            return render_template('stock/update.html', products=products, selected_product=product)
+
+        prev_qty = product.qty
+        if movement_type == 'exit':
+            product.qty -= qty_change
+        else:
+            product.qty += qty_change
+
+        movement = StockMovement(
+            product_id=product.id,
+            user=user,
+            type=movement_type,
+            prev_qty=prev_qty,
+            new_qty=product.qty,
+            notes=notes
+        )
+        db.session.add(movement)
+        db.session.commit()
+
+        from flask import flash, redirect
+        flash(f'Movimiento registrado correctamente. Nuevo stock de {product.name}: {product.qty}', 'success')
+        return redirect('/stock')
+
+    selected_product_id = request.args.get('product_id', type=int)
+    selected_product = Product.query.get(selected_product_id) if selected_product_id else None
+
+    if request.headers.get('HX-Request') and selected_product_id:
+        return render_template('stock/partials/product_info.html', selected_product=selected_product)
+
+    return render_template('stock/update.html', products=products, selected_product=selected_product)
 
 @app.route("/reports")
 @login_required

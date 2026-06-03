@@ -1,0 +1,122 @@
+<div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cant. Cambio</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Anterior</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nuevo</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notas</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for movement in pagination.items %}
+            <tr class="hover:bg-gray-50 transition">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ movement.date.strftime('%d/%m/%Y %H:%M') if movement.date else 'N/A' }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {{ movement.product.name if movement.product else 'N/A' }}
+                    <div class="text-xs text-gray-400">{{ movement.product.sku if movement.product else '' }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    {% if movement.type == 'entry' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            ↑ Entrada
+                        </span>
+                    {% else %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            ↓ Salida
+                        </span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
+                    {% if movement.type == 'entry' %}
+                        <span class="text-green-600">+{{ movement.new_qty - movement.prev_qty }}</span>
+                    {% else %}
+                        <span class="text-red-600">-{{ movement.prev_qty - movement.new_qty }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ movement.prev_qty }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    {% if movement.product and movement.new_qty <= movement.product.min_stock %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                            {{ movement.new_qty }} ⚠
+                        </span>
+                    {% elif movement.product and movement.new_qty == 0 %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            0 Agotado
+                        </span>
+                    {% else %}
+                        <span class="text-gray-700">{{ movement.new_qty }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ movement.user or 'system' }}</td>
+                <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{{ movement.notes or '—' }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8" class="px-6 py-10 text-center text-gray-500">
+                    No se encontraron movimientos con los filtros aplicados.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if pagination.pages > 1 %}
+<div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4">
+    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+        <p class="text-sm text-gray-700">
+            Mostrando <span class="font-medium">{{ (pagination.page - 1) * pagination.per_page + 1 if pagination.total > 0 else 0 }}</span>
+            a <span class="font-medium">{{ [pagination.page * pagination.per_page, pagination.total] | min }}</span>
+            de <span class="font-medium">{{ pagination.total }}</span> registros
+        </p>
+        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+            {% if pagination.has_prev %}
+            <button hx-get="/stock?page={{ pagination.prev_num }}&type={{ movement_type }}&date_from={{ date_from }}&date_to={{ date_to }}&product_id={{ product_id or '' }}"
+                    hx-target="#history-container"
+                    hx-push-url="true"
+                    class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                Anterior
+            </button>
+            {% else %}
+            <span class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">Anterior</span>
+            {% endif %}
+
+            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if page_num %}
+                    {% if pagination.page == page_num %}
+                    <span class="relative inline-flex items-center px-4 py-2 border border-blue-500 bg-blue-50 text-sm font-medium text-blue-600">{{ page_num }}</span>
+                    {% else %}
+                    <button hx-get="/stock?page={{ page_num }}&type={{ movement_type }}&date_from={{ date_from }}&date_to={{ date_to }}&product_id={{ product_id or '' }}"
+                            hx-target="#history-container"
+                            hx-push-url="true"
+                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        {{ page_num }}
+                    </button>
+                    {% endif %}
+                {% else %}
+                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>
+                {% endif %}
+            {% endfor %}
+
+            {% if pagination.has_next %}
+            <button hx-get="/stock?page={{ pagination.next_num }}&type={{ movement_type }}&date_from={{ date_from }}&date_to={{ date_to }}&product_id={{ product_id or '' }}"
+                    hx-target="#history-container"
+                    hx-push-url="true"
+                    class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                Siguiente
+            </button>
+            {% else %}
+            <span class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">Siguiente</span>
+            {% endif %}
+        </nav>
+    </div>
+</div>
+{% endif %}
