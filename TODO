@@ -152,10 +152,10 @@
 - [x] Show success/error flash messages after each action
 
 **Day 26 — Stock & Movement History UI**
-- [ ] Create stock/update.html (entry/exit form)
-- [ ] Create stock/history.html with filterable table
-- [ ] Add HTMX filter by date range and movement type
-- [ ] Show current stock level and alert badge if below min_stock
+- [x] Create stock/update.html (entry/exit form)
+- [x] Create stock/history.html with filterable table
+- [x] Add HTMX filter by date range and movement type
+- [x] Show current stock level and alert badge if below min_stock
 
 **Day 27 — Audit & Reports UI**
 - [ ] Create audit/index.html (only rendered if session has audit:view scope)
