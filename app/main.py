@@ -59,7 +59,7 @@ api.register_blueprint(audit_bp)
 def index():
     total_products = Product.query.filter_by(status='active').count()
     low_stock_count = Product.query.filter(Product.qty <= Product.min_stock, Product.qty > 0, Product.status == 'active').count()
-    critical_stock_count = Product.query.filter(Product.qty == 0, Product.status == 'active').count()
+    critical_stock_count = Product.query.filter(Product.qty <= Product.min_stock * 0.2, Product.status == 'active').count()
     total_movements = StockMovement.query.count()
     
     recent_movements = StockMovement.query.order_by(StockMovement.date.desc()).limit(5).all()
