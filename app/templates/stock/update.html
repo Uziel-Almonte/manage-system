@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar Movimiento - Sistema de Gestión de Inventario{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center space-x-3">
+    <a href="/stock" class="text-blue-600 hover:text-blue-800 transition">← Volver al Historial</a>
+    <span class="text-gray-400">/</span>
+    <h2 class="text-2xl font-bold text-gray-800">Registrar Movimiento de Stock</h2>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Form -->
+    <div class="lg:col-span-2 bg-white rounded-lg shadow-md p-6">
+        <form method="POST" action="/stock/update" class="space-y-5">
+
+            <!-- Product selector -->
+            <div>
+                <label for="product_id" class="block text-sm font-medium text-gray-700 mb-1">
+                    Producto <span class="text-red-500">*</span>
+                </label>
+                <select id="product_id" name="product_id" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        hx-get="/stock/update"
+                        hx-trigger="change"
+                        hx-target="#product-info"
+                        hx-swap="innerHTML"
+                        hx-include="[name='product_id']">
+                    <option value="">-- Seleccionar producto --</option>
+                    {% for product in products %}
+                    <option value="{{ product.id }}"
+                            {% if selected_product and selected_product.id == product.id %}selected{% endif %}>
+                        {{ product.name }} ({{ product.sku }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Movement type -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Tipo de Movimiento <span class="text-red-500">*</span>
+                </label>
+                <div class="flex space-x-4">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="radio" name="type" value="entry" required
+                               class="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-500">
+                        <span class="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">↑ Entrada</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="radio" name="type" value="exit"
+                               class="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500">
+                        <span class="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">↓ Salida</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Quantity -->
+            <div>
+                <label for="qty_change" class="block text-sm font-medium text-gray-700 mb-1">
+                    Cantidad <span class="text-red-500">*</span>
+                </label>
+                <input type="number" id="qty_change" name="qty_change" min="1" required
+                       placeholder="Ingrese la cantidad"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- User -->
+            <div>
+                <label for="user" class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
+                <input type="text" id="user" name="user"
+                       value="{{ session.get('user', {}).get('preferred_username', '') }}"
+                       placeholder="Nombre del responsable"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- Notes -->
+            <div>
+                <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+                <textarea id="notes" name="notes" rows="3"
+                          placeholder="Descripción opcional del movimiento (ej: compra a proveedor, venta a cliente...)"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex space-x-3 pt-2">
+                <button type="submit"
+                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                    Registrar Movimiento
+                </button>
+                <a href="/stock"
+                   class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Product Info Panel -->
+    <div class="lg:col-span-1">
+        <div id="product-info">
+            {% if selected_product %}
+            {% include 'stock/partials/product_info.html' with context %}
+            {% else %}
+            <div class="bg-gray-50 rounded-lg border border-dashed border-gray-300 p-6 text-center text-gray-500">
+                <div class="text-4xl mb-2">📦</div>
+                <p class="text-sm">Selecciona un producto para ver su información actual.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
