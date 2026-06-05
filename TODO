@@ -158,10 +158,10 @@
 - [x] Show current stock level and alert badge if below min_stock
 
 **Day 27 — Audit & Reports UI**
-- [ ] Create audit/index.html (only rendered if session has audit:view scope)
-- [ ] Create reports/index.html with critical stock and top products tables
-- [ ] Hide nav links based on user scopes in base.html (Jinja2 if blocks)
-- [ ] Make all pages responsive using Tailwind classes
+- [x] Create audit/index.html (only rendered if session has audit:view scope)
+- [x] Create reports/index.html with critical stock and top products tables
+- [x] Hide nav links based on user scopes in base.html (Jinja2 if blocks)
+- [x] Make all pages responsive using Tailwind classes
 
 **Day 28 — Rest & Catch Up**
 - [ ] Walk through the full app as each user role
