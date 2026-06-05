@@ -48,9 +48,26 @@ def callback():
     # Authlib automatically parses the id_token if 'openid' is in scope
     user_info = token.get('userinfo') 
     
+    # Extract permissions from the access token.
+    # Keycloak puts custom realm roles (product:view, audit:view, etc.) in
+    # realm_access.roles — NOT in the OAuth2 "scope" string which only ever
+    # contains the standard OpenID scopes (openid, profile, email).
+    access_token = token.get('access_token', '')
+    user_scopes = []
+    if access_token:
+        try:
+            import jwt as pyjwt
+            unverified = pyjwt.decode(access_token, options={"verify_signature": False})
+            realm_roles = unverified.get('realm_access', {}).get('roles', [])
+            # Keep only the application-level permission roles (those containing ':')
+            user_scopes = [r for r in realm_roles if ':' in r]
+        except Exception:
+            user_scopes = []
+
     # Store token and user data in the secure flask session
     session['user'] = user_info
     session['token'] = token
+    session['user_scopes'] = user_scopes
     # Redirect to home page instead of returning JSON so refreshing doesn't cause CSRF errors
     return redirect('/')
 
