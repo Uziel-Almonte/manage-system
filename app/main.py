@@ -7,7 +7,7 @@ from app.stock.views import stock_bp
 from app.reports.views import reports_bp
 from app.products.views import products_bp
 from app.auth.views import auth_bp
-from app.auth.middleware import require_jwt, login_required
+from app.auth.middleware import require_jwt, login_required, require_ui_scope
 from app.audit.views import audit_bp
 from app.audit.listeners import register_audit_listeners
 from flask_migrate import Migrate
@@ -105,11 +105,13 @@ def products_ui():
 
 @app.route("/products/new")
 @login_required
+@require_ui_scope('product:manage')
 def new_product():
     return render_template('products/form.html', product=None)
 
 @app.route("/products/<int:product_id>/edit")
 @login_required
+@require_ui_scope('product:manage')
 def edit_product(product_id):
     product = Product.query.get(product_id)
     if not product:
@@ -119,6 +121,7 @@ def edit_product(product_id):
 
 @app.route("/products", methods=['POST'])
 @login_required
+@require_ui_scope('product:manage')
 def create_product():
     name = request.form.get('name')
     sku = request.form.get('sku')
@@ -160,6 +163,7 @@ def create_product():
 
 @app.route("/products/<int:product_id>", methods=['PUT', 'POST'])
 @login_required
+@require_ui_scope('product:manage')
 def update_product(product_id):
     product = Product.query.get(product_id)
     if not product:
@@ -206,6 +210,7 @@ def update_product(product_id):
 
 @app.route("/products/<int:product_id>/delete", methods=['POST'])
 @login_required
+@require_ui_scope('product:manage')
 def delete_product(product_id):
     product = Product.query.get(product_id)
     if not product:
@@ -301,6 +306,7 @@ def stock_ui():
 
 @app.route("/stock/update", methods=['GET', 'POST'])
 @login_required
+@require_ui_scope('stock:manage')
 def stock_update_ui():
     products = Product.query.filter_by(status='active').order_by(Product.name).all()
 
@@ -364,13 +370,58 @@ def stock_update_ui():
 
 @app.route("/reports")
 @login_required
+@require_ui_scope('report:view')
 def reports_ui():
-    return "Reports UI coming soon!"
+    critical_products = Product.query.filter(
+        Product.qty <= Product.min_stock,
+        Product.status == 'active'
+    ).order_by(Product.qty.asc()).all()
+
+    top_products = Product.query.filter_by(status='active').order_by(Product.qty.desc()).limit(10).all()
+
+    recent_movements = StockMovement.query.order_by(StockMovement.date.desc()).limit(20).all()
+
+    return render_template('reports/index.html',
+                           critical_products=critical_products,
+                           top_products=top_products,
+                           recent_movements=recent_movements)
 
 @app.route("/audit")
 @login_required
+@require_ui_scope('audit:view')
 def audit_ui():
-    return "Audit UI coming soon!"
+    from app.audit.models import AuditLog
+
+    page = request.args.get('page', 1, type=int)
+    per_page = 25
+    filter_table = request.args.get('table', '')
+    filter_action = request.args.get('action', '')
+    filter_record_id = request.args.get('record_id', None, type=int)
+
+    query = AuditLog.query
+    if filter_table:
+        query = query.filter_by(table_name=filter_table)
+    if filter_action:
+        query = query.filter_by(action=filter_action)
+    if filter_record_id:
+        query = query.filter_by(record_id=filter_record_id)
+
+    total = query.count()
+    pagination = query.order_by(AuditLog.timestamp.desc()).paginate(page=page, per_page=per_page, error_out=False)
+
+    if request.headers.get('HX-Request'):
+        return render_template('audit/partials/audit_table.html',
+                               pagination=pagination,
+                               filter_table=filter_table,
+                               filter_action=filter_action,
+                               filter_record_id=filter_record_id)
+
+    return render_template('audit/index.html',
+                           pagination=pagination,
+                           total=total,
+                           filter_table=filter_table,
+                           filter_action=filter_action,
+                           filter_record_id=filter_record_id)
 
 @app.route("/health")
 @require_jwt

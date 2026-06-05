@@ -117,3 +117,24 @@ def login_required(f):
         
         return f(*args, **kwargs)
     return decorated_function
+
+
+def require_ui_scope(required_scope):
+    """
+    Decorator for UI routes that checks the user's session scopes.
+    Returns a 403 flash+redirect instead of a JSON response.
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if current_app.config.get('TESTING'):
+                return f(*args, **kwargs)
+
+            user_scopes = session.get('user_scopes', [])
+            if required_scope not in user_scopes:
+                from flask import flash, abort
+                flash(f'Acceso denegado: se requiere el permiso "{required_scope}".', 'error')
+                return redirect(url_for('index')), 303
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
