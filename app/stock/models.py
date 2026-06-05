@@ -13,7 +13,7 @@ class StockMovement(db.Model):
     notes = db.Column(db.Text, nullable=True)
     date = db.Column(db.DateTime, default=db.func.now(), nullable=False)
 
-    product = db.relationship('Product', backref='movements')
+    product = db.relationship('Product', backref=db.backref('movements', cascade='all, delete-orphan'))
 
     def to_dict(self):
         return {

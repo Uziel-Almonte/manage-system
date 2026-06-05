@@ -5,9 +5,11 @@
 {% block content %}
 <div class="mb-6 flex justify-between items-center">
     <h2 class="text-2xl font-bold text-gray-800">Gestionar Productos</h2>
+    {% if 'product:manage' in session.get('user_scopes', []) %}
     <a href="/products/new" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-        ➕ Nuevo Producto
+        + Nuevo Producto
     </a>
+    {% endif %}
 </div>
 
 <div class="bg-white rounded-lg shadow-md p-6">

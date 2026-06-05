@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes - Sistema de Gestión de Inventario{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h2 class="text-2xl font-bold text-gray-800">Reportes</h2>
+    <p class="text-gray-500 text-sm mt-1">Resumen del estado del inventario</p>
+</div>
+
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div class="bg-white rounded-lg shadow-md p-5 border-l-4 border-red-500">
+        <p class="text-sm font-medium text-gray-500">Stock Crítico</p>
+        <p class="text-3xl font-bold text-red-600 mt-1">{{ critical_products | length }}</p>
+        <p class="text-xs text-gray-400 mt-1">productos bajo mínimo</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-md p-5 border-l-4 border-blue-500">
+        <p class="text-sm font-medium text-gray-500">Top Productos</p>
+        <p class="text-3xl font-bold text-blue-600 mt-1">{{ top_products | length }}</p>
+        <p class="text-xs text-gray-400 mt-1">con mayor stock</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-md p-5 border-l-4 border-green-500">
+        <p class="text-sm font-medium text-gray-500">Movimientos Recientes</p>
+        <p class="text-3xl font-bold text-green-600 mt-1">{{ recent_movements | length }}</p>
+        <p class="text-xs text-gray-400 mt-1">últimos registrados</p>
+    </div>
+</div>
+
+<!-- Critical Stock Table -->
+<div class="bg-white rounded-lg shadow-md overflow-hidden mb-8">
+    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <h3 class="text-lg font-semibold text-gray-800">Productos con Stock Critico</h3>
+        <span class="text-sm text-red-600 font-medium">{{ critical_products | length }} producto(s)</span>
+    </div>
+
+    {% if critical_products %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Actual</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Mínimo</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acción</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for product in critical_products %}
+                <tr class="hover:bg-red-50 transition">
+                    <td class="px-4 py-3 font-medium text-gray-900">{{ product.name }}</td>
+                    <td class="px-4 py-3 text-gray-500">{{ product.sku }}</td>
+                    <td class="px-4 py-3 text-gray-500">{{ product.category or '—' }}</td>
+                    <td class="px-4 py-3">
+                        <span class="font-bold {% if product.qty == 0 %}text-red-700{% else %}text-orange-600{% endif %}">
+                            {{ product.qty }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-gray-600">{{ product.min_stock }}</td>
+                    <td class="px-4 py-3">
+                        {% if product.qty == 0 %}
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">Agotado</span>
+                        {% else %}
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">Crítico</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3">
+                        <a href="/stock/update?product_id={{ product.id }}"
+                           class="text-blue-600 hover:underline text-xs font-medium">
+                            Reponer
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="px-6 py-10 text-center text-gray-400">
+        <p class="font-medium text-gray-600">No hay productos en stock critico.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Top Products Table -->
+<div class="bg-white rounded-lg shadow-md overflow-hidden mb-8">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-800">Top Productos por Stock</h3>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for product in top_products %}
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-4 py-3 text-gray-400 font-medium">{{ loop.index }}</td>
+                    <td class="px-4 py-3 font-medium text-gray-900">
+                        <a href="/products" class="hover:text-blue-600">{{ product.name }}</a>
+                    </td>
+                    <td class="px-4 py-3 text-gray-500">{{ product.sku }}</td>
+                    <td class="px-4 py-3 text-gray-500">{{ product.category or '—' }}</td>
+                    <td class="px-4 py-3 text-gray-700">${{ "%.2f"|format(product.price) }}</td>
+                    <td class="px-4 py-3 font-semibold text-gray-800">{{ product.qty }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="px-6 py-10 text-center text-gray-400">No hay productos activos.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Recent Movements Table -->
+<div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <h3 class="text-lg font-semibold text-gray-800">Movimientos Recientes</h3>
+        <a href="/stock" class="text-sm text-blue-600 hover:underline">Ver todos →</a>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cambio</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Resultante</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for m in recent_movements %}
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-4 py-3 whitespace-nowrap text-gray-500">
+                        {{ m.date.strftime('%d/%m/%Y %H:%M') if m.date else 'N/A' }}
+                    </td>
+                    <td class="px-4 py-3 font-medium text-gray-900">
+                        {{ m.product.name if m.product else 'N/A' }}
+                        <div class="text-xs text-gray-400">{{ m.product.sku if m.product else '' }}</div>
+                    </td>
+                    <td class="px-4 py-3">
+                        {% if m.type == 'entry' %}
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">↑ Entrada</span>
+                        {% else %}
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">↓ Salida</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 font-medium">
+                        {% if m.type == 'entry' %}
+                        <span class="text-green-600">+{{ m.new_qty - m.prev_qty }}</span>
+                        {% else %}
+                        <span class="text-red-600">-{{ m.prev_qty - m.new_qty }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-gray-700">{{ m.new_qty }}</td>
+                    <td class="px-4 py-3 text-gray-500">{{ m.user or 'system' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="px-6 py-10 text-center text-gray-400">No hay movimientos recientes.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
