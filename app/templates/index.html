@@ -3,130 +3,122 @@
 {% block title %}Dashboard - Sistema de Gestión de Inventario{% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+{% set scopes = session.get('user_scopes', []) %}
+
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+
     <!-- Card 1: Total Products -->
-    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-gray-600 text-sm font-medium">Productos Activos</p>
-                <p class="text-3xl font-bold text-gray-800 mt-2">{{ total_products }}</p>
-            </div>
-            <div class="text-4xl text-blue-500"></div>
-        </div>
-        <a href="/products" class="mt-4 inline-block text-blue-600 hover:text-blue-800 text-sm font-medium">
-            Ver detalles →
+    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition border-t-4 border-blue-500">
+        <p class="text-gray-500 text-sm font-medium">Productos Activos</p>
+        <p class="text-3xl font-bold text-gray-800 mt-1">{{ total_products }}</p>
+        {% if 'product:view' in scopes or 'product:manage' in scopes %}
+        <a href="/products" class="mt-3 inline-block text-blue-600 hover:text-blue-800 text-sm font-medium">
+            Ver detalles &rarr;
         </a>
+        {% endif %}
     </div>
 
-    <!-- Card 2: Low Stock (<= min_stock) -->
-    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-gray-600 text-sm font-medium">Alertas Stock Bajo</p>
-                <p class="text-3xl font-bold text-gray-800 mt-2">{{ low_stock_count }}</p>
-            </div>
-            <div class="text-4xl text-yellow-500"></div>
-        </div>
-        <a href="/stock" class="mt-4 inline-block text-yellow-600 hover:text-yellow-800 text-sm font-medium">
-            Ver alertas →
+    <!-- Card 2: Low Stock -->
+    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition border-t-4 border-yellow-400">
+        <p class="text-gray-500 text-sm font-medium">Alertas Stock Bajo</p>
+        <p class="text-3xl font-bold text-gray-800 mt-1">{{ low_stock_count }}</p>
+        {% if 'stock:view' in scopes or 'stock:manage' in scopes %}
+        <a href="/stock" class="mt-3 inline-block text-yellow-600 hover:text-yellow-800 text-sm font-medium">
+            Ver alertas &rarr;
         </a>
+        {% endif %}
     </div>
 
-    <!-- Card 3: Critical Stock (0 qty) -->
-    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-gray-600 text-sm font-medium">Stock Crítico (0)</p>
-                <p class="text-3xl font-bold text-gray-800 mt-2">{{ critical_stock_count }}</p>
-            </div>
-            <div class="text-4xl text-red-500"></div>
-        </div>
-        <a href="/reports" class="mt-4 inline-block text-red-600 hover:text-red-800 text-sm font-medium">
-            Ver críticos →
+    <!-- Card 3: Critical Stock -->
+    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition border-t-4 border-red-500">
+        <p class="text-gray-500 text-sm font-medium">Stock Critico</p>
+        <p class="text-3xl font-bold text-gray-800 mt-1">{{ critical_stock_count }}</p>
+        {% if 'report:view' in scopes %}
+        <a href="/reports" class="mt-3 inline-block text-red-600 hover:text-red-800 text-sm font-medium">
+            Ver criticos &rarr;
         </a>
+        {% elif 'stock:view' in scopes or 'stock:manage' in scopes %}
+        <a href="/stock" class="mt-3 inline-block text-red-600 hover:text-red-800 text-sm font-medium">
+            Ver stock &rarr;
+        </a>
+        {% endif %}
     </div>
 
     <!-- Card 4: Total Movements -->
-    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-gray-600 text-sm font-medium">Movimientos Totales</p>
-                <p class="text-3xl font-bold text-gray-800 mt-2">{{ total_movements }}</p>
-            </div>
-            <div class="text-4xl text-purple-500"></div>
-        </div>
-        <a href="/reports" class="mt-4 inline-block text-purple-600 hover:text-purple-800 text-sm font-medium">
-            Historial completo →
+    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition border-t-4 border-purple-500">
+        <p class="text-gray-500 text-sm font-medium">Movimientos Totales</p>
+        <p class="text-3xl font-bold text-gray-800 mt-1">{{ total_movements }}</p>
+        {% if 'report:view' in scopes %}
+        <a href="/reports" class="mt-3 inline-block text-purple-600 hover:text-purple-800 text-sm font-medium">
+            Ver reporte &rarr;
         </a>
+        {% elif 'stock:view' in scopes or 'stock:manage' in scopes %}
+        <a href="/stock" class="mt-3 inline-block text-purple-600 hover:text-purple-800 text-sm font-medium">
+            Ver historial &rarr;
+        </a>
+        {% endif %}
     </div>
 </div>
 
-<!-- Welcome Section -->
-<div class="bg-white rounded-lg shadow-md p-8 mb-8">
-    <h2 class="text-2xl font-bold text-gray-800 mb-2">Bienvenido, {{ session.get('user', {}).get('name', 'Usuario') }}!</h2>
-    <p class="text-gray-600">
-        Sistema de Gestión de Inventario - Resumen general de la actividad.
-    </p>
+<!-- Welcome -->
+<div class="bg-white rounded-lg shadow-md px-8 py-6 mb-8">
+    <h2 class="text-xl font-bold text-gray-800">
+        Bienvenido, {{ session.get('user', {}).get('name', session.get('user', {}).get('preferred_username', 'Usuario')) }}
+    </h2>
+    <p class="text-gray-500 text-sm mt-1">Resumen general de la actividad del inventario.</p>
 </div>
 
 <!-- Recent Movements Table -->
+{% if 'stock:view' in scopes or 'stock:manage' in scopes %}
 <div class="bg-white rounded-lg shadow-md p-6">
     <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold text-gray-800">Movimientos Recientes</h2>
-        <a href="/stock" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Ver todos</a>
+        <h2 class="text-lg font-bold text-gray-800">Movimientos Recientes</h2>
+        <a href="/stock" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Ver todos &rarr;</a>
     </div>
-    
+
     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
             <thead class="bg-gray-50">
                 <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Antes</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Después</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Antes</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Despues</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 {% for movement in recent_movements %}
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ movement.date.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ movement.product.name }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-4 py-3 whitespace-nowrap text-gray-500">
+                        {{ movement.date.strftime('%d/%m/%Y %H:%M') if movement.date else 'N/A' }}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap font-medium text-gray-900">
+                        {{ movement.product.name if movement.product else '(eliminado)' }}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
                         {% if movement.type == 'entry' %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Entrada</span>
+                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">Entrada</span>
                         {% else %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Salida</span>
+                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800">Salida</span>
                         {% endif %}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ movement.prev_qty }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">{{ movement.new_qty }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ movement.user }}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-gray-500">{{ movement.prev_qty }}</td>
+                    <td class="px-4 py-3 whitespace-nowrap font-semibold text-gray-800">{{ movement.new_qty }}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-gray-500">{{ movement.user or 'system' }}</td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" class="px-6 py-10 text-center text-gray-500">No hay movimientos recientes registrados.</td>
+                    <td colspan="6" class="px-4 py-10 text-center text-gray-400">
+                        No hay movimientos recientes registrados.
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
-
-<!-- Footer Info -->
-<div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 text-center text-gray-600 text-sm">
-    <div class="bg-white rounded-lg shadow-md p-4">
-        <p class="font-semibold">Soporte</p>
-        <p>support@example.com</p>
-    </div>
-    <div class="bg-white rounded-lg shadow-md p-4">
-        <p class="font-semibold">Documentación</p>
-        <p><a href="#" class="text-blue-600 hover:underline">Ver guía</a></p>
-    </div>
-    <div class="bg-white rounded-lg shadow-md p-4">
-        <p class="font-semibold">Versión</p>
-        <p>1.0.0</p>
-    </div>
-</div>
+{% endif %}
 {% endblock %}
