@@ -111,43 +111,50 @@
         <aside class="hidden lg:block w-56 bg-white shadow-lg flex-shrink-0">
             <div class="p-5">
                 <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Navegación</h2>
+                {% set cp = request.path %}
                 <nav class="space-y-1">
                     <a href="/"
-                       class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition">
+                       class="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition
+                              {{ 'bg-blue-50 text-blue-600 font-semibold' if cp == '/' else 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
                         Dashboard
                     </a>
 
                     {% if 'product:view' in scopes or 'product:manage' in scopes %}
                     <a href="/products"
-                       class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition">
+                       class="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition
+                              {{ 'bg-blue-50 text-blue-600 font-semibold' if cp.startswith('/products') else 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
                         Productos
                     </a>
                     {% endif %}
 
                     {% if 'stock:view' in scopes or 'stock:manage' in scopes %}
                     <a href="/stock"
-                       class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition">
+                       class="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition
+                              {{ 'bg-blue-50 text-blue-600 font-semibold' if cp == '/stock' else 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
                         Inventario
                     </a>
                     {% if 'stock:manage' in scopes %}
                     <a href="/stock/update"
-                       class="flex items-center gap-2 px-3 py-2 text-sm text-gray-500 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition pl-6">
-                        ↳ Registrar Movimiento
+                       class="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition pl-6
+                              {{ 'bg-blue-50 text-blue-600 font-semibold' if cp == '/stock/update' else 'text-gray-500 hover:bg-blue-50 hover:text-blue-600' }}">
+                        &#x21B3; Registrar Movimiento
                     </a>
                     {% endif %}
                     {% endif %}
 
                     {% if 'report:view' in scopes %}
                     <a href="/reports"
-                       class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition">
+                       class="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition
+                              {{ 'bg-blue-50 text-blue-600 font-semibold' if cp == '/reports' else 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
                         Reportes
                     </a>
                     {% endif %}
 
                     {% if 'audit:view' in scopes %}
                     <a href="/audit"
-                       class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition">
-                        Auditoría
+                       class="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition
+                              {{ 'bg-blue-50 text-blue-600 font-semibold' if cp == '/audit' else 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
+                        Auditoria
                     </a>
                     {% endif %}
                 </nav>

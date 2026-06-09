@@ -164,8 +164,8 @@
 - [x] Make all pages responsive using Tailwind classes
 
 **Day 28 — Rest & Catch Up**
-- [ ] Walk through the full app as each user role
-- [ ] Fix layout issues, missing data, broken links
+- [x] Walk through the full app as each user role
+- [x] Fix layout issues, missing data, broken links
 - [ ] Commit, open PR, do code review with teammate
 
 ---
