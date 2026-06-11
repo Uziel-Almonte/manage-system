@@ -22,8 +22,12 @@ stock_bp = Blueprint('stock', 'stock', url_prefix='/api/stock', description="End
 def add_movement(data):
     if not data or not data.get('product_id') or not data.get('type') or 'qty_change' not in data:
         return jsonify({"error": "product_id, type, and qty_change are required"}), 400
-    
-    product = Product.query.get(data['product_id'])
+
+    try:
+        product = Product.query.get(data['product_id'])
+    except OverflowError:
+        return jsonify({"error": "Product not found"}), 404
+
     if not product:
         return jsonify({"error": "Product not found"}), 404
 
