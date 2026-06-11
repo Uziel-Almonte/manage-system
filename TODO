@@ -166,16 +166,16 @@
 **Day 28 — Rest & Catch Up**
 - [x] Walk through the full app as each user role
 - [x] Fix layout issues, missing data, broken links
-- [ ] Commit, open PR, do code review with teammate
+- [x] Commit, open PR, do code review with teammate
 
 ---
 
 ## 🗓️ Week 5 — Testing (E2E, Security, Performance)
 
 **Day 29 — API Contract Tests**
-- [ ] Install schemathesis
-- [ ] Run schemathesis against your OpenAPI spec automatically
-- [ ] Fix any schema mismatches found
+- [x] Install schemathesis
+- [x] Run schemathesis against your OpenAPI spec automatically
+- [x] Fix any schema mismatches found
 
 **Day 30 — E2E Tests Setup**
 - [ ] Install Playwright (Python: playwright install)

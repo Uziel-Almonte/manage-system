@@ -41,21 +41,22 @@ def get_audit_logs():
 @audit_bp.route('/product/<int:product_id>', methods=['GET'])
 @require_scope('audit:view')
 def get_product_audit(product_id):
-    """
-    GET /audit/product/1
-    Auditoría de un producto específico
-    """
     limit = request.args.get('limit', 50, type=int)
     offset = request.args.get('offset', 0, type=int)
-    
-    query = AuditLog.query.filter_by(
-        table_name='products',
-        record_id=product_id
-    )
-    
-    total = query.count()
-    logs = query.order_by(AuditLog.timestamp.desc()).limit(limit).offset(offset).all()
-    
+
+    try:
+        query = AuditLog.query.filter_by(
+            table_name='products',
+            record_id=product_id
+        )
+        total = query.count()
+        logs = query.order_by(AuditLog.timestamp.desc()).limit(limit).offset(offset).all()
+    except OverflowError:
+        return jsonify({'total': 0, 'limit': limit, 'offset': offset, 'data': []}), 200
+
+    if total == 0:
+        return jsonify({'error': 'No audit logs found for this product'}), 404
+
     return jsonify({
         'total': total,
         'limit': limit,
@@ -66,21 +67,22 @@ def get_product_audit(product_id):
 @audit_bp.route('/movement/<int:movement_id>', methods=['GET'])
 @require_scope('audit:view')
 def get_movement_audit(movement_id):
-    """
-    GET /audit/movement/1
-    Auditoría de un movimiento de stock específico
-    """
     limit = request.args.get('limit', 50, type=int)
     offset = request.args.get('offset', 0, type=int)
-    
-    query = AuditLog.query.filter_by(
-        table_name='stock_movements',
-        record_id=movement_id
-    )
-    
-    total = query.count()
-    logs = query.order_by(AuditLog.timestamp.desc()).limit(limit).offset(offset).all()
-    
+
+    try:
+        query = AuditLog.query.filter_by(
+            table_name='stock_movements',
+            record_id=movement_id
+        )
+        total = query.count()
+        logs = query.order_by(AuditLog.timestamp.desc()).limit(limit).offset(offset).all()
+    except OverflowError:
+        return jsonify({'total': 0, 'limit': limit, 'offset': offset, 'data': []}), 200
+
+    if total == 0:
+        return jsonify({'error': 'No audit logs found for this movement'}), 404
+
     return jsonify({
         'total': total,
         'limit': limit,
