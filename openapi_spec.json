@@ -1,0 +1,494 @@
+﻿{
+  "paths": {
+    "/api/stock/movement": {
+      "post": {
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockMovement"
+              }
+            }
+          }
+        },
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/api/stock/history": {
+      "get": {
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/api/stock/alerts": {
+      "get": {
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "stock"
+        ]
+      }
+    },
+    "/api/reports/critical-stock": {
+      "get": {
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "GET /reports/critical-stock\nReturns a list of products whose quantity is less than or equal to their min_stock.",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/reports/top-products": {
+      "get": {
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Returns the top products based on highest quantity in stock.\n(Alternatively: you could group by StockMovements to see most frequently moved)",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/reports/recent-movements": {
+      "get": {
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "GET /reports/recent-movements?limit=20\nReturns the most recent stock movements.",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/products": {
+      "get": {
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "products"
+        ]
+      },
+      "post": {
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Product"
+              }
+            }
+          }
+        },
+        "tags": [
+          "products"
+        ]
+      }
+    },
+    "/api/products/{product_id}": {
+      "put": {
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductUpdate"
+              }
+            }
+          }
+        },
+        "tags": [
+          "products"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "product_id",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      ],
+      "get": {
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "products"
+        ]
+      },
+      "delete": {
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "products"
+        ]
+      }
+    },
+    "/auth/login-page": {
+      "get": {
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "Render the login page",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/login": {
+      "get": {
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/callback": {
+      "get": {
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "get": {
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/audit": {
+      "get": {
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "GET /audit?table=products&record_id=1&action=UPDATE&limit=50&offset=0\nObtiene logs de auditor\u00eda con filtros opcionales",
+        "tags": [
+          "audit"
+        ]
+      }
+    },
+    "/api/audit/product/{product_id}": {
+      "get": {
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "GET /audit/product/1\nAuditor\u00eda de un producto espec\u00edfico",
+        "tags": [
+          "audit"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "product_id",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      ]
+    },
+    "/api/audit/movement/{movement_id}": {
+      "get": {
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "summary": "GET /audit/movement/1\nAuditor\u00eda de un movimiento de stock espec\u00edfico",
+        "tags": [
+          "audit"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "movement_id",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      ]
+    }
+  },
+  "info": {
+    "title": "Inventory Management API",
+    "version": "v1"
+  },
+  "tags": [
+    {
+      "name": "stock",
+      "description": "Endpoints for stock operations"
+    },
+    {
+      "name": "reports",
+      "description": "Endpoints for reports"
+    },
+    {
+      "name": "products",
+      "description": "Endpoints for managing products in the inventory"
+    },
+    {
+      "name": "auth",
+      "description": "Authentication routes"
+    },
+    {
+      "name": "audit",
+      "description": "Endpoints for audit logs"
+    }
+  ],
+  "openapi": "3.0.3",
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "Error code"
+          },
+          "status": {
+            "type": "string",
+            "description": "Error name"
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Errors",
+            "additionalProperties": {}
+          }
+        },
+        "additionalProperties": false
+      },
+      "PaginationMetadata": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "Total number of items."
+          },
+          "total_pages": {
+            "type": "integer",
+            "description": "Total number of pages."
+          },
+          "first_page": {
+            "type": "integer",
+            "description": "First available page number."
+          },
+          "last_page": {
+            "type": "integer",
+            "description": "Last available page number."
+          },
+          "page": {
+            "type": "integer",
+            "description": "Current page number."
+          },
+          "previous_page": {
+            "type": "integer",
+            "description": "Previous page number."
+          },
+          "next_page": {
+            "type": "integer",
+            "description": "Next page number."
+          }
+        },
+        "additionalProperties": false
+      },
+      "StockMovement": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          },
+          "qty_change": {
+            "type": "integer"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "user": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "qty_change",
+          "type"
+        ],
+        "additionalProperties": false
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "qty": {
+            "type": "integer"
+          },
+          "min_stock": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "price",
+          "sku"
+        ],
+        "additionalProperties": false
+      },
+      "ProductUpdate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "qty": {
+            "type": "integer"
+          },
+          "min_stock": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "responses": {
+      "UNPROCESSABLE_CONTENT": {
+        "description": "Unprocessable Content",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "DEFAULT_ERROR": {
+        "description": "Default error response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  }
+}

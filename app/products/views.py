@@ -92,7 +92,10 @@ def create_product(data):
 @require_scope('product:manage')
 @products_bp.arguments(ProductUpdateSchema)
 def update_product(data, product_id):
-    product = Product.query.get(product_id)
+    try:
+        product = Product.query.get(product_id)
+    except OverflowError:
+        return jsonify({'error': 'Product not found, try another ID'}), 404
     if not product:
         return jsonify({'error': 'Product not found, try another ID'}), 404
 
@@ -115,7 +118,7 @@ def update_product(data, product_id):
         product.min_stock = data['min_stock']
     if 'status' in data:
         product.status = data['status']
-    
+
     db.session.commit()
     return jsonify(product.to_dict()), 200
 
@@ -123,7 +126,10 @@ def update_product(data, product_id):
 @products_bp.route('/<int:product_id>', methods=['GET'])
 @require_scope('product:view')
 def get_single_product(product_id):
-    product = Product.query.get(product_id)
+    try:
+        product = Product.query.get(product_id)
+    except OverflowError:
+        return jsonify({'error': 'Product not found, try another ID'}), 404
     if not product:
         return jsonify({'error': 'Product not found, try another ID'}), 404
     return jsonify(product.to_dict()), 200
@@ -131,7 +137,10 @@ def get_single_product(product_id):
 @products_bp.route('/<int:product_id>', methods=['DELETE'])
 @require_scope('product:manage')
 def delete_product(product_id):
-    product = Product.query.get(product_id)
+    try:
+        product = Product.query.get(product_id)
+    except OverflowError:
+        return jsonify({'error': 'Product not found, try another ID'}), 404
     if not product:
         return jsonify({'error': 'Product not found, try another ID'}), 404
 
