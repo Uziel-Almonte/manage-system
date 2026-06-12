@@ -3,27 +3,30 @@ from app.database import db
 from app.products.models import Product
 from app.auth.middleware import require_scope
 from flask_smorest import Blueprint
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, validate
+
+_INT_RANGE = validate.Range(min=0, max=2_147_483_647)
+_PRICE_RANGE = validate.Range(min=0, max=999_999_999.99)
 
 class ProductSchema(Schema):
-    name = fields.String(required=True)
-    sku = fields.String(required=True)
-    price = fields.Float(required=True)
-    description = fields.String()
-    category = fields.String()
-    qty = fields.Integer()
-    min_stock = fields.Integer()
-    status = fields.String()
+    name = fields.String(required=True, validate=validate.Length(min=1, max=100))
+    sku = fields.String(required=True, validate=validate.Length(min=1, max=50))
+    price = fields.Float(required=True, validate=_PRICE_RANGE)
+    description = fields.String(load_default=None)
+    category = fields.String(load_default=None, validate=validate.Length(max=50))
+    qty = fields.Integer(load_default=0, validate=_INT_RANGE)
+    min_stock = fields.Integer(load_default=0, validate=_INT_RANGE)
+    status = fields.String(load_default='active', validate=validate.OneOf(['active', 'inactive']))
 
 class ProductUpdateSchema(Schema):
-    name = fields.String()
-    sku = fields.String()
-    price = fields.Float()
+    name = fields.String(validate=validate.Length(min=1, max=100))
+    sku = fields.String(validate=validate.Length(min=1, max=50))
+    price = fields.Float(validate=_PRICE_RANGE)
     description = fields.String()
-    category = fields.String()
-    qty = fields.Integer()
-    min_stock = fields.Integer()
-    status = fields.String()
+    category = fields.String(validate=validate.Length(max=50))
+    qty = fields.Integer(validate=_INT_RANGE)
+    min_stock = fields.Integer(validate=_INT_RANGE)
+    status = fields.String(validate=validate.OneOf(['active', 'inactive']))
 
 products_bp = Blueprint('products', 'products', url_prefix='/api/products', description="Endpoints for managing products in the inventory")
 

@@ -49,6 +49,16 @@ def setup_database():
         _db.drop_all()
 
 
+# ── Limpiar datos entre cada test para no contaminar otros módulos ─────────────
+@pytest.fixture(autouse=True)
+def clean_tables():
+    yield
+    with flask_app.app_context():
+        for table in reversed(_db.metadata.sorted_tables):
+            _db.session.execute(table.delete())
+        _db.session.commit()
+
+
 # ── Cliente con TESTING=True (bypasea require_jwt y login_required) ───────────
 @pytest.fixture()
 def client():
