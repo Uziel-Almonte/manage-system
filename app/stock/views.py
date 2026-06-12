@@ -4,15 +4,15 @@ from app.database import db
 from app.stock.models import StockMovement
 from app.products.models import Product
 from app.auth.middleware import require_scope
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, validate
 from datetime import datetime
 
 class StockMovementSchema(Schema):
-    product_id = fields.Integer(required=True)
-    type = fields.String(required=True)
-    qty_change = fields.Integer(required=True)
-    notes = fields.String()
-    user = fields.String()
+    product_id = fields.Integer(required=True, validate=validate.Range(min=1, max=2_147_483_647))
+    type = fields.String(required=True, validate=validate.OneOf(['entry', 'exit']))
+    qty_change = fields.Integer(required=True, validate=validate.Range(min=1, max=2_147_483_647))
+    notes = fields.String(load_default='')
+    user = fields.String(load_default='system')
 
 stock_bp = Blueprint('stock', 'stock', url_prefix='/api/stock', description="Endpoints for stock operations")
 
