@@ -16,6 +16,9 @@ venv/
 .coverage
 htmlcov/
 
+# Hypothesis / Schemathesis fuzz cache
+.hypothesis/
+
 # Type checking / linting
 .mypy_cache/
 .ruff_cache/

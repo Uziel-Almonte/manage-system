@@ -50,5 +50,24 @@ services:
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
 
+  e2e:
+    image: mcr.microsoft.com/playwright/python:v1.60.0-jammy
+    network_mode: host
+    volumes:
+      - .:/app
+    working_dir: /app
+    environment:
+      - PYTHONPATH=/app
+      - E2E_BASE_URL=http://localhost:5000
+      - E2E_ALICE_USER=alice_worker
+      - E2E_ALICE_PASSWORD=password123
+      - E2E_MANAGER_USER=kratos_boss
+      - E2E_MANAGER_PASSWORD=password123
+    profiles:
+      - e2e
+    command: >
+      sh -c "pip install -q -r requirements.txt &&
+             pytest tests/e2e -m e2e -v --tb=short"
+
 volumes:
   postgres_data:

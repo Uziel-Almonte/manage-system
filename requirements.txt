@@ -15,3 +15,5 @@ Authlib
 requests
 Flask-CORS
 schemathesis
+playwright==1.60.0
+pytest-playwright
