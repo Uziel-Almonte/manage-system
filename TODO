@@ -183,9 +183,9 @@
 - [x] Write E2E test: add a product, verify it appears in list
 
 **Day 31 — E2E Tests (Flows)**
-- [ ] Write E2E test: stock entry/exit flow
-- [ ] Write E2E test: user without audit:view scope cannot see audit page
-- [ ] Add screenshot capture on every test failure
+- [x] Write E2E test: stock entry/exit flow
+- [x] Write E2E test: user without audit:view scope cannot see audit page
+- [x] Add screenshot capture on every test failure
 
 **Day 32 — Security Tests**
 - [ ] Add OWASP ZAP to Docker Compose (zaproxy/zap-stable)
