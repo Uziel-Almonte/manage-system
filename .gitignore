@@ -92,6 +92,7 @@ Thumbs.db
 # =========================
 coverage.xml
 /reports/
+security-reports/
 artifacts/
 
 # =========================

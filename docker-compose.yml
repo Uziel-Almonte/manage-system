@@ -69,5 +69,36 @@ services:
       sh -c "pip install -q -r requirements.txt &&
              pytest tests/e2e -m e2e -v --tb=short"
 
+  zap:
+    image: zaproxy/zap-stable
+    profiles:
+      - security
+    user: zap
+    environment:
+      SECURITY_SCAN_TARGET: ${SECURITY_SCAN_TARGET:-http://web:5000}
+    command: >
+      sh -c "zap-baseline.py
+      -t $$SECURITY_SCAN_TARGET
+      -r zap-baseline-report.html
+      -J zap-baseline-report.json
+      -I"
+    volumes:
+      - ./security-reports:/zap/wrk:rw
+    depends_on:
+      - web
+
+  pip-audit:
+    image: python:3.12-slim
+    profiles:
+      - security
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: >
+      sh -c "pip install -q pip-audit &&
+             mkdir -p security-reports &&
+             pip-audit -r requirements.txt --format json -o security-reports/pip-audit-report.json || true;
+             pip-audit -r requirements.txt --format columns > security-reports/pip-audit-report.txt 2>&1 || true"
+
 volumes:
   postgres_data:
