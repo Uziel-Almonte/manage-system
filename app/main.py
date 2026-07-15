@@ -40,6 +40,10 @@ init_oauth(app)
 db.init_app(app)
 migrate = Migrate(app, db)
 
+from app.telemetry import init_metrics, init_telemetry
+init_telemetry(app, db)
+init_metrics(app)
+
 api = Api(app)
 
 # Registrar los event listeners de auditoría

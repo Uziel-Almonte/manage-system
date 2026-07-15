@@ -214,14 +214,14 @@
 ## 🗓️ Week 6 — Observability, CI/CD & Final Polish
 
 **Day 36 — Observability Stack**
-- [ ] Add Prometheus, Grafana, Tempo, Loki, Alloy, Alertmanager to Docker Compose
-- [ ] Verify all containers start cleanly
+- [x] Add Prometheus, Grafana, Tempo, Loki, Alloy, Alertmanager to Docker Compose
+- [x] Verify all containers start cleanly
 
 **Day 37 — Instrument Flask**
-- [ ] Install opentelemetry-sdk + opentelemetry-instrumentation-flask
-- [ ] Add traceId, spanId, correlationId, user, endpoint to all logs
-- [ ] Instrument DB queries with OpenTelemetry
-- [ ] Verify traces appear in Grafana Tempo
+- [x] Install opentelemetry-sdk + opentelemetry-instrumentation-flask
+- [x] Add traceId, spanId, correlationId, user, endpoint to all logs
+- [x] Instrument DB queries with OpenTelemetry
+- [x] Verify traces appear in Grafana Tempo
 
 **Day 38 — Grafana Dashboards & Alerts**
 - [ ] Create infrastructure dashboard (CPU, memory, DB pool)
