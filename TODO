@@ -194,15 +194,15 @@
 - [x] Document all findings even if not fixed
 
 **Day 33 — Performance Tests**
-- [ ] Install k6 (single binary, no JVM)
-- [ ] Write k6 load test: GET /products (50 concurrent users)
-- [ ] Write k6 stress test: POST /stock/movement
-- [ ] Collect and save response time + throughput report
+- [x] Install k6 (single binary, no JVM)
+- [x] Write k6 load test: GET /products (50 concurrent users)
+- [x] Write k6 stress test: POST /stock/movement
+- [x] Collect and save response time + throughput report
 
 **Day 34 — Data & Exploratory Testing**
-- [ ] Write data tests: verify migrations applied in correct order
-- [ ] Test duplicate SKU constraint is enforced
-- [ ] Manual exploratory testing: write 2-3 charters, log bugs found as GitHub Issues
+- [x] Write data tests: verify migrations applied in correct order
+- [x] Test duplicate SKU constraint is enforced
+- [x] Manual exploratory testing: write 2-3 charters, log bugs found as GitHub Issues
 
 **Day 35 — Rest & Catch Up**
 - [ ] Run full test suite end to end

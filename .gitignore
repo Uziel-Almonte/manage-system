@@ -94,6 +94,7 @@ coverage.xml
 /reports/
 security-reports/
 artifacts/
+tests/k6/reports/
 
 # =========================
 # Grafana / Monitoring temp files

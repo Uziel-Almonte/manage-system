@@ -1,0 +1,2 @@
+:: run-data-tests.bat
+docker compose exec -e TEST_DATABASE_URL=postgresql://postgres:1234@db:5432/inventory_test_db web pytest tests/data -v

@@ -37,7 +37,9 @@ def require_jwt(f):
         # Bypass for unit tests
         if current_app.config.get('TESTING'):
             request.user_claims = {
-                "scope": "product:view product:manage stock:view stock:manage report:view audit:view user:manage"
+                "realm_access": {
+                    "roles": ["product:view", "product:manage", "stock:view", "stock:manage", "report:view", "audit:view", "user:manage"]
+                }
             }
             return f(*args, **kwargs)
         
@@ -85,16 +87,12 @@ def require_jwt(f):
 def require_scope(required_scope):
     def decorator(f):
         @wraps(f)
-        @require_jwt
-        def decorated_function(*args, **kwargs):
-            claims = getattr(request, 'user_claims', {})
-            token_scopes = claims.get('scope', '').split()
-            
-            if required_scope not in token_scopes:
+        def decorated(*args, **kwargs):
+            roles = request.user_claims.get('realm_access', {}).get('roles', [])
+            if required_scope not in roles:
                 return jsonify({"message": f"Missing required scope: {required_scope}"}), 403
-                
             return f(*args, **kwargs)
-        return decorated_function
+        return decorated
     return decorator
 
 def login_required(f):
