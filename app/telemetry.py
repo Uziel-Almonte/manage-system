@@ -27,6 +27,22 @@ if TYPE_CHECKING:
 
 _telemetry_initialized = False
 
+# ---- Negocio ----
+products_created_total = Counter(
+    "products_created_total", "Productos creados"
+)
+stock_movements_total = Counter(
+    "stock_movements_total", "Movimientos de stock", ["type", "product"]
+)
+products_total = Gauge(
+    "products_total", "Cantidad total de productos activos"
+)    # ---- Seguridad ----
+auth_failures_total = Counter(
+    "auth_failures_total", "Fallos de autenticación", ["source_ip"]
+)
+invalid_tokens_total = Counter(
+    "invalid_tokens_total", "Tokens inválidos recibidos"
+)
 
 class ContextFormatter(logging.Formatter):
     """Ensure trace/request fields exist on every log record."""
