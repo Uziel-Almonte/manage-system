@@ -9,6 +9,7 @@ import logging
 import os
 import uuid
 from typing import TYPE_CHECKING
+from app.database import db
 
 from flask import Flask, g, request, session
 from opentelemetry import trace
@@ -19,6 +20,7 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from prometheus_client import Counter, Gauge
 
 if TYPE_CHECKING:
     from flask_sqlalchemy import SQLAlchemy
@@ -181,6 +183,20 @@ def init_metrics(app: Flask) -> None:
         "HTTP request latency",
         ["method", "endpoint"],
     )
+
+    db_pool_active_connections = Gauge(
+        "db_pool_active_connections", "Conexiones activas del pool de DB"
+    )
+    db_pool_max_connections = Gauge(
+        "db_pool_max_connections", "Tamaño máximo configurado del pool de DB"
+    )
+    
+    def _pool():
+        with app.app_context():
+            return db.engine.pool
+
+    db_pool_active_connections.set_function(lambda: _pool().checkedout())
+    db_pool_max_connections.set_function(lambda: _pool().size())
 
     @app.before_request
     def _metrics_start_timer():

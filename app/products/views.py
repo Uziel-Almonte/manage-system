@@ -4,6 +4,8 @@ from app.products.models import Product
 from app.auth.middleware import require_scope, require_jwt
 from flask_smorest import Blueprint
 from marshmallow import Schema, fields, validate
+from prometheus_client import Counter, Gauge  # o desde tu módulo centralizado de métricas
+from app.telemetry import products_created_total, products_total
 
 _INT_RANGE = validate.Range(min=0, max=2_147_483_647)
 _PRICE_RANGE = validate.Range(min=0, max=999_999_999.99)
@@ -91,6 +93,10 @@ def create_product(data):
 
     db.session.add(new_product)
     db.session.commit()
+
+    products_created_total.inc()                                    # <-- NUEVO
+    products_total.set(Product.query.filter_by(status='active').count())  # <-- NUEVO
+
     return jsonify(new_product.to_dict()), 201
 
 @products_bp.route('/<int:product_id>', methods=['PUT'])
@@ -154,4 +160,7 @@ def delete_product(product_id):
 
     db.session.delete(product)
     db.session.commit()
+
+    products_total.set(Product.query.filter_by(status='active').count())
+    
     return jsonify({'message': f'Product {product_id} deleted successfully'}), 200

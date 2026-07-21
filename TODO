@@ -224,12 +224,12 @@
 - [x] Verify traces appear in Grafana Tempo
 
 **Day 38 — Grafana Dashboards & Alerts**
-- [ ] Create infrastructure dashboard (CPU, memory, DB pool)
-- [ ] Create application dashboard (latency, throughput, error rate)
-- [ ] Create business dashboard (products added, stock movements)
-- [ ] Create security dashboard (auth failures, invalid tokens)
-- [ ] Configure Alertmanager alerts (high CPU, high error rate, auth failures)
-- [ ] Export all dashboards as JSON files
+- [x] Create infrastructure dashboard (CPU, memory, DB pool)
+- [x] Create application dashboard (latency, throughput, error rate)
+- [x] Create business dashboard (products added, stock movements)
+- [x] Create security dashboard (auth failures, invalid tokens)
+- [x] Configure Alertmanager alerts (high CPU, high error rate, auth failures)
+- [x] Export all dashboards as JSON files
 
 **Day 39 — GitHub Actions**
 - [ ] Write .github/workflows/ci.yml

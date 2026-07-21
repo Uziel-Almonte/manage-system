@@ -31,3 +31,7 @@ scrape_configs:
     static_configs:
       - targets: ["web:5000"]
     metrics_path: /metrics
+
+  - job_name: node_exporter
+    static_configs:
+      - targets: ["node-exporter:9100"]

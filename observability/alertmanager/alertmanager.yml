@@ -3,14 +3,50 @@ global:
 
 route:
   receiver: default
-  group_by: [alertname]
+  group_by: [alertname, team]
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 1h
+  routes:
+    - match: {severity: critical, team: security}
+      receiver: security-critical
+      repeat_interval: 30m
+
+    - match: {severity: critical, team: infra}
+      receiver: infra-critical
+
+    - match: {severity: critical, team: backend}
+      receiver: backend-critical
+
+    - match: {team: backend}
+      receiver: backend-team
+
+    - match: {team: security}
+      receiver: security-team
+
+    - match: {team: infra}
+      receiver: infra-team
 
 receivers:
   - name: default
-    # Day 38 can wire email/Slack; for now log-only receiver.
+    webhook_configs: []
+
+  - name: infra-team
+    webhook_configs: []
+
+  - name: infra-critical
+    webhook_configs: []
+
+  - name: backend-team
+    webhook_configs: []
+
+  - name: backend-critical
+    webhook_configs: []
+
+  - name: security-team
+    webhook_configs: []
+
+  - name: security-critical
     webhook_configs: []
 
 inhibit_rules:
@@ -18,4 +54,4 @@ inhibit_rules:
       severity: critical
     target_match:
       severity: warning
-    equal: [alertname]
+    equal: [alert_group]

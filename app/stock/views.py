@@ -6,6 +6,8 @@ from app.products.models import Product
 from app.auth.middleware import require_scope
 from marshmallow import Schema, fields, validate
 from datetime import datetime
+from prometheus_client import Counter, Gauge  # o desde tu módulo centralizado
+from app.telemetry import stock_movements_total
 
 class StockMovementSchema(Schema):
     product_id = fields.Integer(required=True, validate=validate.Range(min=1, max=2_147_483_647))
@@ -60,6 +62,8 @@ def add_movement(data):
 
     db.session.add(movement)
     db.session.commit()
+
+    stock_movements_total.labels(type=movement_type, product=product.sku).inc()
 
     return jsonify(movement.to_dict()), 201
 

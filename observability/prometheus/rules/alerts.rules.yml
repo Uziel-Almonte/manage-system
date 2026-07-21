@@ -1,0 +1,110 @@
+groups:
+  - name: infrastructure.rules
+    rules:
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+          team: infra
+          alert_group: cpu
+        annotations:
+          summary: "CPU alta en {{ $labels.instance }}"
+          description: "El uso de CPU en {{ $labels.instance }} lleva más de 5m por encima del 85% (actual: {{ $value | printf \"%.1f\" }}%)."
+
+      - alert: CriticalCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95
+        for: 3m
+        labels:
+          severity: critical
+          team: infra
+          alert_group: cpu
+        annotations:
+          summary: "CPU crítica en {{ $labels.instance }}"
+          description: "El uso de CPU en {{ $labels.instance }} supera el 95% durante más de 3m (actual: {{ $value | printf \"%.1f\" }}%)."
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Memoria alta en {{ $labels.instance }}"
+          description: "Uso de memoria en {{ $labels.instance }} por encima del 90% durante 5m (actual: {{ $value | printf \"%.1f\" }}%)."
+
+      - alert: DBPoolNearExhaustion
+        expr: (db_pool_active_connections / db_pool_max_connections) * 100 > 90
+        for: 3m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Pool de conexiones de DB casi agotado"
+          description: "El pool de conexiones está al {{ $value | printf \"%.1f\" }}% de su capacidad durante más de 3m."
+
+  - name: application.rules
+    rules:
+      - alert: HighErrorRate
+        expr: (sum(rate(flask_http_request_total{status=~"5.."}[5m])) / sum(rate(flask_http_request_total[5m]))) * 100 > 5
+        for: 5m
+        labels:
+          severity: critical
+          team: backend
+          alert_group: error_rate
+        annotations:
+          summary: "Tasa de error alta"
+          description: "La tasa de errores 5xx lleva más de 5m por encima del 5% (actual: {{ $value | printf \"%.2f\" }}%)."
+
+      - alert: ElevatedErrorRate
+        expr: (sum(rate(flask_http_request_total{status=~"5.."}[5m])) / sum(rate(flask_http_request_total[5m]))) * 100 > 1
+        for: 10m
+        labels:
+          severity: warning
+          team: backend
+          alert_group: error_rate
+        annotations:
+          summary: "Tasa de error elevada"
+          description: "La tasa de errores 5xx supera el 1% durante más de 10m (actual: {{ $value | printf \"%.2f\" }}%)."
+
+      - alert: HighLatencyP95
+        expr: histogram_quantile(0.95, sum(rate(flask_http_request_duration_seconds_bucket[5m])) by (le)) > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Latencia p95 alta"
+          description: "La latencia p95 supera 1s durante más de 5m (actual: {{ $value | printf \"%.2f\" }}s)."
+
+  - name: security.rules
+    rules:
+      - alert: HighAuthFailureRate
+        expr: sum(rate(auth_failures_total[5m])) > 1
+        for: 5m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "Tasa alta de fallos de autenticación"
+          description: "Se detectan más de 1 fallo/s de autenticación durante 5m (actual: {{ $value | printf \"%.2f\" }}/s). Posible ataque de fuerza bruta."
+
+      - alert: SpikeInvalidTokens
+        expr: increase(invalid_tokens_total[15m]) > 50
+        for: 0m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "Pico de tokens inválidos"
+          description: "Se registraron {{ $value }} tokens inválidos en los últimos 15 minutos."
+
+      - alert: AuthFailuresFromSingleIP
+        expr: sum by(source_ip) (increase(auth_failures_total[10m])) > 20
+        for: 0m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "Múltiples fallos de auth desde una misma IP"
+          description: "La IP {{ $labels.source_ip }} generó {{ $value }} fallos de autenticación en 10 minutos."
