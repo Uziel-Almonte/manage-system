@@ -6,7 +6,6 @@ from functools import wraps
 from flask import request, jsonify, current_app, session, redirect, url_for
 import jwt
 from jwt.algorithms import RSAAlgorithm
-from prometheus_client import Counter, Gauge  
 from app.telemetry import invalid_tokens_total
 
 _public_keys = None
@@ -93,12 +92,14 @@ def require_jwt(f):
 def require_scope(required_scope):
     def decorator(f):
         @wraps(f)
-        def decorated(*args, **kwargs):
-            roles = request.user_claims.get('realm_access', {}).get('roles', [])
+        @require_jwt
+        def decorated_function(*args, **kwargs):
+            claims = getattr(request, 'user_claims', {})
+            roles = claims.get('realm_access', {}).get('roles', [])
             if required_scope not in roles:
                 return jsonify({"message": f"Missing required scope: {required_scope}"}), 403
             return f(*args, **kwargs)
-        return decorated
+        return decorated_function
     return decorator
 
 def login_required(f):

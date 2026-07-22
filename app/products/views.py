@@ -1,7 +1,7 @@
 from flask import request, jsonify
 from app.database import db
 from app.products.models import Product
-from app.auth.middleware import require_scope, require_jwt
+from app.auth.middleware import require_scope
 from flask_smorest import Blueprint
 from marshmallow import Schema, fields, validate
 from prometheus_client import Counter, Gauge  # o desde tu módulo centralizado de métricas
@@ -33,7 +33,6 @@ class ProductUpdateSchema(Schema):
 products_bp = Blueprint('products', 'products', url_prefix='/api/products', description="Endpoints for managing products in the inventory")
 
 @products_bp.route('', methods=['GET'])
-@require_jwt
 @require_scope('product:view')
 def get_products():
     search = request.args.get('search')
@@ -69,7 +68,6 @@ def get_products():
     }), 200
 
 @products_bp.route('', methods=['POST'])
-@require_jwt
 @require_scope('product:manage')
 @products_bp.arguments(ProductSchema)
 def create_product(data):
@@ -100,7 +98,6 @@ def create_product(data):
     return jsonify(new_product.to_dict()), 201
 
 @products_bp.route('/<int:product_id>', methods=['PUT'])
-@require_jwt
 @require_scope('product:manage')
 @products_bp.arguments(ProductUpdateSchema)
 def update_product(data, product_id):
@@ -136,7 +133,6 @@ def update_product(data, product_id):
 
 
 @products_bp.route('/<int:product_id>', methods=['GET'])
-@require_jwt
 @require_scope('product:view')
 def get_single_product(product_id):
     try:
@@ -148,7 +144,6 @@ def get_single_product(product_id):
     return jsonify(product.to_dict()), 200
 
 @products_bp.route('/<int:product_id>', methods=['DELETE'])
-@require_jwt
 @require_scope('product:manage')
 def delete_product(product_id):
     try:

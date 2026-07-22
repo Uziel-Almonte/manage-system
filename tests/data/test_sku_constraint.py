@@ -1,5 +1,7 @@
 import pytest
 from sqlalchemy.exc import IntegrityError
+
+from app.database import db
 from app.products.models import Product
 
 
@@ -14,44 +16,49 @@ def make_product(sku, name="Producto de prueba", price="10.00", qty=5):
     )
 
 
-def test_duplicate_sku_is_rejected(db_session):
-    db_session.add(make_product(sku="ABC-123"))
-    db_session.flush()  # envía el INSERT a Postgres sin hacer commit todavía
+def test_duplicate_sku_is_rejected(app):
+    with app.app_context():
+        db.session.add(make_product(sku="ABC-123"))
+        db.session.flush()
 
-    db_session.add(make_product(sku="ABC-123", name="Otro producto"))
+        db.session.add(make_product(sku="ABC-123", name="Otro producto"))
 
-    with pytest.raises(IntegrityError):
-        db_session.flush()
-
-
-def test_different_skus_are_allowed(db_session):
-    db_session.add(make_product(sku="ABC-123"))
-    db_session.add(make_product(sku="ABC-124"))
-    db_session.flush()  # no debe lanzar error
+        with pytest.raises(IntegrityError):
+            db.session.flush()
+        db.session.rollback()
 
 
-def test_sku_is_case_sensitive_by_default(db_session):
+def test_different_skus_are_allowed(app):
+    with app.app_context():
+        db.session.add(make_product(sku="ABC-123"))
+        db.session.add(make_product(sku="ABC-124"))
+        db.session.flush()
+        db.session.rollback()
+
+
+def test_sku_is_case_sensitive_by_default(app):
     """
-    Documenta el comportamiento ACTUAL del constraint: Postgres distingue
-    mayúsculas/minúsculas, así que 'ABC-123' y 'abc-123' se consideran
-    SKUs distintos. Si el negocio espera que sean el mismo SKU, este test
-    debería fallar y es una señal de que falta un índice case-insensitive.
-    """
-    db_session.add(make_product(sku="ABC-123"))
-    db_session.add(make_product(sku="abc-123"))
-    db_session.flush()  # actualmente NO lanza error
+    SQLite/Postgres distinguen mayúsculas en el SKU por defecto.
+  """
+    with app.app_context():
+        db.session.add(make_product(sku="ABC-123"))
+        db.session.add(make_product(sku="abc-123"))
+        db.session.flush()
+        db.session.rollback()
 
 
-def test_sku_cannot_be_null(db_session):
-    product = Product(
-        name="Producto sin SKU",
-        sku=None,
-        price="10.00",
-        qty=5,
-        min_stock=0,
-        status="active",
-    )
-    db_session.add(product)
+def test_sku_cannot_be_null(app):
+    with app.app_context():
+        product = Product(
+            name="Producto sin SKU",
+            sku=None,
+            price="10.00",
+            qty=5,
+            min_stock=0,
+            status="active",
+        )
+        db.session.add(product)
 
-    with pytest.raises(IntegrityError):
-        db_session.flush()
+        with pytest.raises(IntegrityError):
+            db.session.flush()
+        db.session.rollback()

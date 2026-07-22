@@ -1,11 +1,16 @@
+from pathlib import Path
+
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 from sqlalchemy import text
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
 
 def get_alembic_config():
-    # Ajusta la ruta si tu alembic.ini no está en /app/migrations
-    return Config("migrations/alembic.ini")
+    cfg = Config()
+    cfg.set_main_option("script_location", str(PROJECT_ROOT / "migrations"))
+    return cfg
 
 
 def test_migration_chain_has_single_head():
@@ -17,17 +22,17 @@ def test_migration_chain_has_single_head():
     )
 
 
-def test_database_is_at_latest_migration(engine):
-    """La DB de test debe estar exactamente en la última migración (head)."""
+def test_database_is_at_latest_migration(postgres_engine):
+    """La DB debe estar exactamente en la última migración (head)."""
     script = ScriptDirectory.from_config(get_alembic_config())
     expected_head = script.get_current_head()
 
-    with engine.connect() as conn:
+    with postgres_engine.connect() as conn:
         row = conn.execute(text("SELECT version_num FROM alembic_version")).fetchone()
         assert row is not None, "No hay ninguna migración registrada en alembic_version"
         assert row[0] == expected_head, (
             f"La DB está en '{row[0]}', se esperaba la head '{expected_head}'. "
-            "Corre 'flask db upgrade' contra la DB de test."
+            "Corre 'flask db upgrade' contra la DB."
         )
 
 
