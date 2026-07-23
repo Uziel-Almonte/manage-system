@@ -205,6 +205,12 @@ jobs:
               --realm master \
               --user admin \
               --password admin
+            KRATOS_ID=$(/opt/keycloak/bin/kcadm.sh get users -r inventory-realm -q username=kratos_boss --fields id --format csv --noquotes | tail -1)
+            /opt/keycloak/bin/kcadm.sh update users/$KRATOS_ID -r inventory-realm \
+              -s firstName=Kratos \
+              -s lastName=Boss \
+              -s email=kratos@company.com \
+              -s emailVerified=true
             for user in alice_worker kratos_boss; do
               /opt/keycloak/bin/kcadm.sh set-password \
                 -r inventory-realm \

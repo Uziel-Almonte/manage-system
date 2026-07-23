@@ -2473,6 +2473,9 @@
   }, {
     "id" : "f6217e93-5fe8-43e0-be11-b18bc10e7708",
     "username" : "kratos_boss",
+    "firstName" : "Kratos",
+    "lastName" : "Boss",
+    "email" : "kratos@company.com",
     "emailVerified" : false,
     "createdTimestamp" : 1779387745467,
     "enabled" : true,

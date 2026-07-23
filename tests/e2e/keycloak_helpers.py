@@ -19,8 +19,18 @@ def login_via_keycloak(page, base_url, username, password):
     page.click("#kc-login")
 
     # Keycloak may briefly stay on login-actions; wait for redirect back to the app.
-    page.wait_for_url(
-        lambda url: url.startswith(base_url) and "/realms/" not in url,
-        timeout=60000,
-    )
+    try:
+        page.wait_for_url(
+            lambda url: url.startswith(base_url) and "/realms/" not in url,
+            timeout=60000,
+        )
+    except Exception as exc:
+        error = page.locator("#input-error, .kc-feedback-text, .alert-error").first
+        if error.count() > 0:
+            raise AssertionError(
+                f"Keycloak login failed for {username}: {error.inner_text().strip()}"
+            ) from exc
+        raise AssertionError(
+            f"Keycloak login timed out for {username}; current URL: {page.url}"
+        ) from exc
     page.wait_for_load_state("domcontentloaded")
