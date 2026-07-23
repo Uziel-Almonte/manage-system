@@ -59,7 +59,7 @@
       "datasource": "${DS_PROMETHEUS}",
       "targets": [
         {
-          "expr": "increase(stock_movements_total{type=\"in\"}[24h]) / increase(stock_movements_total{type=\"out\"}[24h])",
+          "expr": "increase(stock_movements_total{type=\"entry\"}[24h]) / increase(stock_movements_total{type=\"exit\"}[24h])",
           "legendFormat": "entradas/salidas",
           "refId": "A"
         }

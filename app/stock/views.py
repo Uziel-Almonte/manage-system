@@ -6,8 +6,8 @@ from app.products.models import Product
 from app.auth.middleware import require_scope
 from marshmallow import Schema, fields, validate
 from datetime import datetime
-from prometheus_client import Counter, Gauge  # o desde tu módulo centralizado
-from app.telemetry import stock_movements_total
+from app.stock.services import register_stock_movement
+from app.telemetry import record_stock_movement
 
 class StockMovementSchema(Schema):
     product_id = fields.Integer(required=True, validate=validate.Range(min=1, max=2_147_483_647))
@@ -49,21 +49,20 @@ def add_movement(data):
     else:
         return jsonify({"error": "Invalid movement type. Must be 'entry' or 'exit'."}), 400
 
-    movement = StockMovement(
-        product_id=product.id,
-        user=data.get('user', 'system'),
-        type=movement_type,
-        prev_qty=product.qty,
-        new_qty=new_qty,
-        notes=data.get('notes', '')
-    )
-
+    previous_qty = product.qty
     product.qty = new_qty
 
-    db.session.add(movement)
-    db.session.commit()
+    movement = register_stock_movement(
+        product,
+        movement_type,
+        previous_qty=previous_qty,
+        new_qty=new_qty,
+        user=data.get('user', 'system'),
+        notes=data.get('notes', ''),
+    )
 
-    stock_movements_total.labels(type=movement_type, product=product.sku).inc()
+    db.session.commit()
+    record_stock_movement(movement_type, product.sku)
 
     return jsonify(movement.to_dict()), 201
 

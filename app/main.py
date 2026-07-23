@@ -12,6 +12,8 @@ from app.audit.views import audit_bp
 from app.audit.listeners import register_audit_listeners
 from flask_migrate import Migrate
 from flask_smorest import Api
+from app.telemetry import record_product_created, sync_active_products_total, record_stock_movement
+from app.stock.services import register_qty_change_movement
 
 
 from flask_cors import CORS
@@ -158,6 +160,8 @@ def create_product():
         )
         db.session.add(new_product_obj)
         db.session.commit()
+        record_product_created()
+        sync_active_products_total()
         flash(f'Producto "{name}" creado exitosamente', 'success')
         return redirect(url_for('products_ui'))
     except Exception as e:
@@ -194,17 +198,28 @@ def update_product(product_id):
             flash('Ya existe otro producto con este SKU', 'error')
             return redirect(url_for('edit_product', product_id=product_id))
 
+    previous_qty = product.qty
+
     try:
+        qty_value = int(qty) if qty else None
         product.name = name
         product.sku = sku
         product.description = description
         product.category = category
         product.price = float(price)
-        product.qty = int(qty) if qty else 0
-        product.min_stock = int(min_stock) if min_stock else 0
+        if qty_value is not None:
+            product.qty = qty_value
+        if min_stock:
+            product.min_stock = int(min_stock)
         product.status = status
 
+        if qty_value is not None and qty_value != previous_qty:
+            register_qty_change_movement(product, previous_qty, qty_value, user='system')
+
         db.session.commit()
+        if qty_value is not None and qty_value != previous_qty:
+            record_stock_movement('entry' if qty_value > previous_qty else 'exit', product.sku)
+        sync_active_products_total()
         flash(f'Producto "{name}" actualizado exitosamente', 'success')
         return redirect(url_for('products_ui'))
     except Exception as e:
@@ -227,6 +242,7 @@ def delete_product(product_id):
         product_name = product.name
         db.session.delete(product)
         db.session.commit()
+        sync_active_products_total()
         flash(f'Producto "{product_name}" eliminado exitosamente', 'success')
     except Exception as e:
         db.session.rollback()

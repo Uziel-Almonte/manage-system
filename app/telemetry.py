@@ -44,6 +44,28 @@ invalid_tokens_total = Counter(
     "invalid_tokens_total", "Tokens inválidos recibidos"
 )
 
+
+def record_product_created() -> None:
+    products_created_total.inc()
+
+
+def sync_active_products_total() -> None:
+    from app.products.models import Product
+
+    products_total.set(Product.query.filter_by(status="active").count())
+
+
+def record_stock_movement(movement_type: str, product_sku: str) -> None:
+    stock_movements_total.labels(type=movement_type, product=product_sku).inc()
+
+
+def record_auth_failure(source_ip: str | None) -> None:
+    auth_failures_total.labels(source_ip=source_ip or "-").inc()
+
+
+def record_invalid_token() -> None:
+    invalid_tokens_total.inc()
+
 class ContextFormatter(logging.Formatter):
     """Ensure trace/request fields exist on every log record."""
 

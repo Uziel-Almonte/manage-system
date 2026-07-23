@@ -2,8 +2,7 @@ import os
 from flask import redirect, url_for, session, current_app, jsonify, request, render_template
 from flask_smorest import Blueprint
 from authlib.integrations.flask_client import OAuth
-from prometheus_client import Counter, Gauge  # o desde tu módulo centralizado
-from app.telemetry import auth_failures_total
+from app.telemetry import record_auth_failure
 
 auth_bp = Blueprint('auth', 'auth', url_prefix='/auth', description="Authentication routes")
 
@@ -45,7 +44,7 @@ def callback():
         token = oauth.keycloak.authorize_access_token()
     except Exception as e:
         current_app.logger.error(f"OAuth callback error: {e}")
-        auth_failures_total.labels(source_ip=request.remote_addr).inc()
+        record_auth_failure(request.remote_addr)
         return jsonify({"error": str(e)}), 500
     
     # Authlib automatically parses the id_token if 'openid' is in scope

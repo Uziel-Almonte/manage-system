@@ -4,8 +4,8 @@ from app.products.models import Product
 from app.auth.middleware import require_scope
 from flask_smorest import Blueprint
 from marshmallow import Schema, fields, validate
-from prometheus_client import Counter, Gauge  # o desde tu módulo centralizado de métricas
-from app.telemetry import products_created_total, products_total
+from app.telemetry import record_product_created, sync_active_products_total, record_stock_movement
+from app.stock.services import register_qty_change_movement
 
 _INT_RANGE = validate.Range(min=0, max=2_147_483_647)
 _PRICE_RANGE = validate.Range(min=0, max=999_999_999.99)
@@ -92,8 +92,8 @@ def create_product(data):
     db.session.add(new_product)
     db.session.commit()
 
-    products_created_total.inc()                                    # <-- NUEVO
-    products_total.set(Product.query.filter_by(status='active').count())  # <-- NUEVO
+    record_product_created()
+    sync_active_products_total()
 
     return jsonify(new_product.to_dict()), 201
 
@@ -107,6 +107,8 @@ def update_product(data, product_id):
         return jsonify({'error': 'Product not found, try another ID'}), 404
     if not product:
         return jsonify({'error': 'Product not found, try another ID'}), 404
+
+    previous_qty = product.qty
 
     if 'name' in data:
         product.name = data['name']
@@ -128,7 +130,13 @@ def update_product(data, product_id):
     if 'status' in data:
         product.status = data['status']
 
+    if 'qty' in data and data['qty'] != previous_qty:
+        register_qty_change_movement(product, previous_qty, data['qty'])
+
     db.session.commit()
+    if 'qty' in data and data['qty'] != previous_qty:
+        record_stock_movement('entry' if data['qty'] > previous_qty else 'exit', product.sku)
+    sync_active_products_total()
     return jsonify(product.to_dict()), 200
 
 
@@ -156,6 +164,6 @@ def delete_product(product_id):
     db.session.delete(product)
     db.session.commit()
 
-    products_total.set(Product.query.filter_by(status='active').count())
+    sync_active_products_total()
     
     return jsonify({'message': f'Product {product_id} deleted successfully'}), 200
