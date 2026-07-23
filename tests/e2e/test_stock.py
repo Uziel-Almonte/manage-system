@@ -47,9 +47,9 @@ def test_stock_entry_and_exit_flow(logged_in_manager, base_url):
         movement_type="entry", qty=5, notes="E2E entry test",
     )
 
-    entry_row = page.locator("tr", has_text=product_name).first
+    entry_row = page.locator("tr", has_text=product_name).filter(has_text="Entrada").first
     expect(entry_row.get_by_text("Entrada")).to_be_visible()
-    expect(entry_row.locator("text=+5")).to_be_visible()
+    expect(entry_row.locator("span.text-green-600")).to_have_text("+5")
     expect(entry_row.get_by_role("cell", name="15", exact=True)).to_be_visible()
 
     # Exit: 15 -> 12
@@ -58,7 +58,7 @@ def test_stock_entry_and_exit_flow(logged_in_manager, base_url):
         movement_type="exit", qty=3, notes="E2E exit test",
     )
 
-    exit_row = page.locator("tr", has_text=product_name).first
+    exit_row = page.locator("tr", has_text=product_name).filter(has_text="Salida").first
     expect(exit_row.get_by_text("Salida")).to_be_visible()
-    expect(exit_row.locator("text=-3")).to_be_visible()
+    expect(exit_row.locator("span.text-red-600")).to_have_text("-3")
     expect(exit_row.get_by_role("cell", name="12", exact=True)).to_be_visible()
