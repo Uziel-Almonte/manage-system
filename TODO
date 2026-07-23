@@ -232,9 +232,9 @@
 - [x] Export all dashboards as JSON files
 
 **Day 39 — GitHub Actions**
-- [ ] Write .github/workflows/ci.yml
-- [ ] Stages: build → unit tests → integration tests → API tests → E2E → security scan → coverage → Docker build
-- [ ] Connect SonarCloud (free for public repos) to the workflow
+- [x] Write .github/workflows/ci.yml
+- [x] Stages: build → unit tests → integration tests → API tests → E2E → security scan → coverage → Docker build
+- [ ] Connect SonarCloud (optional — not in CI)
 
 **Day 40 — Jenkins Pipeline**
 - [ ] Add Jenkins to Docker Compose
