@@ -221,7 +221,7 @@ jobs:
 
       - name: Stop CI stack
         if: always()
-        run: docker compose -f docker-compose.ci.yml down -v
+        run: docker compose -f docker-compose.ci.yml down -v || true
 
   security:
     name: Security scan
