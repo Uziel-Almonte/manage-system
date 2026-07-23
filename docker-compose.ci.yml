@@ -42,6 +42,7 @@ services:
     build: .
     environment:
       PYTHONPATH: /app
+      FLASK_APP: app.main
       OTEL_ENABLED: "false"
       FLASK_SECRET_KEY: ci-secret-key
       DATABASE_URL: postgresql://postgres:ci_password@db:5432/inventory_db
@@ -54,6 +55,9 @@ services:
       KEYCLOAK_ISSUER: http://localhost:8080/realms/inventory-realm
     ports:
       - "5000:5000"
+    command: >
+      sh -c "flask db upgrade &&
+             flask --app app.main run --host=0.0.0.0 --port=5000"
     depends_on:
       db:
         condition: service_healthy

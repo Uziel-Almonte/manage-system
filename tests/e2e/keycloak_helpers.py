@@ -13,12 +13,14 @@ def login_via_keycloak(page, base_url, username, password):
     page.goto(f"{base_url}/auth/login-page")
     page.get_by_role("link", name="Continuar con Keycloak").click()
 
-    page.wait_for_selector("#username", timeout=15000)
+    page.wait_for_selector("#username", timeout=30000)
     page.fill("#username", username)
     page.fill("#password", password)
     page.click("#kc-login")
 
+    # Keycloak may briefly stay on login-actions; wait for redirect back to the app.
     page.wait_for_url(
         lambda url: url.startswith(base_url) and "/realms/" not in url,
-        timeout=30000,
+        timeout=60000,
     )
+    page.wait_for_load_state("domcontentloaded")

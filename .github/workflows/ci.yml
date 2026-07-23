@@ -184,7 +184,7 @@ jobs:
 
       - name: Wait for Flask
         run: |
-          for i in $(seq 1 24); do
+          for i in $(seq 1 36); do
             if curl -sf http://localhost:5000/auth/login-page; then
               exit 0
             fi
@@ -193,6 +193,25 @@ jobs:
           echo "Flask did not become ready in time"
           docker compose -f docker-compose.ci.yml logs web
           exit 1
+
+      - name: Ensure database migrations applied
+        run: docker compose -f docker-compose.ci.yml exec -T web flask db upgrade
+
+      - name: Reset Keycloak user passwords for E2E
+        run: |
+          docker compose -f docker-compose.ci.yml exec -T keycloak bash -c '
+            /opt/keycloak/bin/kcadm.sh config credentials \
+              --server http://localhost:8080 \
+              --realm master \
+              --user admin \
+              --password admin
+            for user in alice_worker kratos_boss; do
+              /opt/keycloak/bin/kcadm.sh set-password \
+                -r inventory-realm \
+                --username "$user" \
+                --new-password password123
+            done
+          '
 
       - uses: actions/setup-python@v5
         with:
