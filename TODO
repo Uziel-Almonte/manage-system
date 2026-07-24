@@ -237,9 +237,10 @@
 - [ ] Connect SonarCloud (optional — not in CI)
 
 **Day 40 — Jenkins Pipeline**
-- [ ] Add Jenkins to Docker Compose
-- [ ] Write Jenkinsfile with all stages matching GitHub Actions
-- [ ] Verify visual pipeline runs and is green
+- [x] Add Jenkins to Docker Compose
+- [x] Write Jenkinsfile with all stages matching GitHub Actions
+- [x] Add scripts/verify-stack.sh and scripts/run-full-test-suite.sh
+- [ ] Verify visual pipeline runs and is green in Jenkins UI
 
 **Day 41 — Staging Environment & Final QA**
 - [ ] Write docker-compose.staging.yml replicating production

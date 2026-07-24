@@ -1,0 +1,8 @@
+jenkins:
+  systemMessage: "manage-system — pipeline CI local (Day 40)"
+  numExecutors: 2
+  mode: NORMAL
+
+unclassified:
+  location:
+    url: "http://localhost:8090/"
