@@ -5,7 +5,7 @@ const REALM = __ENV.REALM || 'inventory-realm';
 const CLIENT_ID = __ENV.CLIENT_ID || 'flask-backend';
 const CLIENT_SECRET = __ENV.CLIENT_SECRET || '';
 const KC_USERNAME = __ENV.KC_USERNAME || 'kratos_boss';
-const KC_PASSWORD = __ENV.KC_PASSWORD || 'test';
+const KC_PASSWORD = __ENV.KC_PASSWORD || 'password123';
 
 export function fetchAccessToken() {
   const tokenUrl = `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/token`;

@@ -168,6 +168,8 @@ pipeline {
                       -v "${HOST_MOUNT}:/app" -w /app \
                       -e BASE_URL=http://localhost:5000 \
                       -e KEYCLOAK_URL=http://localhost:8080 \
+                      -e KC_USERNAME=kratos_boss \
+                      -e KC_PASSWORD=password123 \
                       grafana/k6:0.53.0 run tests/k6/smoke-test.js
                 '''
             }
