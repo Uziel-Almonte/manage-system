@@ -17,7 +17,7 @@ services:
       - db
       - alloy
     volumes:
-      - .:/app
+      - ${CI_PROJECT_DIR:-.}:/app
 
   db:
     image: postgres:16
@@ -52,13 +52,13 @@ services:
     depends_on:
       - db
     volumes:
-      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
+      - ${CI_PROJECT_DIR:-.}/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
 
   e2e:
     image: mcr.microsoft.com/playwright/python:v1.60.0-jammy
     network_mode: host
     volumes:
-      - .:/app
+      - ${CI_PROJECT_DIR:-.}:/app
     working_dir: /app
     environment:
       - PYTHONPATH=/app
@@ -87,7 +87,7 @@ services:
       -J zap-baseline-report.json
       -I"
     volumes:
-      - ./security-reports:/zap/wrk:rw
+      - ${CI_PROJECT_DIR:-.}/security-reports:/zap/wrk:rw
     depends_on:
       - web
 
@@ -96,7 +96,7 @@ services:
     profiles:
       - security
     volumes:
-      - .:/app
+      - ${CI_PROJECT_DIR:-.}:/app
     working_dir: /app
     command: >
       sh -c "pip install -q pip-audit &&
@@ -110,8 +110,8 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./observability/prometheus/rules:/etc/prometheus/rules:ro
+      - ${CI_PROJECT_DIR:-.}/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ${CI_PROJECT_DIR:-.}/observability/prometheus/rules:/etc/prometheus/rules:ro
       - prometheus_data:/prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -124,7 +124,7 @@ services:
     ports:
       - "3200:3200"
     volumes:
-      - ./observability/tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - ${CI_PROJECT_DIR:-.}/observability/tempo/tempo.yaml:/etc/tempo.yaml:ro
       - tempo_data:/var/tempo
     command: ["-config.file=/etc/tempo.yaml"]
 
@@ -134,7 +134,7 @@ services:
     ports:
       - "3100:3100"
     volumes:
-      - ./observability/loki/loki.yaml:/etc/loki/loki.yaml:ro
+      - ${CI_PROJECT_DIR:-.}/observability/loki/loki.yaml:/etc/loki/loki.yaml:ro
       - loki_data:/loki
     command: -config.file=/etc/loki/loki.yaml
 
@@ -147,7 +147,7 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
     volumes:
-      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ${CI_PROJECT_DIR:-.}/observability/grafana/provisioning:/etc/grafana/provisioning:ro
       - grafana_data:/var/lib/grafana
     depends_on:
       - prometheus
@@ -160,7 +160,7 @@ services:
     ports:
       - "9093:9093"
     volumes:
-      - ./observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ${CI_PROJECT_DIR:-.}/observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     command:
       - --config.file=/etc/alertmanager/alertmanager.yml
 
@@ -172,7 +172,7 @@ services:
       - "4318:4318"
       - "12345:12345"
     volumes:
-      - ./observability/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - ${CI_PROJECT_DIR:-.}/observability/alloy/config.alloy:/etc/alloy/config.alloy:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - alloy_data:/var/lib/alloy
     command:

@@ -157,7 +157,8 @@ pipeline {
                       sed -i 's/your_password_here/ci_password/g; s/admin_username_here/admin/g; s/admin_password_here/admin/g' .env
                     fi
                     ${DOCKER_COMPOSE} -f ${COMPOSE_FULL} down -v --remove-orphans || true
-                    CI_HOST=${CI_HOST} CI_WAIT_USE_HOST_NETWORK=${CI_WAIT_USE_HOST_NETWORK} ${DOCKER_COMPOSE} -f ${COMPOSE_FULL} up -d --build
+                    CI_PROJECT_DIR=${HOST_MOUNT} CI_HOST=${CI_HOST} CI_WAIT_USE_HOST_NETWORK=${CI_WAIT_USE_HOST_NETWORK} \
+                      ${DOCKER_COMPOSE} -f ${COMPOSE_FULL} up -d --build
                     CI_HOST=${CI_HOST} CI_WAIT_USE_HOST_NETWORK=${CI_WAIT_USE_HOST_NETWORK} bash scripts/wait-for-services.sh
                     ${DOCKER_COMPOSE} -f ${COMPOSE_FULL} exec -T web flask db upgrade
                     COMPOSE_FILE=${COMPOSE_FULL} DOCKER_COMPOSE=${DOCKER_COMPOSE} bash scripts/prepare-keycloak-e2e.sh
@@ -172,7 +173,10 @@ pipeline {
             }
             post {
                 always {
-                    sh '${DOCKER_COMPOSE} -f ${COMPOSE_FULL} down -v --remove-orphans || true'
+                    sh '''
+                        ${DOCKER_COMPOSE} -f ${COMPOSE_FULL} logs --no-color --tail=100 web keycloak alertmanager || true
+                        ${DOCKER_COMPOSE} -f ${COMPOSE_FULL} down -v --remove-orphans || true
+                    '''
                 }
             }
         }
