@@ -111,10 +111,10 @@ pipeline {
         stage('E2E') {
             steps {
                 sh '''
-                    ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} up -d --build
+                    ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} up -d --build --wait
                     CI_WAIT_USE_HOST_NETWORK=${CI_WAIT_USE_HOST_NETWORK} bash scripts/wait-for-services.sh \
-                      "Keycloak realm" "http://localhost:8080/realms/inventory-realm/.well-known/openid-configuration" 120 3 \
-                      "Flask" "http://localhost:5000/auth/login-page" 90 3
+                      "Keycloak realm" "http://localhost:8080/realms/inventory-realm/.well-known/openid-configuration" 90 4 \
+                      "Flask" "http://localhost:5000/auth/login-page" 60 3
                     ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} exec -T web flask db upgrade
                     COMPOSE_FILE=${COMPOSE_CI} COMPOSE_PROJECT=${PROJECT_CI} bash scripts/prepare-keycloak-e2e.sh
                     ${DOCKER} run --rm --network host \

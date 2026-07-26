@@ -19,6 +19,13 @@ wait_for_url() {
       echo "OK  $name ($url)"
       return 0
     fi
+    if [[ "$i" == "$attempts" || $((i % 10)) -eq 0 ]]; then
+      local probe
+      probe="$(ci_resolve_url "$url")"
+      local code
+      code="$(curl -s -o /dev/null -w "%{http_code}" "$probe" 2>/dev/null || echo "err")"
+      echo "… still waiting for $name (attempt $i/$attempts, HTTP $code)" >&2
+    fi
     sleep "$delay"
   done
 

@@ -1,16 +1,24 @@
 #!/usr/bin/env bash
-# HTTP helper for CI (supports Jenkins-in-Docker via host network).
-ci_curl() {
-  local docker="${DOCKER:-/usr/local/bin/docker}"
-
+# HTTP helper for CI (Jenkins-in-Docker reaches host services via host.docker.internal).
+ci_resolve_url() {
+  local url="$1"
   if [[ "${CI_WAIT_USE_HOST_NETWORK:-}" == "1" ]]; then
-    "$docker" run --rm --network host curlimages/curl:8.5.0 -fsSL "$@"
+    echo "${url//localhost/host.docker.internal}"
   else
-    curl -fsSL "$@"
+    echo "$url"
   fi
 }
 
+ci_curl() {
+  local resolved=()
+  for arg in "$@"; do
+    resolved+=("$(ci_resolve_url "$arg")")
+  done
+  curl "${resolved[@]}"
+}
+
 ci_http_ok() {
-  local url="$1"
-  ci_curl "$url" >/dev/null 2>&1
+  local url
+  url="$(ci_resolve_url "$1")"
+  curl -fsSL "$url" >/dev/null 2>&1
 }
