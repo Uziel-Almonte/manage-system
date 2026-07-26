@@ -112,8 +112,9 @@ pipeline {
                 sh '''
                     ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} up -d --build
                     CI_HOST=${CI_HOST} bash scripts/wait-for-services.sh \
-                      "Flask" "http://${CI_HOST}:5000/auth/login-page" \
-                      "Keycloak" "http://${CI_HOST}:8080/realms/inventory-realm/.well-known/openid-configuration"
+                      "Keycloak" "http://${CI_HOST}:8080/health/ready" 120 3 \
+                      "Keycloak realm" "http://${CI_HOST}:8080/realms/inventory-realm/.well-known/openid-configuration" 60 2 \
+                      "Flask" "http://${CI_HOST}:5000/auth/login-page" 60 2
                     ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} exec -T web flask db upgrade
                     COMPOSE_FILE=${COMPOSE_CI} COMPOSE_PROJECT=${PROJECT_CI} bash scripts/prepare-keycloak-e2e.sh
                     ${DOCKER} run --rm --network host \
@@ -176,6 +177,10 @@ pipeline {
                 ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} down -v || true
                 ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI}-data down -v || true
                 ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI}-cov down -v || true
+                if [ ! -f .env ]; then
+                  cp .env.example .env
+                  sed -i 's/your_password_here/ci_password/g; s/admin_username_here/admin/g; s/admin_password_here/admin/g' .env
+                fi
                 ${DOCKER_COMPOSE} -f ${COMPOSE_FULL} down -v --remove-orphans || true
             '''
         }

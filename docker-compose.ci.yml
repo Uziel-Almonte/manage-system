@@ -29,9 +29,16 @@ services:
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_HOSTNAME_STRICT_BACKCHANNEL: "true"
+      KC_HEALTH_ENABLED: "true"
     command: start-dev --import-realm
     ports:
       - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 90s
     depends_on:
       db:
         condition: service_healthy
@@ -62,4 +69,4 @@ services:
       db:
         condition: service_healthy
       keycloak:
-        condition: service_started
+        condition: service_healthy
