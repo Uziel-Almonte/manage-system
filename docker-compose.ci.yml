@@ -68,8 +68,7 @@ services:
       - ${CI_PROJECT_DIR:-.}/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
 
   web:
-    build:
-      context: ${CI_PROJECT_DIR:-.}
+    build: .
     environment:
       PYTHONPATH: /app
       FLASK_APP: app.main
