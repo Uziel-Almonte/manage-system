@@ -4,5 +4,6 @@ git
 docker-workflow
 credentials-binding
 junit
+timestamper
 configuration-as-code
 job-dsl

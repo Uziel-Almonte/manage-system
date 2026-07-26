@@ -3,6 +3,26 @@ jenkins:
   numExecutors: 2
   mode: NORMAL
 
+jobs:
+  - script: >
+      pipelineJob('manage-system') {
+        description('CI pipeline — uses local bind-mounted repo at /workspace')
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('file:///workspace')
+                }
+                branches('*/dev')
+              }
+            }
+            scriptPath('Jenkinsfile')
+            lightweight(true)
+          }
+        }
+      }
+
 unclassified:
   location:
     url: "http://localhost:8090/"

@@ -217,6 +217,7 @@ services:
       - .:/workspace
     environment:
       - DOCKER_HOST=unix:///var/run/docker.sock
+      - HOST_PROJECT_DIR=${PWD}
     user: root
 
 volumes:
