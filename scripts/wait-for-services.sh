@@ -2,7 +2,12 @@
 # Wait until HTTP endpoints return success (2xx/3xx).
 set -euo pipefail
 
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck disable=SC1091
+source "$ROOT_DIR/scripts/ci-http-check.sh"
+
 CI_HOST="${CI_HOST:-localhost}"
+
 wait_for_url() {
   local name="$1"
   local url="$2"
@@ -10,7 +15,7 @@ wait_for_url() {
   local delay="${4:-2}"
 
   for ((i = 1; i <= attempts; i++)); do
-    if curl -sf "$url" >/dev/null 2>&1; then
+    if ci_http_ok "$url"; then
       echo "OK  $name ($url)"
       return 0
     fi
