@@ -16,6 +16,7 @@ pipeline {
         FLASK_APP = 'app.main'
         DATABASE_URL = 'postgresql://postgres:ci_password@localhost:5432/inventory_db'
         E2E_BASE_URL = 'http://localhost:5000'
+        CI_HOST = 'host.docker.internal'
         PATH = '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin'
         DOCKER = '/usr/local/bin/docker'
         DOCKER_COMPOSE = '/usr/local/bin/docker-compose'
@@ -92,7 +93,6 @@ pipeline {
             }
             post {
                 always {
-                    junit allowEmptyResults: true, testResults: '**/report.xml'
                     sh '${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI}-cov down -v || true'
                 }
             }
@@ -111,9 +111,9 @@ pipeline {
             steps {
                 sh '''
                     ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} up -d --build
-                    bash scripts/wait-for-services.sh \
-                      "Flask" "http://localhost:5000/auth/login-page" \
-                      "Keycloak" "http://localhost:8080/realms/inventory-realm/.well-known/openid-configuration"
+                    CI_HOST=${CI_HOST} bash scripts/wait-for-services.sh \
+                      "Flask" "http://${CI_HOST}:5000/auth/login-page" \
+                      "Keycloak" "http://${CI_HOST}:8080/realms/inventory-realm/.well-known/openid-configuration"
                     ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} exec -T web flask db upgrade
                     COMPOSE_FILE=${COMPOSE_CI} COMPOSE_PROJECT=${PROJECT_CI} bash scripts/prepare-keycloak-e2e.sh
                     ${DOCKER} run --rm --network host \
@@ -138,12 +138,16 @@ pipeline {
         stage('Full stack + k6 smoke') {
             steps {
                 sh '''
+                    if [ ! -f .env ]; then
+                      cp .env.example .env
+                      sed -i 's/your_password_here/ci_password/g; s/admin_username_here/admin/g; s/admin_password_here/admin/g' .env
+                    fi
                     ${DOCKER_COMPOSE} -f ${COMPOSE_FULL} down -v --remove-orphans || true
-                    ${DOCKER_COMPOSE} -f ${COMPOSE_FULL} up -d --build
-                    bash scripts/wait-for-services.sh
+                    CI_HOST=${CI_HOST} ${DOCKER_COMPOSE} -f ${COMPOSE_FULL} up -d --build
+                    CI_HOST=${CI_HOST} bash scripts/wait-for-services.sh
                     ${DOCKER_COMPOSE} -f ${COMPOSE_FULL} exec -T web flask db upgrade
                     COMPOSE_FILE=${COMPOSE_FULL} bash scripts/prepare-keycloak-e2e.sh
-                    bash scripts/verify-stack.sh
+                    CI_HOST=${CI_HOST} bash scripts/verify-stack.sh
                     mkdir -p reports
                     ${DOCKER} run --rm --network host \
                       -v "${HOST_MOUNT}:/app" -w /app \

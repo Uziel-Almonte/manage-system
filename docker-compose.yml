@@ -215,6 +215,8 @@ services:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
       - .:/workspace
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - DOCKER_HOST=unix:///var/run/docker.sock
       - HOST_PROJECT_DIR=${PWD}

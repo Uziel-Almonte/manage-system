@@ -5,6 +5,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+CI_HOST="${CI_HOST:-localhost}"
 json_query() {
   python3 -c "$1"
 }
@@ -13,7 +14,7 @@ echo "==> Waiting for core services"
 bash scripts/wait-for-services.sh
 
 echo "==> Flask metrics endpoint"
-METRICS_BODY="$(curl -sf http://localhost:5000/metrics)"
+METRICS_BODY="$(curl -sf "http://${CI_HOST}:5000/metrics")"
 if ! grep -q "flask_http_request" <<<"$METRICS_BODY"; then
   echo "FAIL Flask /metrics missing prometheus metrics" >&2
   exit 1
@@ -21,7 +22,7 @@ fi
 echo "OK  Flask /metrics exposes prometheus metrics"
 
 echo "==> Prometheus targets"
-TARGETS_JSON="$(curl -sf http://localhost:9090/api/v1/targets)"
+TARGETS_JSON="$(curl -sf "http://${CI_HOST}:9090/api/v1/targets")"
 for job in flask node_exporter prometheus; do
   UP_COUNT="$(TARGETS_JSON="$TARGETS_JSON" JOB="$job" json_query '
 import json, os
@@ -37,7 +38,7 @@ print(sum(1 for t in data["data"]["activeTargets"] if t["labels"].get("job") == 
 done
 
 echo "==> Grafana dashboards (provisioned)"
-DASHBOARDS="$(curl -sf "http://localhost:3000/api/search?type=dash-db")"
+DASHBOARDS="$(curl -sf "http://${CI_HOST}:3000/api/search?type=dash-db")"
 DASH_COUNT="$(DASHBOARDS="$DASHBOARDS" json_query 'import json, os; print(len(json.loads(os.environ["DASHBOARDS"])))')"
 if [[ "$DASH_COUNT" -lt 4 ]]; then
   echo "FAIL Expected at least 4 Grafana dashboards, found $DASH_COUNT" >&2
@@ -64,7 +65,7 @@ print(any(d.get("title") == title for d in dashboards))
 done
 
 echo "==> Grafana datasources"
-DS_COUNT="$(curl -sf http://localhost:3000/api/datasources | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')"
+DS_COUNT="$(curl -sf "http://${CI_HOST}:3000/api/datasources" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')"
 if [[ "$DS_COUNT" -lt 3 ]]; then
   echo "FAIL Expected Prometheus, Loki, and Tempo datasources (found $DS_COUNT)" >&2
   exit 1
@@ -72,7 +73,7 @@ fi
 echo "OK  Grafana datasources ($DS_COUNT)"
 
 echo "==> Keycloak token grant (kratos_boss)"
-TOKEN_RESPONSE="$(curl -sf -X POST "http://localhost:8080/realms/inventory-realm/protocol/openid-connect/token" \
+TOKEN_RESPONSE="$(curl -sf -X POST "http://${CI_HOST}:8080/realms/inventory-realm/protocol/openid-connect/token" \
   -d "client_id=flask-backend" \
   -d "grant_type=password" \
   -d "username=kratos_boss" \
@@ -89,7 +90,7 @@ echo "==> API smoke (authenticated GET /api/products)"
 ACCESS_TOKEN="$(echo "$TOKEN_RESPONSE" | python3 -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')"
 API_STATUS="$(curl -s -o /dev/null -w "%{http_code}" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
-  http://localhost:5000/api/products)"
+  "http://${CI_HOST}:5000/api/products")"
 if [[ "$API_STATUS" != "200" ]]; then
   echo "FAIL GET /api/products returned HTTP $API_STATUS" >&2
   exit 1

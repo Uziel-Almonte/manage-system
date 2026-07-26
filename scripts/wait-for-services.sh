@@ -2,6 +2,7 @@
 # Wait until HTTP endpoints return success (2xx/3xx).
 set -euo pipefail
 
+CI_HOST="${CI_HOST:-localhost}"
 wait_for_url() {
   local name="$1"
   local url="$2"
@@ -33,11 +34,11 @@ if [[ $# -gt 0 ]]; then
   exit 0
 fi
 
-wait_for_url "Flask" "http://localhost:5000/auth/login-page"
-wait_for_url "Keycloak" "http://localhost:8080/realms/inventory-realm/.well-known/openid-configuration"
-wait_for_url "Grafana" "http://localhost:3000/api/health"
-wait_for_url "Prometheus" "http://localhost:9090/-/healthy"
-wait_for_url "Alertmanager" "http://localhost:9093/-/healthy"
-wait_for_url "Loki" "http://localhost:3100/ready"
-wait_for_url "Tempo" "http://localhost:3200/ready"
-wait_for_url "Alloy" "http://localhost:12345/-/healthy"
+wait_for_url "Flask" "http://${CI_HOST}:5000/auth/login-page"
+wait_for_url "Keycloak" "http://${CI_HOST}:8080/realms/inventory-realm/.well-known/openid-configuration"
+wait_for_url "Grafana" "http://${CI_HOST}:3000/api/health"
+wait_for_url "Prometheus" "http://${CI_HOST}:9090/-/healthy"
+wait_for_url "Alertmanager" "http://${CI_HOST}:9093/-/healthy"
+wait_for_url "Loki" "http://${CI_HOST}:3100/ready"
+wait_for_url "Tempo" "http://${CI_HOST}:3200/ready"
+wait_for_url "Alloy" "http://${CI_HOST}:12345/-/healthy"
