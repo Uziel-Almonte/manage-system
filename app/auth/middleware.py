@@ -11,12 +11,15 @@ from app.telemetry import record_invalid_token
 _public_keys = None
 
 def get_keycloak_public_keys():
-    realm_url = os.environ.get('KEYCLOAK_REALM_URL')
-    if not realm_url:
-        raise ValueError("KEYCLOAK_REALM_URL is not set")
-    certs_url = f"{realm_url}/protocol/openid-connect/certs"
+    # Prefer KEYCLOAK_JWKS_URL so browser-facing KEYCLOAK_REALM_URL can stay on
+    # localhost while containers reach Keycloak via Docker DNS.
+    certs_url = os.environ.get('KEYCLOAK_JWKS_URL')
+    if not certs_url:
+        realm_url = os.environ.get('KEYCLOAK_REALM_URL')
+        if not realm_url:
+            raise ValueError("KEYCLOAK_JWKS_URL or KEYCLOAK_REALM_URL must be set")
+        certs_url = f"{realm_url}/protocol/openid-connect/certs"
     try:
-        # Keycloak inside docker will resolve 'keycloak_auth' host
         with urllib.request.urlopen(certs_url) as response:
             jwks = json.loads(response.read().decode())
     except Exception as e:

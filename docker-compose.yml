@@ -13,9 +13,17 @@ services:
       - OTEL_ENABLED=${OTEL_ENABLED:-true}
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://alloy:4318/v1/traces}
       - OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME:-manage-system}
+      # Browser-facing issuer/authorize stay on localhost; server-side uses Docker DNS.
+      - KEYCLOAK_ISSUER=http://localhost:8080/realms/inventory-realm
+      - KEYCLOAK_AUTHORIZE_URL=http://localhost:8080/realms/inventory-realm/protocol/openid-connect/auth
+      - KEYCLOAK_TOKEN_URL=http://keycloak_auth:8080/realms/inventory-realm/protocol/openid-connect/token
+      - KEYCLOAK_USERINFO_URL=http://keycloak_auth:8080/realms/inventory-realm/protocol/openid-connect/userinfo
+      - KEYCLOAK_JWKS_URL=http://keycloak_auth:8080/realms/inventory-realm/protocol/openid-connect/certs
+      - KEYCLOAK_REALM_URL=http://keycloak_auth:8080/realms/inventory-realm
     depends_on:
       - db
       - alloy
+      - keycloak
     volumes:
       - ${CI_PROJECT_DIR:-.}:/app
 
