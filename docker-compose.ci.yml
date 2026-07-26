@@ -6,8 +6,10 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ci_password
       POSTGRES_DB: inventory_db
+    volumes:
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d inventory_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d inventory_db && pg_isready -U postgres -d keycloak"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -17,7 +19,7 @@ services:
     environment:
       KC_DB: postgres
       KC_DB_URL_HOST: db
-      KC_DB_URL_DATABASE: inventory_db
+      KC_DB_URL_DATABASE: keycloak
       KC_DB_USERNAME: postgres
       KC_DB_PASSWORD: ci_password
       KEYCLOAK_ADMIN: admin
@@ -28,15 +30,16 @@ services:
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_HOSTNAME_STRICT_BACKCHANNEL: "false"
       KC_HEALTH_ENABLED: "true"
+      KC_HTTP_RELATIVE_PATH: /
     command: start-dev --import-realm
     ports:
       - "8080:8080"
     healthcheck:
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080 && echo -e \"GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3 && head -1 <&3 | grep -q \"200\"'"]
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080 && echo -e \"GET /realms/inventory-realm/.well-known/openid-configuration HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3 && head -1 <&3 | grep -q \"200\"'"]
       interval: 10s
       timeout: 10s
-      retries: 30
-      start_period: 180s
+      retries: 60
+      start_period: 300s
     depends_on:
       db:
         condition: service_healthy
@@ -51,6 +54,9 @@ services:
       OTEL_ENABLED: "false"
       FLASK_SECRET_KEY: ci-secret-key
       DATABASE_URL: postgresql://postgres:ci_password@db:5432/inventory_db
+      KEYCLOAK_HOST: keycloak
+      KEYCLOAK_WAIT_ATTEMPTS: "180"
+      KEYCLOAK_WAIT_DELAY: "2"
       KEYCLOAK_REALM_URL: http://localhost:8080/realms/inventory-realm
       KEYCLOAK_CLIENT_ID: flask-backend
       KEYCLOAK_AUTHORIZE_URL: http://localhost:8080/realms/inventory-realm/protocol/openid-connect/auth
@@ -61,15 +67,16 @@ services:
     ports:
       - "5000:5000"
     command: >
-      sh -c "python scripts/wait-for-keycloak-realm.py &&
-             flask db upgrade &&
+      sh -c "set -eu;
+             python scripts/wait-for-keycloak-realm.py;
+             flask db upgrade;
              flask --app app.main run --host=0.0.0.0 --port=5000"
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/auth/login-page', timeout=3)\""]
       interval: 5s
       timeout: 5s
       retries: 36
-      start_period: 240s
+      start_period: 120s
     depends_on:
       db:
         condition: service_healthy

@@ -138,7 +138,12 @@ pipeline {
             }
             post {
                 always {
-                    sh '${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} down -v || true'
+                    sh '''
+                        ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} ps -a || true
+                        ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} logs --no-color --tail=200 web || true
+                        ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} logs --no-color --tail=200 keycloak || true
+                        ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} down -v || true
+                    '''
                 }
             }
         }
