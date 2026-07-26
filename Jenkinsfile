@@ -33,7 +33,7 @@ pipeline {
         stage('Build') {
             steps {
                 sh '${DOCKER} build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
-                sh '${DOCKER} run --rm ${IMAGE_NAME}:${IMAGE_TAG} python -c "from app.main import app; assert app is not None"'
+                sh '${DOCKER} run --rm -e DATABASE_URL=sqlite:///:memory: ${IMAGE_NAME}:${IMAGE_TAG} python -c "from app.main import app; assert app is not None"'
             }
         }
 
