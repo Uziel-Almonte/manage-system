@@ -1,9 +1,5 @@
 pipeline {
-    agent {
-        node {
-            customWorkspace '/workspace'
-        }
-    }
+    agent any
 
     options {
         disableConcurrentBuilds()
