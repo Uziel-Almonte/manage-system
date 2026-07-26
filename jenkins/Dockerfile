@@ -34,7 +34,7 @@ RUN chmod +x /usr/local/bin/jenkins-entrypoint.sh
 
 USER jenkins
 
-ENV JAVA_OPTS="-Djenkins.install.runSetupWizard=false"
+ENV JAVA_OPTS="-Djenkins.install.runSetupWizard=false -Dhudson.plugins.git.GitSCM.ALLOW_LOCAL_CHECKOUT=true"
 ENV CASC_JENKINS_CONFIG=/var/jenkins_home/casc_configs/casc.yaml
 ENV PATH="/usr/local/bin:/usr/bin:/bin:${PATH}"
 
