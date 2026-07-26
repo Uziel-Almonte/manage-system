@@ -23,7 +23,11 @@ wait_for_url() {
       local probe
       probe="$(ci_resolve_url "$url")"
       local code
-      code="$(curl -s -o /dev/null -w "%{http_code}" "$probe" 2>/dev/null || echo "err")"
+      if [[ "${CI_WAIT_USE_HOST_NETWORK:-}" == "1" && "$probe" == *":8080"* ]]; then
+        code="$(curl -s -o /dev/null -w "%{http_code}" -H "Host: localhost" "$probe" 2>/dev/null || echo "err")"
+      else
+        code="$(curl -s -o /dev/null -w "%{http_code}" "$probe" 2>/dev/null || echo "err")"
+      fi
       echo "… still waiting for $name (attempt $i/$attempts, HTTP $code)" >&2
     fi
     sleep "$delay"
