@@ -35,7 +35,7 @@ Rutas usadas (según el OpenAPI del proyecto):
 
 ```bash
 # Load test — GET /api/products, 50 usuarios concurrentes
-set BASE_URL=http://localhost:5000 && k6 run load-test.js
+set BASE_URL=http://localhost:5000&& k6 run load-test.js
 k6 run --vus 1 --iterations 3 load-test.js
 
 # Stress test — POST /api/stock/movement, carga creciente hasta el punto de quiebre
