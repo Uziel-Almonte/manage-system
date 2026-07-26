@@ -119,11 +119,11 @@ pipeline {
                 sh '''
                     CI_KEEP_PROJECTS=${PROJECT_CI} bash scripts/ci-free-host-ports.sh
                     ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} up -d --build --wait --wait-timeout 600
-                    CI_WAIT_USE_HOST_NETWORK=${CI_WAIT_USE_HOST_NETWORK} bash scripts/wait-for-services.sh \
-                      "Keycloak realm" "http://localhost:8080/realms/inventory-realm/.well-known/openid-configuration" 90 4 \
-                      "Flask" "http://localhost:5000/auth/login-page" 60 3
+                    COMPOSE_FILE=${COMPOSE_CI} COMPOSE_PROJECT=${PROJECT_CI} DOCKER_COMPOSE=${DOCKER_COMPOSE} \
+                      bash scripts/ci-verify-e2e-ready.sh
                     ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} exec -T web flask db upgrade
-                    COMPOSE_FILE=${COMPOSE_CI} COMPOSE_PROJECT=${PROJECT_CI} bash scripts/prepare-keycloak-e2e.sh
+                    COMPOSE_FILE=${COMPOSE_CI} COMPOSE_PROJECT=${PROJECT_CI} DOCKER_COMPOSE=${DOCKER_COMPOSE} \
+                      bash scripts/prepare-keycloak-e2e.sh
                     ${DOCKER} run --rm --network host \
                       -v "${HOST_MOUNT}:/app" -w /app \
                       -e PYTHONPATH=/app \
@@ -154,7 +154,7 @@ pipeline {
                     CI_HOST=${CI_HOST} CI_WAIT_USE_HOST_NETWORK=${CI_WAIT_USE_HOST_NETWORK} ${DOCKER_COMPOSE} -f ${COMPOSE_FULL} up -d --build
                     CI_HOST=${CI_HOST} CI_WAIT_USE_HOST_NETWORK=${CI_WAIT_USE_HOST_NETWORK} bash scripts/wait-for-services.sh
                     ${DOCKER_COMPOSE} -f ${COMPOSE_FULL} exec -T web flask db upgrade
-                    COMPOSE_FILE=${COMPOSE_FULL} bash scripts/prepare-keycloak-e2e.sh
+                    COMPOSE_FILE=${COMPOSE_FULL} DOCKER_COMPOSE=${DOCKER_COMPOSE} bash scripts/prepare-keycloak-e2e.sh
                     CI_HOST=${CI_HOST} CI_WAIT_USE_HOST_NETWORK=${CI_WAIT_USE_HOST_NETWORK} bash scripts/verify-stack.sh
                     mkdir -p reports
                     ${DOCKER} run --rm --network host \

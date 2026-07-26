@@ -5,29 +5,53 @@ set -euo pipefail
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.ci.yml}"
 COMPOSE_PROJECT="${COMPOSE_PROJECT:-}"
 
-if [[ -f .env ]]; then
+# CI compose hard-codes admin/admin; don't let a leftover .env override that.
+if [[ "$COMPOSE_FILE" == *docker-compose.ci.yml ]]; then
+  KC_ADMIN=admin
+  KC_ADMIN_PASSWORD=admin
+elif [[ -f .env ]]; then
   set -a
   # shellcheck disable=SC1091
   source .env
   set +a
+  KC_ADMIN="${KEYCLOAK_ADMIN:-${KEYCLOAK_USER:-admin}}"
+  KC_ADMIN_PASSWORD="${KEYCLOAK_ADMIN_PASSWORD:-${KEYCLOAK_PASSWORD:-admin}}"
+else
+  KC_ADMIN="${KEYCLOAK_ADMIN:-${KEYCLOAK_USER:-admin}}"
+  KC_ADMIN_PASSWORD="${KEYCLOAK_ADMIN_PASSWORD:-${KEYCLOAK_PASSWORD:-admin}}"
 fi
 
-compose() {
-  if [[ -n "$COMPOSE_PROJECT" ]]; then
-    docker compose -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" "$@"
-  else
-    docker compose -f "$COMPOSE_FILE" "$@"
-  fi
-}
-
-KC_ADMIN="${KEYCLOAK_ADMIN:-${KEYCLOAK_USER:-admin}}"
-KC_ADMIN_PASSWORD="${KEYCLOAK_ADMIN_PASSWORD:-${KEYCLOAK_PASSWORD:-admin}}"
+if [[ -n "${DOCKER_COMPOSE:-}" ]]; then
+  compose() {
+    if [[ -n "$COMPOSE_PROJECT" ]]; then
+      "$DOCKER_COMPOSE" -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" "$@"
+    else
+      "$DOCKER_COMPOSE" -f "$COMPOSE_FILE" "$@"
+    fi
+  }
+elif command -v docker-compose >/dev/null 2>&1; then
+  compose() {
+    if [[ -n "$COMPOSE_PROJECT" ]]; then
+      docker-compose -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" "$@"
+    else
+      docker-compose -f "$COMPOSE_FILE" "$@"
+    fi
+  }
+else
+  compose() {
+    if [[ -n "$COMPOSE_PROJECT" ]]; then
+      docker compose -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" "$@"
+    else
+      docker compose -f "$COMPOSE_FILE" "$@"
+    fi
+  }
+fi
 
 echo "==> Preparing Keycloak users via kcadm"
 compose exec -T \
   -e KC_ADMIN="$KC_ADMIN" \
   -e KC_ADMIN_PASSWORD="$KC_ADMIN_PASSWORD" \
-  keycloak bash -c '
+  keycloak bash -ec '
   /opt/keycloak/bin/kcadm.sh config credentials \
     --server http://localhost:8080 \
     --realm master \
