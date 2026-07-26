@@ -14,7 +14,7 @@ pipeline {
         COMPOSE_FULL = 'docker-compose.yml'
         PYTHONPATH = '.'
         FLASK_APP = 'app.main'
-        DATABASE_URL = 'postgresql://postgres:ci_password@localhost:5432/inventory_db'
+        DATABASE_URL = 'postgresql://postgres:ci_password@db:5432/inventory_db'
         E2E_BASE_URL = 'http://localhost:5000'
         CI_HOST = 'localhost'
         CI_WAIT_USE_HOST_NETWORK = '1'
@@ -36,6 +36,12 @@ pipeline {
             steps {
                 sh '${DOCKER} build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
                 sh '${DOCKER} run --rm -e DATABASE_URL=sqlite:///:memory: ${IMAGE_NAME}:${IMAGE_TAG} python -c "from app.main import app; assert app is not None"'
+            }
+        }
+
+        stage('Prepare CI') {
+            steps {
+                sh 'CI_KEEP_PROJECTS=${PROJECT_CI} bash scripts/ci-free-host-ports.sh'
             }
         }
 
@@ -61,7 +67,7 @@ pipeline {
                               ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI}-data exec -T db pg_isready -U postgres -d inventory_db && break
                               sleep 2
                             done
-                            ${DOCKER} run --rm --network host \
+                            ${DOCKER} run --rm --network ${PROJECT_CI}-data_default \
                               -e PYTHONPATH=/app -e FLASK_APP=app.main \
                               -e DATABASE_URL=${DATABASE_URL} \
                               ${IMAGE_NAME}:${IMAGE_TAG} \
@@ -85,7 +91,7 @@ pipeline {
                       ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI}-cov exec -T db pg_isready -U postgres -d inventory_db && break
                       sleep 2
                     done
-                    ${DOCKER} run --rm --network host \
+                    ${DOCKER} run --rm --network ${PROJECT_CI}-cov_default \
                       -e PYTHONPATH=/app -e FLASK_APP=app.main \
                       -e DATABASE_URL=${DATABASE_URL} \
                       ${IMAGE_NAME}:${IMAGE_TAG} \
@@ -111,6 +117,7 @@ pipeline {
         stage('E2E') {
             steps {
                 sh '''
+                    CI_KEEP_PROJECTS=${PROJECT_CI} bash scripts/ci-free-host-ports.sh
                     ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} up -d --build --wait
                     CI_WAIT_USE_HOST_NETWORK=${CI_WAIT_USE_HOST_NETWORK} bash scripts/wait-for-services.sh \
                       "Flask" "http://localhost:5000/auth/login-page" 30 3
