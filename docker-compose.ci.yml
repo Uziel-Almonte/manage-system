@@ -1,4 +1,6 @@
 # Minimal stack for CI / E2E (no observability services).
+# CI_PROJECT_DIR must be a host path when compose is driven from Jenkins-in-Docker
+# (bind mounts are resolved by the Docker daemon on the host).
 services:
   db:
     image: postgres:16
@@ -6,13 +8,30 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ci_password
       POSTGRES_DB: inventory_db
-    volumes:
-      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d inventory_db && pg_isready -U postgres -d keycloak"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d inventory_db"]
       interval: 5s
       timeout: 5s
       retries: 10
+
+  # Create Keycloak's DB without bind mounts (Jenkins-in-Docker can't mount jenkins_home paths).
+  keycloak-db-init:
+    image: postgres:16
+    environment:
+      PGPASSWORD: ci_password
+    entrypoint:
+      - bash
+      - -ec
+      - |
+        until pg_isready -h db -U postgres -d inventory_db; do sleep 1; done
+        if ! psql -h db -U postgres -d postgres -tc "SELECT 1 FROM pg_database WHERE datname='keycloak'" | grep -q 1; then
+          psql -h db -U postgres -d postgres -c 'CREATE DATABASE keycloak'
+        fi
+        psql -h db -U postgres -d keycloak -c 'SELECT 1'
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
 
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.1
@@ -43,11 +62,14 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      keycloak-db-init:
+        condition: service_completed_successfully
     volumes:
-      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
+      - ${CI_PROJECT_DIR:-.}/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
 
   web:
-    build: .
+    build:
+      context: ${CI_PROJECT_DIR:-.}
     environment:
       PYTHONPATH: /app
       FLASK_APP: app.main

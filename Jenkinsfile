@@ -23,6 +23,7 @@ pipeline {
         DOCKER_COMPOSE = '/usr/local/bin/docker-compose'
         // Host path for docker -v (set in docker-compose jenkins service via HOST_PROJECT_DIR)
         HOST_MOUNT = "${env.HOST_PROJECT_DIR ?: '/workspace'}"
+        CI_PROJECT_DIR = "${env.HOST_PROJECT_DIR ?: ''}"
     }
 
     stages {
@@ -118,7 +119,7 @@ pipeline {
             steps {
                 sh '''
                     CI_KEEP_PROJECTS=${PROJECT_CI} bash scripts/ci-free-host-ports.sh
-                    ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} up -d --build --wait --wait-timeout 600
+                    CI_PROJECT_DIR=${HOST_MOUNT} ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} up -d --build --wait --wait-timeout 600
                     COMPOSE_FILE=${COMPOSE_CI} COMPOSE_PROJECT=${PROJECT_CI} DOCKER_COMPOSE=${DOCKER_COMPOSE} \
                       bash scripts/ci-verify-e2e-ready.sh
                     ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} exec -T web flask db upgrade
