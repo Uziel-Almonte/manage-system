@@ -380,6 +380,7 @@ def stock_update_ui():
 
         from flask import flash, redirect
         flash(f'Movimiento registrado correctamente. Nuevo stock de {product.name}: {product.qty}', 'success')
+        record_stock_movement(movement_type, product.sku)
         return redirect('/stock')
 
     selected_product_id = request.args.get('product_id', type=int)

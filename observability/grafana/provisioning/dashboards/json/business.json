@@ -38,7 +38,7 @@
       "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
       "datasource": "${DS_PROMETHEUS}",
       "targets": [
-        { "expr": "increase(products_created_total[24h])", "legendFormat": "agregados", "refId": "A" }
+        { "expr": "sum(increase(products_created_total[24h]))", "legendFormat": "agregados", "refId": "A" }
       ]
     },
     {
@@ -48,7 +48,7 @@
       "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
       "datasource": "${DS_PROMETHEUS}",
       "targets": [
-        { "expr": "increase(stock_movements_total[24h])", "legendFormat": "movimientos", "refId": "A" }
+        { "expr": "sum(increase(stock_movements_total[24h]))", "legendFormat": "movimientos", "refId": "A" }
       ]
     },
     {
@@ -58,8 +58,8 @@
       "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
       "datasource": "${DS_PROMETHEUS}",
       "targets": [
-        {
-          "expr": "increase(stock_movements_total{type=\"entry\"}[24h]) / increase(stock_movements_total{type=\"exit\"}[24h])",
+        {          
+          "expr": "sum(increase(stock_movements_total{type=\"entry\"}[24h])) / sum(increase(stock_movements_total{type=\"exit\"}[24h]))",
           "legendFormat": "entradas/salidas",
           "refId": "A"
         }
@@ -101,7 +101,7 @@
       "datasource": "${DS_PROMETHEUS}",
       "targets": [
         {
-          "expr": "topk(10, sum by(product) (increase(stock_movements_total[24h])))",
+          "expr": "topk(10, sum by(product) (sum(increase(stock_movements_total[24h]))))",
           "legendFormat": "{{product}}",
           "refId": "A",
           "format": "table",

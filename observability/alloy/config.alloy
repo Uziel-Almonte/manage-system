@@ -48,3 +48,10 @@ loki.source.docker "docker_logs" {
 logging {
   level = "info"
 }
+
+prometheus.scrape "postgres" {
+  targets = [
+    {"__address__" = "postgres_exporter:9187"},
+  ]
+  forward_to = [prometheus.remote_write.default.receiver]
+}
