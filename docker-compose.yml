@@ -129,6 +129,18 @@ services:
       - --storage.tsdb.path=/prometheus
       - --web.enable-lifecycle
 
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter
+    container_name: postgres_exporter
+    env_file:
+      - .env
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-inventory_db}?sslmode=disable"
+    ports:
+      - "9187:9187"
+    depends_on:
+      - db
+
   tempo:
     image: grafana/tempo:2.7.1
     container_name: tempo
