@@ -38,7 +38,7 @@
         }
       },
       "targets": [
-        { "expr": "sum(rate(auth_failures_total[5m]))", "legendFormat": "fallos/s", "refId": "A" }
+        { "expr": "auth_failures_total", "legendFormat": "fallos/s", "refId": "A" }
       ]
     },
     {

@@ -62,27 +62,23 @@
     {
       "id": 2,
       "type": "timeseries",
-      "title": "Uso de memoria por instancia (%)",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "title": "Memoria residente de la aplicación",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
       "datasource": "${DS_PROMETHEUS}",
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "orange", "value": 80 },
-              { "color": "red", "value": 90 }
-            ]
-          }
+          "unit": "bytes",
+          "min": 0
         }
       },
       "targets": [
         {
-          "expr": "sum(pg_stat_activity_count{instance=~\"$instance\"}) / max(pg_settings_max_connections{instance=~\"$instance\"}) * 100",
+          "expr": "process_resident_memory_bytes",
           "legendFormat": "{{instance}}",
           "refId": "A"
         }
