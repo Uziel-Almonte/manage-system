@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Usuario {{ user.username }} - Sistema de Gestión de Inventario{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+    <div>
+        <h2 class="text-2xl font-bold text-gray-800">{{ user.username }}</h2>
+        <p class="text-gray-500 text-sm mt-1">{{ user.firstName or '' }} {{ user.lastName or '' }} · {{ user.email or 'sin email' }}</p>
+    </div>
+    <a href="/users" class="text-sm text-blue-600 hover:text-blue-800 font-medium">← Volver</a>
+</div>
+
+{% if issued_token %}
+<div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+        <h3 class="text-sm font-semibold text-amber-900">JWT generado</h3>
+        <dl class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-amber-900">
+            <div><span class="font-medium">Expira en:</span> {{ issued_token.expires_in }} s</div>
+            <div><span class="font-medium">exp (UTC):</span> {{ issued_token.claims.exp_iso or '—' }}</div>
+        </dl>
+    </div>
+    <p class="text-sm text-amber-800 mb-2">
+        Roles: {{ issued_token.claims.roles|join(', ') or '—' }}
+    </p>
+    <details open>
+        <summary class="cursor-pointer text-sm font-medium text-amber-900 hover:text-amber-700 select-none">
+            Más info — ver access_token
+        </summary>
+        <div class="mt-3">
+            <textarea readonly rows="5"
+                      class="w-full text-xs font-mono px-3 py-2 border border-amber-200 rounded-lg bg-white"
+                      onclick="this.select()">{{ issued_token.access_token }}</textarea>
+        </div>
+    </details>
+</div>
+{% endif %}
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Permisos en tiempo real</h3>
+        <p class="text-xs text-gray-500 mb-4">
+            Los cambios se aplican de inmediato en Keycloak. Las sesiones activas se cierran para forzar un nuevo token con los roles actualizados.
+        </p>
+        <form method="POST" action="/users/{{ user.id }}/roles" class="space-y-3">
+            {% for role in manageable_roles %}
+            <label class="flex items-center gap-2 text-sm text-gray-700">
+                <input type="checkbox" name="roles" value="{{ role }}"
+                       class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                       {% if role in user.roles %}checked{% endif %}>
+                {{ role }}
+            </label>
+            {% endfor %}
+            <button type="submit"
+                    class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium">
+                Guardar permisos
+            </button>
+        </form>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Emitir JWT</h3>
+        <p class="text-xs text-gray-500 mb-4">
+            Usa la contraseña del usuario para obtener un access token firmado por Keycloak (password grant).
+            La duración la define Keycloak (Access Token Lifespan del realm/cliente).
+        </p>
+        <form method="POST" action="/users/{{ user.id }}/token" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña del usuario <span class="text-red-500">*</span></label>
+                <input type="password" name="password" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <button type="submit"
+                    class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm font-medium">
+                Generar JWT
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

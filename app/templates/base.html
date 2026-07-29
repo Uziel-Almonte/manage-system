@@ -45,6 +45,10 @@
                     {% if 'audit:view' in scopes %}
                     <a href="/audit" class="text-gray-700 hover:text-blue-600 transition text-sm font-medium">Auditoría</a>
                     {% endif %}
+
+                    {% if 'user:manage' in scopes %}
+                    <a href="/users" class="text-gray-700 hover:text-blue-600 transition text-sm font-medium">Usuarios</a>
+                    {% endif %}
                 </div>
 
                 <!-- User Menu -->
@@ -96,6 +100,9 @@
                 {% endif %}
                 {% if 'audit:view' in scopes %}
                 <a href="/audit" class="block px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">Auditoría</a>
+                {% endif %}
+                {% if 'user:manage' in scopes %}
+                <a href="/users" class="block px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">Usuarios</a>
                 {% endif %}
             </div>
         </div>
@@ -155,6 +162,14 @@
                        class="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition
                               {{ 'bg-blue-50 text-blue-600 font-semibold' if cp == '/audit' else 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
                         Auditoria
+                    </a>
+                    {% endif %}
+
+                    {% if 'user:manage' in scopes %}
+                    <a href="/users"
+                       class="flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition
+                              {{ 'bg-blue-50 text-blue-600 font-semibold' if cp.startswith('/users') else 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
+                        Usuarios
                     </a>
                     {% endif %}
                 </nav>

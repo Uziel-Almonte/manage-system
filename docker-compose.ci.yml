@@ -85,6 +85,11 @@ services:
       KEYCLOAK_USERINFO_URL: http://keycloak:8080/realms/inventory-realm/protocol/openid-connect/userinfo
       KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/inventory-realm/protocol/openid-connect/certs
       KEYCLOAK_ISSUER: http://localhost:8080/realms/inventory-realm
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: admin
+      KEYCLOAK_ADMIN_API_URL: http://keycloak:8080/admin
+      KEYCLOAK_ADMIN_TOKEN_URL: http://keycloak:8080/realms/master/protocol/openid-connect/token
+      KEYCLOAK_TOKEN_CLIENT_ID: flask-backend
     ports:
       - "5000:5000"
     command: >

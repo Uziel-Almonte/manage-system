@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo usuario - Sistema de Gestión de Inventario{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h2 class="text-2xl font-bold text-gray-800">Crear usuario</h2>
+    <p class="text-gray-500 text-sm mt-1">Los datos se crean en Keycloak y se genera un JWT automáticamente.</p>
+</div>
+
+<div class="bg-white rounded-lg shadow-md p-6 max-w-2xl">
+    <form method="POST" action="/users" class="space-y-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="sm:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Usuario <span class="text-red-500">*</span></label>
+                <input name="username" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder="ej. nuevo_empleado">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                <input name="firstName"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
+                <input name="lastName"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="sm:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" name="email"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="sm:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña <span class="text-red-500">*</span></label>
+                <input type="password" name="password" required minlength="6"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+        </div>
+
+        <div>
+            <p class="block text-sm font-medium text-gray-700 mb-2">Permisos (roles Keycloak)</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {% for role in manageable_roles %}
+                <label class="flex items-center gap-2 text-sm text-gray-700">
+                    <input type="checkbox" name="roles" value="{{ role }}"
+                           class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                           {% if role == 'group:employee' %}checked{% endif %}>
+                    {{ role }}
+                </label>
+                {% endfor %}
+            </div>
+            <p class="text-xs text-gray-500 mt-2">
+                Tip: asigna <code>group:employee</code> o <code>group:manager</code> para heredar los permisos compuestos.
+            </p>
+        </div>
+
+        <div class="flex gap-3 pt-2">
+            <button type="submit"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium">
+                Crear usuario
+            </button>
+            <a href="/users"
+               class="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
+                Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

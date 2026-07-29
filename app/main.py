@@ -9,6 +9,7 @@ from app.products.views import products_bp
 from app.auth.views import auth_bp
 from app.auth.middleware import require_jwt, login_required, require_ui_scope
 from app.audit.views import audit_bp
+from app.users.views import users_bp
 from app.audit.listeners import register_audit_listeners
 from flask_migrate import Migrate
 from flask_smorest import Api
@@ -59,6 +60,7 @@ api.register_blueprint(reports_bp)
 api.register_blueprint(products_bp)
 api.register_blueprint(auth_bp)
 api.register_blueprint(audit_bp)
+api.register_blueprint(users_bp)
 
 @app.route("/")
 @login_required
@@ -442,6 +444,199 @@ def audit_ui():
                            filter_table=filter_table,
                            filter_action=filter_action,
                            filter_record_id=filter_record_id)
+
+
+@app.route("/users")
+@login_required
+@require_ui_scope('user:manage')
+def users_ui():
+    from app.auth.keycloak_admin import (
+        MANAGEABLE_ROLES,
+        KeycloakAdminError,
+        get_user_realm_roles,
+        list_users,
+        user_summary,
+    )
+
+    try:
+        raw_users = list_users(max_results=100)
+        users = []
+        for u in raw_users:
+            roles = [
+                r['name']
+                for r in get_user_realm_roles(u['id'])
+                if r.get('name') in MANAGEABLE_ROLES
+            ]
+            users.append(user_summary(u, roles))
+    except KeycloakAdminError as e:
+        flash(f'Error al listar usuarios: {e.message}', 'error')
+        users = []
+
+    return render_template(
+        'users/index.html',
+        users=users,
+        issued_token=None,
+        issued_username=None,
+    )
+
+
+@app.route("/users/new")
+@login_required
+@require_ui_scope('user:manage')
+def users_new_ui():
+    from app.auth.keycloak_admin import MANAGEABLE_ROLES
+    return render_template('users/form.html', manageable_roles=MANAGEABLE_ROLES)
+
+
+@app.route("/users", methods=['POST'])
+@login_required
+@require_ui_scope('user:manage')
+def users_create_ui():
+    from app.auth.keycloak_admin import (
+        MANAGEABLE_ROLES,
+        KeycloakAdminError,
+        create_user,
+        fetch_user_access_token,
+        get_user_realm_roles,
+        list_users,
+        user_summary,
+    )
+
+    username = (request.form.get('username') or '').strip()
+    email = (request.form.get('email') or '').strip()
+    first_name = (request.form.get('firstName') or '').strip()
+    last_name = (request.form.get('lastName') or '').strip()
+    password = request.form.get('password') or ''
+    roles = request.form.getlist('roles')
+
+    if not username or not password:
+        flash('Usuario y contraseña son obligatorios.', 'error')
+        return redirect(url_for('users_new_ui'))
+
+    try:
+        create_user(
+            username=username,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            password=password,
+            roles=roles,
+        )
+        # Do not put JWTs in the session cookie (browser 4KB limit). Render them
+        # on this response instead.
+        issued_token = fetch_user_access_token(username, password)
+        flash(f'Usuario "{username}" creado en Keycloak.', 'success')
+    except KeycloakAdminError as e:
+        flash(f'No se pudo crear el usuario: {e.message}', 'error')
+        return redirect(url_for('users_new_ui'))
+    except Exception as e:
+        flash(f'Error inesperado al crear el usuario: {e}', 'error')
+        return redirect(url_for('users_new_ui'))
+
+    try:
+        raw_users = list_users(max_results=100)
+        users = []
+        for u in raw_users:
+            user_roles = [
+                r['name']
+                for r in get_user_realm_roles(u['id'])
+                if r.get('name') in MANAGEABLE_ROLES
+            ]
+            users.append(user_summary(u, user_roles))
+    except KeycloakAdminError:
+        users = []
+
+    return render_template(
+        'users/index.html',
+        users=users,
+        issued_token=issued_token,
+        issued_username=username,
+    )
+
+
+@app.route("/users/<user_id>")
+@login_required
+@require_ui_scope('user:manage')
+def users_detail_ui(user_id):
+    from app.auth.keycloak_admin import (
+        MANAGEABLE_ROLES,
+        KeycloakAdminError,
+        get_user,
+        get_user_realm_roles,
+        user_summary,
+    )
+
+    try:
+        user = get_user(user_id)
+        roles = [
+            r['name']
+            for r in get_user_realm_roles(user_id)
+            if r.get('name') in MANAGEABLE_ROLES
+        ]
+    except KeycloakAdminError as e:
+        flash(f'Usuario no disponible: {e.message}', 'error')
+        return redirect(url_for('users_ui'))
+
+    return render_template(
+        'users/detail.html',
+        user=user_summary(user, roles),
+        manageable_roles=MANAGEABLE_ROLES,
+        issued_token=None,
+    )
+
+
+@app.route("/users/<user_id>/roles", methods=['POST'])
+@login_required
+@require_ui_scope('user:manage')
+def users_roles_ui(user_id):
+    from app.auth.keycloak_admin import KeycloakAdminError, set_user_roles
+
+    roles = request.form.getlist('roles')
+    try:
+        set_user_roles(user_id, roles)
+        flash('Permisos actualizados en Keycloak.', 'success')
+    except KeycloakAdminError as e:
+        flash(f'No se pudieron actualizar permisos: {e.message}', 'error')
+    return redirect(url_for('users_detail_ui', user_id=user_id))
+
+
+@app.route("/users/<user_id>/token", methods=['POST'])
+@login_required
+@require_ui_scope('user:manage')
+def users_token_ui(user_id):
+    from app.auth.keycloak_admin import (
+        MANAGEABLE_ROLES,
+        KeycloakAdminError,
+        fetch_user_access_token,
+        get_user,
+        get_user_realm_roles,
+        user_summary,
+    )
+
+    password = request.form.get('password') or ''
+    if not password:
+        flash('La contraseña es obligatoria para emitir el JWT.', 'error')
+        return redirect(url_for('users_detail_ui', user_id=user_id))
+
+    try:
+        user = get_user(user_id)
+        issued_token = fetch_user_access_token(user['username'], password)
+        roles = [
+            r['name']
+            for r in get_user_realm_roles(user_id)
+            if r.get('name') in MANAGEABLE_ROLES
+        ]
+        flash('JWT generado correctamente.', 'success')
+        return render_template(
+            'users/detail.html',
+            user=user_summary(user, roles),
+            manageable_roles=MANAGEABLE_ROLES,
+            issued_token=issued_token,
+        )
+    except KeycloakAdminError as e:
+        flash(f'No se pudo emitir JWT: {e.message}', 'error')
+        return redirect(url_for('users_detail_ui', user_id=user_id))
+
 
 @app.route("/health")
 @require_jwt
