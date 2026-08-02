@@ -224,7 +224,7 @@ def update_product(product_id):
     Por qué lo hace: para mantener sincronizada la ficha del producto con el formulario editado.
     Cómo lo hace: carga el registro, valida SKU, aplica cambios y registra movimientos de inventario si cambia la cantidad.
     De dónde viene: la actualización llega desde `/products/<product_id>` mediante `PUT` o `POST`.
-    A dónde va: vuelve al listado o al formulario de edición según el resultado.
+    A dónde va: vuelve al listado o al formulario de edición según el resultado de este.
     Librerías externas: Flask procesa la petición, SQLAlchemy guarda cambios y la capa de telemetría registra eventos.
     """
     product = Product.query.get(product_id)
