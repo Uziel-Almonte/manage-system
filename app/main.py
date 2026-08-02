@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, flash, redirect, url_for
 from sqlalchemy import text, or_
 from dotenv import load_dotenv
 import os
+from werkzeug.middleware.proxy_fix import ProxyFix
 from app.database import db
 from app.stock.views import stock_bp
 from app.reports.views import reports_bp
@@ -22,6 +23,9 @@ from flask_cors import CORS
 load_dotenv()
 
 app = Flask(__name__, template_folder='templates')
+# Trust reverse-proxy headers (e.g. Cloudflare Tunnel) so url_for(_external=True)
+# produces the correct public scheme/host instead of the internal one.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 # Enable CORS for the application
 CORS(app, resources={r"/*": {"origins": "*"}})
 
@@ -65,6 +69,14 @@ api.register_blueprint(users_bp)
 @app.route("/")
 @login_required
 def index():
+    """
+    Qué hace: construye el panel principal con métricas resumidas del inventario.
+    Por qué lo hace: para que el usuario vea de inmediato el estado general del sistema.
+    Cómo lo hace: consulta modelos de SQLAlchemy para contar productos y movimientos recientes.
+    De dónde viene: la ejecución viene de la ruta raíz `/` cuando el usuario entra al panel.
+    A dónde va: los datos se envían a la plantilla `index.html` con `render_template` de Flask.
+    Librerías externas: Flask renderiza la vista y SQLAlchemy ejecuta las consultas ORM.
+    """
     total_products = Product.query.filter_by(status='active').count()
     low_stock_count = Product.query.filter(Product.qty <= Product.min_stock, Product.qty > 0, Product.status == 'active').count()
     critical_stock_count = Product.query.filter(Product.qty <= Product.min_stock * 0.2, Product.status == 'active').count()
@@ -82,6 +94,14 @@ def index():
 @app.route("/products")
 @login_required
 def products_ui():
+    """
+    Qué hace: muestra el listado paginado de productos con búsqueda y ordenamiento.
+    Por qué lo hace: para navegar y filtrar productos sin salir de la interfaz web.
+    Cómo lo hace: lee parámetros de la URL, arma una consulta ORM y pagina el resultado.
+    De dónde viene: la vista se dispara desde la ruta `/products` y sus parámetros `page`, `search`, `sort_by` y `sort_order`.
+    A dónde va: renderiza `products/index.html` o la tabla parcial de HTMX según la petición.
+    Librerías externas: Flask procesa request/render_template, SQLAlchemy filtra y pagina, HTMX pide el parcial.
+    """
     page = request.args.get('page', 1, type=int)
     per_page = 10
     search = request.args.get('search', '')
@@ -115,12 +135,28 @@ def products_ui():
 @login_required
 @require_ui_scope('product:manage')
 def new_product():
+    """
+    Qué hace: muestra el formulario para crear un producto nuevo.
+    Por qué lo hace: para separar la captura de datos del guardado en base de datos.
+    Cómo lo hace: devuelve la plantilla del formulario con un producto vacío.
+    De dónde viene: la navegación llega desde `/products/new` protegida por el permiso `product:manage`.
+    A dónde va: la vista `products/form.html` recibe `product=None`.
+    Librerías externas: Flask renderiza la plantilla y los decoradores controlan acceso.
+    """
     return render_template('products/form.html', product=None)
 
 @app.route("/products/<int:product_id>/edit")
 @login_required
 @require_ui_scope('product:manage')
 def edit_product(product_id):
+    """
+    Qué hace: carga el formulario de edición para un producto específico.
+    Por qué lo hace: para permitir modificar un registro existente desde la UI.
+    Cómo lo hace: busca el producto por ID y redirige si no existe.
+    De dónde viene: la petición llega desde `/products/<product_id>/edit` con el identificador en la URL.
+    A dónde va: la plantilla `products/form.html` recibe el objeto `product`.
+    Librerías externas: Flask maneja la navegación, SQLAlchemy obtiene el registro.
+    """
     product = Product.query.get(product_id)
     if not product:
         flash('Producto no encontrado', 'error')
@@ -131,6 +167,14 @@ def edit_product(product_id):
 @login_required
 @require_ui_scope('product:manage')
 def create_product():
+    """
+    Qué hace: crea un producto nuevo a partir del formulario enviado.
+    Por qué lo hace: para persistir en la base de datos la información capturada en la UI.
+    Cómo lo hace: valida campos obligatorios, evita SKU duplicado, guarda con SQLAlchemy y actualiza métricas.
+    De dónde viene: los datos vienen del formulario `products/form.html` enviado por `POST /products`.
+    A dónde va: tras guardar, redirige a `products_ui`; si falla, vuelve al formulario.
+    Librerías externas: Flask lee `request` y `flash`, SQLAlchemy persiste, las funciones de telemetría actualizan métricas.
+    """
     name = request.form.get('name')
     sku = request.form.get('sku')
     price = request.form.get('price')
@@ -175,6 +219,14 @@ def create_product():
 @login_required
 @require_ui_scope('product:manage')
 def update_product(product_id):
+    """
+    Qué hace: actualiza los datos de un producto existente.
+    Por qué lo hace: para mantener sincronizada la ficha del producto con el formulario editado.
+    Cómo lo hace: carga el registro, valida SKU, aplica cambios y registra movimientos de inventario si cambia la cantidad.
+    De dónde viene: la actualización llega desde `/products/<product_id>` mediante `PUT` o `POST`.
+    A dónde va: vuelve al listado o al formulario de edición según el resultado.
+    Librerías externas: Flask procesa la petición, SQLAlchemy guarda cambios y la capa de telemetría registra eventos.
+    """
     product = Product.query.get(product_id)
     if not product:
         flash('Producto no encontrado', 'error')
@@ -233,6 +285,14 @@ def update_product(product_id):
 @login_required
 @require_ui_scope('product:manage')
 def delete_product(product_id):
+    """
+    Qué hace: elimina un producto del sistema.
+    Por qué lo hace: para retirar registros que ya no deben aparecer en el inventario activo.
+    Cómo lo hace: localiza el producto, lo borra con SQLAlchemy y recompone la tabla si la petición viene de HTMX.
+    De dónde viene: la acción se dispara desde `/products/<product_id>/delete` con `POST`.
+    A dónde va: redirige al listado o devuelve el parcial actualizado para la interfaz dinámica.
+    Librerías externas: Flask controla la respuesta, SQLAlchemy ejecuta el borrado y HTMX consume el parcial.
+    """
     product = Product.query.get(product_id)
     if not product:
         if request.headers.get('HX-Request'):
@@ -281,6 +341,14 @@ def delete_product(product_id):
 @app.route("/stock")
 @login_required
 def stock_ui():
+    """
+    Qué hace: muestra el historial de movimientos de stock con filtros.
+    Por qué lo hace: para auditar entradas y salidas del inventario desde la web.
+    Cómo lo hace: lee filtros de la URL, consulta movimientos y pagina el resultado.
+    De dónde viene: la consulta viene de la ruta `/stock` y de los filtros enviados por query string.
+    A dónde va: renderiza `stock/history.html` o el parcial `stock/partials/history_table.html`.
+    Librerías externas: Flask lee la request, SQLAlchemy filtra y pagina, HTMX solicita el fragmento parcial.
+    """
     page = request.args.get('page', 1, type=int)
     per_page = 20
     movement_type = request.args.get('type', '')
@@ -330,6 +398,14 @@ def stock_ui():
 @login_required
 @require_ui_scope('stock:manage')
 def stock_update_ui():
+    """
+    Qué hace: permite registrar manualmente una entrada o salida de inventario.
+    Por qué lo hace: para ajustar stock cuando ocurre un movimiento operativo real.
+    Cómo lo hace: valida datos del formulario, modifica la cantidad, crea un movimiento y confirma con commit.
+    De dónde viene: el flujo viene de `/stock/update`, ya sea para mostrar el formulario o procesar un `POST`.
+    A dónde va: devuelve el formulario, redirige al historial o entrega el parcial de información del producto.
+    Librerías externas: Flask gestiona request/flash/redirect/render_template y SQLAlchemy guarda el movimiento.
+    """
     products = Product.query.filter_by(status='active').order_by(Product.name).all()
 
     if request.method == 'POST':
@@ -395,6 +471,14 @@ def stock_update_ui():
 @login_required
 @require_ui_scope('report:view')
 def reports_ui():
+    """
+    Qué hace: construye la pantalla de reportes de inventario.
+    Por qué lo hace: para ofrecer una vista ejecutiva del estado del catálogo y los movimientos.
+    Cómo lo hace: consulta productos críticos, top productos y movimientos recientes con SQLAlchemy.
+    De dónde viene: la navegación proviene de la ruta `/reports` protegida por `report:view`.
+    A dónde va: envía los datos a `reports/index.html`.
+    Librerías externas: Flask renderiza la plantilla y SQLAlchemy resuelve las consultas ORM.
+    """
     critical_products = Product.query.filter(
         Product.qty <= Product.min_stock,
         Product.status == 'active'
@@ -413,6 +497,14 @@ def reports_ui():
 @login_required
 @require_ui_scope('audit:view')
 def audit_ui():
+    """
+    Qué hace: muestra el historial de auditoría del sistema.
+    Por qué lo hace: para revisar qué cambios ocurrieron y sobre qué registros.
+    Cómo lo hace: consulta `AuditLog` con filtros opcionales y pagina por fecha descendente.
+    De dónde viene: la pantalla se solicita desde `/audit` con filtros opcionales por query string.
+    A dónde va: renderiza `audit/index.html` o el parcial `audit/partials/audit_table.html`.
+    Librerías externas: Flask maneja la petición y SQLAlchemy obtiene el histórico.
+    """
     from app.audit.models import AuditLog
 
     page = request.args.get('page', 1, type=int)
@@ -451,6 +543,14 @@ def audit_ui():
 @login_required
 @require_ui_scope('user:manage')
 def users_ui():
+    """
+    Qué hace: lista usuarios administrables desde Keycloak.
+    Por qué lo hace: para permitir gestión de cuentas y roles desde la interfaz.
+    Cómo lo hace: llama utilidades de Keycloak, filtra roles gestionables y prepara un resumen por usuario.
+    De dónde viene: la vista se origina en la ruta `/users` con permiso `user:manage`.
+    A dónde va: renderiza `users/index.html` con la lista y sin token emitido.
+    Librerías externas: las operaciones reales de usuarios las hace Keycloak mediante el cliente auxiliar del proyecto.
+    """
     from app.auth.keycloak_admin import (
         MANAGEABLE_ROLES,
         KeycloakAdminError,
@@ -485,6 +585,14 @@ def users_ui():
 @login_required
 @require_ui_scope('user:manage')
 def users_new_ui():
+    """
+    Qué hace: muestra el formulario para crear un usuario en Keycloak.
+    Por qué lo hace: para capturar datos y roles antes de llamar al administrador externo.
+    Cómo lo hace: carga la lista de roles administrables y la pasa a la plantilla.
+    De dónde viene: la navegación entra desde `/users/new`.
+    A dónde va: renderiza `users/form.html`.
+    Librerías externas: Keycloak define los roles disponibles y Flask renderiza la vista.
+    """
     from app.auth.keycloak_admin import MANAGEABLE_ROLES
     return render_template('users/form.html', manageable_roles=MANAGEABLE_ROLES)
 
@@ -493,6 +601,14 @@ def users_new_ui():
 @login_required
 @require_ui_scope('user:manage')
 def users_create_ui():
+    """
+    Qué hace: crea un usuario en Keycloak y luego refresca el listado.
+    Por qué lo hace: para registrar nuevas cuentas y devolver retroalimentación inmediata.
+    Cómo lo hace: valida datos, llama al cliente de Keycloak, opcionalmente emite un token y reconstruye el listado.
+    De dónde viene: el envío llega desde el formulario `users/form.html` por `POST /users`.
+    A dónde va: termina en `users/index.html` o redirige al formulario si hay error.
+    Librerías externas: Keycloak realiza la creación y emisión del token; Flask maneja formularios, flashes y renderizado.
+    """
     from app.auth.keycloak_admin import (
         MANAGEABLE_ROLES,
         KeycloakAdminError,
@@ -559,6 +675,14 @@ def users_create_ui():
 @login_required
 @require_ui_scope('user:manage')
 def users_detail_ui(user_id):
+    """
+    Qué hace: muestra el detalle de un usuario de Keycloak.
+    Por qué lo hace: para revisar información, roles y posibles acciones sobre la cuenta.
+    Cómo lo hace: obtiene el usuario, extrae roles administrables y prepara el resumen para la vista.
+    De dónde viene: la consulta proviene de la ruta `/users/<user_id>`.
+    A dónde va: renderiza `users/detail.html`.
+    Librerías externas: el acceso a usuarios y roles se resuelve mediante el cliente de Keycloak.
+    """
     from app.auth.keycloak_admin import (
         MANAGEABLE_ROLES,
         KeycloakAdminError,
@@ -590,6 +714,14 @@ def users_detail_ui(user_id):
 @login_required
 @require_ui_scope('user:manage')
 def users_roles_ui(user_id):
+    """
+    Qué hace: actualiza los roles asignados a un usuario en Keycloak.
+    Por qué lo hace: para administrar permisos desde la interfaz interna.
+    Cómo lo hace: lee el formulario y delega la actualización al helper de Keycloak.
+    De dónde viene: la acción llega desde `/users/<user_id>/roles` con `POST`.
+    A dónde va: vuelve al detalle del usuario.
+    Librerías externas: Keycloak ejecuta el cambio real de roles; Flask solo controla la petición y la redirección.
+    """
     from app.auth.keycloak_admin import KeycloakAdminError, set_user_roles
 
     roles = request.form.getlist('roles')
@@ -605,6 +737,14 @@ def users_roles_ui(user_id):
 @login_required
 @require_ui_scope('user:manage')
 def users_token_ui(user_id):
+    """
+    Qué hace: emite un JWT de un usuario para mostrarlo en la interfaz.
+    Por qué lo hace: para facilitar pruebas y verificación de autenticación.
+    Cómo lo hace: solicita la contraseña, obtiene el usuario, pide el token a Keycloak y re-renderiza el detalle.
+    De dónde viene: el disparador es `/users/<user_id>/token` con una contraseña enviada por formulario.
+    A dónde va: retorna `users/detail.html` con `issued_token` o redirige si hay error.
+    Librerías externas: Keycloak firma y entrega el token; Flask muestra la respuesta y maneja errores.
+    """
     from app.auth.keycloak_admin import (
         MANAGEABLE_ROLES,
         KeycloakAdminError,
@@ -642,6 +782,14 @@ def users_token_ui(user_id):
 @app.route("/health")
 @require_jwt
 def health():
+    """
+    Qué hace: expone un endpoint simple de salud de la aplicación.
+    Por qué lo hace: para que sistemas externos verifiquen disponibilidad y conexión a base de datos.
+    Cómo lo hace: ejecuta una consulta mínima con SQLAlchemy y devuelve estado HTTP según el resultado.
+    De dónde viene: la llamada viene desde monitores, balanceadores o scripts que consultan `/health`.
+    A dónde va: responde JSON directamente al cliente que hizo la verificación.
+    Librerías externas: Flask construye la respuesta y SQLAlchemy ejecuta la consulta de prueba.
+    """
     try:
         db.session.execute(text("SELECT 1"))
         return {"status": "healthy", "database": "connected"}
