@@ -1,4 +1,5 @@
 import os
+from urllib.parse import quote
 from flask import redirect, url_for, session, current_app, jsonify, request, render_template
 from flask_smorest import Blueprint
 from authlib.integrations.flask_client import OAuth
@@ -9,6 +10,14 @@ auth_bp = Blueprint('auth', 'auth', url_prefix='/auth', description="Authenticat
 oauth = OAuth()
 
 def init_oauth(app):
+    """
+    Qué hace: configura el cliente OAuth de Keycloak para la aplicación Flask.
+    Por qué lo hace: para centralizar la autenticación externa y reutilizar la misma configuración en toda la app.
+    Cómo lo hace: inicializa `oauth` y registra el proveedor con URLs, credenciales y scopes esperados.
+    De dónde viene: la configuración se toma de variables de entorno con valores por defecto para desarrollo local.
+    A dónde va: deja listo `oauth.keycloak` para las rutas de login, callback y logout.
+    Librerías externas: `Authlib` gestiona el cliente OAuth y Flask recibe la app que se va a configurar.
+    """
     oauth.init_app(app)
     
     oauth.register(
@@ -30,16 +39,39 @@ def init_oauth(app):
 
 @auth_bp.route('/login-page')
 def login_page():
-    """Render the login page"""
+    """
+    Qué hace: renderiza la pantalla de inicio de sesión.
+    Por qué lo hace: para ofrecer una vista simple desde la cual el usuario puede iniciar el flujo OAuth.
+    Cómo lo hace: devuelve la plantilla `login.html` sin lógica adicional.
+    De dónde viene: la navegación entra por la ruta `/auth/login-page`.
+    A dónde va: la respuesta HTML se entrega al navegador del usuario.
+    Librerías externas: Flask renderiza la plantilla con `render_template`.
+    """
     return render_template('login.html')
 
 @auth_bp.route('/login')
 def login():
+    """
+    Qué hace: inicia el flujo de autenticación con Keycloak.
+    Por qué lo hace: para redirigir al usuario al proveedor de identidad antes de volver a la aplicación.
+    Cómo lo hace: construye la URL de callback y usa `authorize_redirect` de Authlib.
+    De dónde viene: la petición llega desde la ruta `/auth/login`.
+    A dónde va: el navegador termina en la pantalla de login de Keycloak.
+    Librerías externas: Flask genera la URL de callback y Authlib maneja la redirección OAuth.
+    """
     redirect_uri = url_for('auth.callback', _external=True)
     return oauth.keycloak.authorize_redirect(redirect_uri)
 
 @auth_bp.route('/callback')
 def callback():
+    """
+    Qué hace: procesa la respuesta que Keycloak devuelve después del login.
+    Por qué lo hace: para intercambiar el código por tokens y guardar la sesión del usuario.
+    Cómo lo hace: obtiene el token, extrae `userinfo`, decodifica permisos y guarda todo en `session`.
+    De dónde viene: Keycloak redirige aquí tras completar la autenticación OAuth.
+    A dónde va: una sesión válida queda persistida y el usuario vuelve a la página principal.
+    Librerías externas: Authlib realiza el intercambio de tokens, PyJWT decodifica el access token y Flask maneja la sesión.
+    """
     try:
         token = oauth.keycloak.authorize_access_token()
     except Exception as e:
@@ -75,11 +107,27 @@ def callback():
 
 @auth_bp.route('/logout')
 def logout():
+    """
+    Qué hace: cierra la sesión local y prepara el cierre de sesión en Keycloak.
+    Por qué lo hace: para sacar al usuario de la aplicación y evitar sesiones colgadas.
+    Cómo lo hace: limpia la sesión de Flask, construye la URL de logout del proveedor y redirige allí.
+    De dónde viene: la acción se dispara desde la ruta `/auth/logout`.
+    A dónde va: el navegador termina en el endpoint de logout de Keycloak con retorno a la aplicación.
+    Librerías externas: Flask limpia la sesión y `urllib.parse.quote` codifica la URL de retorno.
+    """
     session.clear()
     # The external url where Keycloak should redirect the user after terminating Keycloak session
     redirect_uri = url_for('index', _external=True)
-    
-    # We must construct the logout URL using the external Keycloak URL, not the internal Docker one
-    # so the user's browser can actually reach it.
-    logout_url = f"http://localhost:8080/realms/inventory-realm/protocol/openid-connect/logout?client_id={os.getenv('KEYCLOAK_CLIENT_ID', 'flask-backend')}&post_logout_redirect_uri={redirect_uri}"
+
+    # External Keycloak logout URL (override with KEYCLOAK_LOGOUT_BASE when running
+    # behind a tunnel/proxy so this doesn't hardcode localhost).
+    logout_base = os.getenv(
+        'KEYCLOAK_LOGOUT_BASE',
+        'http://localhost:8080/realms/inventory-realm/protocol/openid-connect/logout',
+    )
+    client_id = os.getenv('KEYCLOAK_CLIENT_ID', 'flask-backend')
+    logout_url = (
+        f"{logout_base}?client_id={client_id}"
+        f"&post_logout_redirect_uri={quote(redirect_uri, safe='')}"
+    )
     return redirect(logout_url)

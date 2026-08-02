@@ -11,6 +11,14 @@ from app.telemetry import record_invalid_token
 _public_keys = None
 
 def get_keycloak_public_keys():
+    """
+    Qué hace: descarga y construye el conjunto de claves públicas de Keycloak.
+    Por qué lo hace: para verificar JWT firmados por Keycloak sin depender de claves hardcodeadas.
+    Cómo lo hace: resuelve la URL JWKS y transforma cada JWK en una clave RSA utilizable por PyJWT.
+    De dónde viene: la URL se toma de `KEYCLOAK_JWKS_URL` o, como respaldo, de `KEYCLOAK_REALM_URL`.
+    A dónde va: devuelve un diccionario indexado por `kid` para que `require_jwt` pueda validar tokens.
+    Librerías externas: `urllib.request` obtiene el JWKS, `json` lo parsea y `PyJWT` reconstruye las claves.
+    """
     # Prefer KEYCLOAK_JWKS_URL so browser-facing KEYCLOAK_REALM_URL can stay on
     # localhost while containers reach Keycloak via Docker DNS.
     certs_url = os.environ.get('KEYCLOAK_JWKS_URL')
@@ -34,6 +42,14 @@ def get_keycloak_public_keys():
     return public_keys
 
 def require_jwt(f):
+    """
+    Qué hace: protege una vista exigiendo un JWT Bearer válido.
+    Por qué lo hace: para asegurar que las rutas de API solo respondan a solicitudes autenticadas.
+    Cómo lo hace: lee el header Authorization, obtiene la clave pública por `kid` y decodifica el token.
+    De dónde viene: el token llega en el encabezado HTTP de la solicitud entrante.
+    A dónde va: las claims decodificadas se guardan en `request.user_claims` para el resto del flujo.
+    Librerías externas: Flask expone `request` y `current_app`, PyJWT verifica la firma y la expiración.
+    """
     @wraps(f)
     def decorated(*args, **kwargs):
         global _public_keys
@@ -93,6 +109,14 @@ def require_jwt(f):
     return decorated
 
 def require_scope(required_scope):
+    """
+    Qué hace: envuelve una vista para exigir un permiso específico en el JWT.
+    Por qué lo hace: para separar la autenticación general de la autorización por capacidad.
+    Cómo lo hace: reutiliza `require_jwt`, lee las roles del realm y compara contra `required_scope`.
+    De dónde viene: `required_scope` se pasa al decorar rutas que necesitan un permiso concreto.
+    A dónde va: si el permiso existe continúa la petición; si no, responde con 403.
+    Librerías externas: depende de Flask para construir la respuesta JSON y de `require_jwt` para validar el token.
+    """
     def decorator(f):
         @wraps(f)
         @require_jwt
@@ -107,15 +131,19 @@ def require_scope(required_scope):
 
 def login_required(f):
     """
-    Decorator for Flask routes that require a user to be logged in via Flask session.
-    Checks if the user has a valid session and redirects to login if not.
+    Qué hace: protege vistas web que requieren una sesión Flask válida.
+    Por qué lo hace: para evitar que usuarios anónimos entren a pantallas internas del sistema.
+    Cómo lo hace: verifica si existe `user` en la sesión y, si no, redirige a la página de login.
+    De dónde viene: el estado de autenticación vive en la sesión creada durante el callback OAuth.
+    A dónde va: cuando la sesión es válida, expone el usuario en `g.user` y continúa con la vista.
+    Librerías externas: Flask aporta `session`, `g`, `redirect` y `url_for`.
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         # Bypass for unit tests
         if current_app.config.get('TESTING'):
             return f(*args, **kwargs)
-        
+        print(session.get('user'))
         # Check if user is in session
         if 'user' not in session:
             return redirect(url_for('auth.login_page'))
@@ -129,8 +157,12 @@ def login_required(f):
 
 def require_ui_scope(required_scope):
     """
-    Decorator for UI routes that checks the user's session scopes.
-    Returns a 403 flash+redirect instead of a JSON response.
+    Qué hace: protege rutas de la interfaz según permisos guardados en la sesión.
+    Por qué lo hace: para controlar acciones sensibles desde la UI con una respuesta amigable.
+    Cómo lo hace: lee `user_scopes` desde la sesión y compara el permiso requerido antes de continuar.
+    De dónde viene: los scopes se almacenan en sesión durante el callback de autenticación.
+    A dónde va: si falta el permiso, muestra un flash y redirige al inicio; si no, deja seguir la vista.
+    Librerías externas: Flask aporta `flash`, `redirect` y `url_for` para la navegación de UI.
     """
     def decorator(f):
         @wraps(f)
