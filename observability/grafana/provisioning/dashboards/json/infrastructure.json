@@ -86,35 +86,6 @@
     },
     {
       "id": 3,
-      "type": "gauge",
-      "title": "Ocupación del pool de conexiones DB (%)",
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
-      "datasource": "${DS_PROMETHEUS}",
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "orange", "value": 75 },
-              { "color": "red", "value": 90 }
-            ]
-          }
-        }
-      },
-      "targets": [
-        {
-          "expr": "(db_pool_active_connections / db_pool_max_connections) * 100",
-          "legendFormat": "Pool DB",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "id": 4,
       "type": "stat",
       "title": "Conexiones activas / máximas",
       "gridPos": { "h": 4, "w": 8, "x": 8, "y": 8 },
@@ -125,7 +96,7 @@
       ]
     },
     {
-      "id": 5,
+      "id": 4,
       "type": "timeseries",
       "title": "Evolución del pool de conexiones",
       "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
