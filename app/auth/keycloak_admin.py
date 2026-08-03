@@ -22,6 +22,8 @@ MANAGEABLE_ROLES = [
 
 
 class KeycloakAdminError(Exception):
+    """Error controlado para operaciones fallidas contra la API de Keycloak."""
+
     def __init__(self, message: str, status_code: int = 500):
         super().__init__(message)
         self.status_code = status_code
@@ -29,6 +31,14 @@ class KeycloakAdminError(Exception):
 
 
 def _admin_base_url() -> str:
+    """
+    Qué hace: resuelve la URL base del API de administración de Keycloak.
+    Por qué lo hace: para centralizar la dirección del servidor y evitar repetirla.
+    Cómo lo hace: lee variables de entorno y aplica un valor por defecto seguro para el entorno local.
+    De dónde viene: el valor proviene de `KEYCLOAK_ADMIN_API_URL` o, si no existe, de `KEYCLOAK_INTERNAL_URL`.
+    A dónde va: se usa como base para construir las rutas de administración.
+    Librerías externas: aquí no interviene una librería externa; solo `os.getenv`.
+    """
     return os.getenv(
         'KEYCLOAK_ADMIN_API_URL',
         os.getenv('KEYCLOAK_INTERNAL_URL', 'http://keycloak_auth:8080') + '/admin',
@@ -36,11 +46,26 @@ def _admin_base_url() -> str:
 
 
 def _realm() -> str:
+    """
+    Qué hace: obtiene el nombre del realm configurado.
+    Por qué lo hace: para dirigir las operaciones al realm correcto de Keycloak.
+    Cómo lo hace: lee una variable de entorno con valor por defecto.
+    De dónde viene: el realm viene de `KEYCLOAK_REALM` o del valor `inventory-realm`.
+    A dónde va: se inserta en todas las URLs de administración del realm.
+    Librerías externas: no usa librerías externas; solo configuración del entorno.
+    """
     return os.getenv('KEYCLOAK_REALM', 'inventory-realm')
 
 
 def _token_url() -> str:
-    # Prefer dedicated admin token URL; fall back to realm token host's master realm.
+    """
+    Qué hace: construye la URL para pedir el token de administrador de Keycloak.
+    Por qué lo hace: para autenticar llamadas al API de administración.
+    Cómo lo hace: prioriza una URL explícita y, si no existe, transforma la URL del realm hacia el realm `master`.
+    De dónde viene: la dirección sale de `KEYCLOAK_ADMIN_TOKEN_URL` o de `KEYCLOAK_TOKEN_URL`.
+    A dónde va: se usa en `get_admin_access_token()` para solicitar el token.
+    Librerías externas: no hay librerías externas aquí; solo string handling y `os.getenv`.
+    """
     explicit = os.getenv('KEYCLOAK_ADMIN_TOKEN_URL')
     if explicit:
         return explicit
@@ -56,6 +81,14 @@ def _token_url() -> str:
 
 
 def _app_token_url() -> str:
+    """
+    Qué hace: obtiene la URL del endpoint de token usado por la aplicación.
+    Por qué lo hace: para pedir JWTs del cliente de frontend/backend sin mezclarlo con el token de admin.
+    Cómo lo hace: lee una variable de entorno o aplica un valor por defecto.
+    De dónde viene: el valor viene de `KEYCLOAK_TOKEN_URL`.
+    A dónde va: se consume en `fetch_user_access_token()`.
+    Librerías externas: no usa librerías externas; solo configuración.
+    """
     return os.getenv(
         'KEYCLOAK_TOKEN_URL',
         'http://keycloak_auth:8080/realms/inventory-realm/protocol/openid-connect/token',
@@ -63,6 +96,14 @@ def _app_token_url() -> str:
 
 
 def get_admin_access_token() -> str:
+    """
+    Qué hace: solicita un access token de administración para Keycloak.
+    Por qué lo hace: porque la API admin requiere autenticación Bearer.
+    Cómo lo hace: hace un `POST` con `requests` al endpoint de token usando credenciales del entorno.
+    De dónde viene: las credenciales provienen de variables como `KEYCLOAK_USER` y `KEYCLOAK_PASSWORD`.
+    A dónde va: el token resultante se reutiliza en `_headers()` para llamadas posteriores.
+    Librerías externas: sí, usa `requests` para la petición HTTP.
+    """
     username = os.getenv('KEYCLOAK_USER') or os.getenv('KEYCLOAK_ADMIN', 'admin')
     password = os.getenv('KEYCLOAK_PASSWORD') or os.getenv('KEYCLOAK_ADMIN_PASSWORD', 'admin')
     client_id = os.getenv('KEYCLOAK_ADMIN_CLIENT_ID', 'admin-cli')
@@ -93,6 +134,14 @@ def get_admin_access_token() -> str:
 
 
 def _headers() -> dict[str, str]:
+    """
+    Qué hace: arma los encabezados HTTP estándar para el API de Keycloak.
+    Por qué lo hace: para reutilizar autenticación y tipo de contenido en todas las llamadas.
+    Cómo lo hace: inserta el Bearer token de administración y `Content-Type: application/json`.
+    De dónde viene: el token viene de `get_admin_access_token()`.
+    A dónde va: se pasa a `requests.get/post/delete` en el resto de funciones.
+    Librerías externas: el header se usa para peticiones con `requests`, pero aquí no se llama directamente a una librería externa.
+    """
     return {
         'Authorization': f'Bearer {get_admin_access_token()}',
         'Content-Type': 'application/json',
@@ -100,10 +149,26 @@ def _headers() -> dict[str, str]:
 
 
 def _realm_url(path: str = '') -> str:
+    """
+    Qué hace: construye una URL completa del realm de administración.
+    Por qué lo hace: para evitar repetir concatenación de rutas en cada función.
+    Cómo lo hace: combina la base admin, el realm configurado y el sufijo recibido.
+    De dónde viene: el sufijo viene del llamado concreto y la base del entorno.
+    A dónde va: se usa en casi todas las operaciones contra Keycloak.
+    Librerías externas: no usa librerías externas; solo composición de strings.
+    """
     return f"{_admin_base_url()}/realms/{_realm()}{path}"
 
 
 def list_users(search: str | None = None, max_results: int = 50) -> list[dict[str, Any]]:
+    """
+    Qué hace: lista usuarios del realm con soporte opcional de búsqueda.
+    Por qué lo hace: para alimentar pantallas de administración de usuarios.
+    Cómo lo hace: ejecuta un `GET` al endpoint `/users` de Keycloak con parámetros de consulta.
+    De dónde viene: los criterios de búsqueda vienen de la UI o del código que llama a este helper.
+    A dónde va: devuelve una lista de diccionarios listos para ser renderizados o procesados.
+    Librerías externas: sí, usa `requests` para hablar con Keycloak.
+    """
     params: dict[str, Any] = {'max': max_results}
     if search:
         params['search'] = search
@@ -114,6 +179,14 @@ def list_users(search: str | None = None, max_results: int = 50) -> list[dict[st
 
 
 def get_user(user_id: str) -> dict[str, Any]:
+    """
+    Qué hace: obtiene los detalles de un usuario por su ID.
+    Por qué lo hace: para mostrar o actualizar información concreta de la cuenta.
+    Cómo lo hace: llama al endpoint individual `/users/{id}` de Keycloak.
+    De dónde viene: el ID viene de la ruta o de otra operación que ya identificó al usuario.
+    A dónde va: retorna el JSON del usuario o un error controlado si no existe.
+    Librerías externas: sí, usa `requests`.
+    """
     res = requests.get(_realm_url(f'/users/{user_id}'), headers=_headers(), timeout=20)
     if res.status_code == 404:
         raise KeycloakAdminError('User not found', status_code=404)
@@ -123,6 +196,14 @@ def get_user(user_id: str) -> dict[str, Any]:
 
 
 def find_user_id_by_username(username: str) -> str | None:
+    """
+    Qué hace: busca el ID de un usuario por nombre de usuario exacto.
+    Por qué lo hace: porque varias operaciones de Keycloak necesitan el ID interno y no el username.
+    Cómo lo hace: consulta `/users` con `username` y `exact=true`, luego toma el primer resultado.
+    De dónde viene: el username viene del formulario o del flujo que creó/consultó al usuario.
+    A dónde va: devuelve el ID o `None` si no se encuentra.
+    Librerías externas: sí, usa `requests` para consultar Keycloak.
+    """
     res = requests.get(
         _realm_url('/users'),
         headers=_headers(),
@@ -145,6 +226,14 @@ def create_user(
     enabled: bool = True,
     roles: list[str] | None = None,
 ) -> dict[str, Any]:
+    """
+    Qué hace: crea un usuario nuevo en Keycloak y opcionalmente le asigna roles.
+    Por qué lo hace: para registrar cuentas administrables desde la aplicación.
+    Cómo lo hace: envía un `POST` con el payload del usuario, busca el ID resultante y llama a `set_user_roles()` si aplica.
+    De dónde viene: los datos vienen del formulario y del flujo UI que llama a este helper.
+    A dónde va: devuelve el usuario recién creado como diccionario de Keycloak.
+    Librerías externas: sí, usa `requests` para crear y `Keycloak` para persistir el usuario.
+    """
     payload = {
         'username': username,
         'email': email,
@@ -177,6 +266,14 @@ def create_user(
 
 
 def get_realm_roles() -> list[dict[str, Any]]:
+    """
+    Qué hace: lista todos los roles del realm.
+    Por qué lo hace: para validar y traducir nombres de roles antes de asignarlos.
+    Cómo lo hace: realiza un `GET` al endpoint `/roles` de Keycloak.
+    De dónde viene: la consulta viene de flujos que necesitan validar permisos o mapear roles.
+    A dónde va: devuelve la lista completa de roles disponibles.
+    Librerías externas: sí, usa `requests`.
+    """
     res = requests.get(_realm_url('/roles'), headers=_headers(), timeout=20)
     if res.status_code != 200:
         raise KeycloakAdminError(f'List roles failed ({res.status_code}): {res.text}', status_code=502)
@@ -184,6 +281,14 @@ def get_realm_roles() -> list[dict[str, Any]]:
 
 
 def get_user_realm_roles(user_id: str) -> list[dict[str, Any]]:
+    """
+    Qué hace: obtiene los roles de realm asignados a un usuario.
+    Por qué lo hace: para mostrar permisos actuales o calcular cambios.
+    Cómo lo hace: consulta el endpoint de role mappings del usuario por su ID.
+    De dónde viene: el `user_id` viene del detalle de usuario o de operaciones de roles.
+    A dónde va: retorna los roles asignados al usuario.
+    Librerías externas: sí, usa `requests`.
+    """
     res = requests.get(
         _realm_url(f'/users/{user_id}/role-mappings/realm'),
         headers=_headers(),
@@ -197,6 +302,14 @@ def get_user_realm_roles(user_id: str) -> list[dict[str, Any]]:
 
 
 def _role_reps(role_names: list[str]) -> list[dict[str, Any]]:
+    """
+    Qué hace: convierte nombres de roles en representaciones completas de Keycloak.
+    Por qué lo hace: porque la API de asignación espera objetos con `id` y `name`.
+    Cómo lo hace: cruza los nombres solicitados contra todos los roles del realm y valida que existan.
+    De dónde viene: la lista de nombres viene del formulario o del código que administra permisos.
+    A dónde va: devuelve una lista lista para enviarse al endpoint de asignación.
+    Librerías externas: la consulta de roles usa `requests` indirectamente a través de `get_realm_roles()`.
+    """
     wanted = set(role_names)
     all_roles = get_realm_roles()
     found = [r for r in all_roles if r.get('name') in wanted]
@@ -207,7 +320,14 @@ def _role_reps(role_names: list[str]) -> list[dict[str, Any]]:
 
 
 def set_user_roles(user_id: str, role_names: list[str]) -> list[str]:
-    """Replace manageable realm roles; leave other realm roles untouched."""
+    """
+    Qué hace: reemplaza los roles administrables de un usuario por un nuevo conjunto.
+    Por qué lo hace: para mantener permisos consistentes sin tocar roles externos a la app.
+    Cómo lo hace: calcula roles a quitar y añadir, llama a los endpoints de mapeo y fuerza logout de sesiones.
+    De dónde viene: la solicitud viene del formulario de edición de roles en la UI.
+    A dónde va: devuelve la lista final de roles administrables activos para ese usuario.
+    Librerías externas: sí, usa `requests` para modificar roles y `current_app` para registrar fallos de logout.
+    """
     current = get_user_realm_roles(user_id)
     manageable_current = [r for r in current if r.get('name') in MANAGEABLE_ROLES]
     desired_names = [n for n in role_names if n in MANAGEABLE_ROLES]
@@ -260,7 +380,14 @@ def set_user_roles(user_id: str, role_names: list[str]) -> list[str]:
 
 
 def fetch_user_access_token(username: str, password: str) -> dict[str, Any]:
-    """Password-grant against the app client; returns token payload + decoded claims."""
+    """
+    Qué hace: solicita un JWT de usuario mediante password grant y devuelve metadatos del token.
+    Por qué lo hace: para mostrar o verificar la autenticación del usuario en la interfaz.
+    Cómo lo hace: hace un `POST` al endpoint de token, decodifica el JWT sin verificar firma y extrae claims relevantes.
+    De dónde viene: las credenciales vienen del formulario o del flujo de emisión de token desde la UI.
+    A dónde va: retorna un diccionario con el token, tiempos y claims resumidos.
+    Librerías externas: sí, usa `requests` para pedir el token y `PyJWT` para decodificarlo.
+    """
     client_id = os.getenv('KEYCLOAK_TOKEN_CLIENT_ID') or os.getenv('KEYCLOAK_CLIENT_ID', 'flask-backend')
     # Public clients (flask-backend) must not send a secret. Only use an explicit token-client secret.
     client_secret = os.getenv('KEYCLOAK_TOKEN_CLIENT_SECRET', '')
@@ -330,6 +457,14 @@ def fetch_user_access_token(username: str, password: str) -> dict[str, Any]:
 
 
 def user_summary(user: dict[str, Any], roles: list[str] | None = None) -> dict[str, Any]:
+    """
+    Qué hace: normaliza la estructura de un usuario para la interfaz.
+    Por qué lo hace: para unificar el formato que consumen las plantillas.
+    Cómo lo hace: extrae campos clave del diccionario original y asegura una lista de roles.
+    De dónde viene: el dato viene de respuestas de Keycloak o de helpers que ya consultaron el usuario.
+    A dónde va: devuelve un diccionario compacto listo para renderizar.
+    Librerías externas: no usa librerías externas; solo transforma datos ya obtenidos.
+    """
     return {
         'id': user.get('id'),
         'username': user.get('username'),
