@@ -1,6 +1,8 @@
 groups:
+    #agrupamos las reglas de alerta en un grupo llamado "manage-system"
   - name: infrastructure.rules
     rules:
+        #declaramos una alerta llamada HighCPUUsage que se activara cuando el uso de CPU supere el 85% durante 5 minutos.
       - alert: HighCPUUsage
         expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
         for: 5m
@@ -12,6 +14,7 @@ groups:
           summary: "CPU alta en {{ $labels.instance }}"
           description: "El uso de CPU en {{ $labels.instance }} lleva más de 5m por encima del 85% (actual: {{ $value | printf \"%.1f\" }}%)."
 
+        #declaramos una alerta llamada CriticalCPUUsage que se activara cuando el uso de CPU supere el 95% durante 3 minutos.
       - alert: CriticalCPUUsage
         expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95
         for: 3m
@@ -23,6 +26,7 @@ groups:
           summary: "CPU crítica en {{ $labels.instance }}"
           description: "El uso de CPU en {{ $labels.instance }} supera el 95% durante más de 3m (actual: {{ $value | printf \"%.1f\" }}%)."
 
+        #declaramos una alerta llamada HighMemoryUsage que se activara cuando el uso de memoria supere el 90% durante 5 minutos.
       - alert: HighMemoryUsage
         expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
         for: 5m
@@ -33,6 +37,7 @@ groups:
           summary: "Memoria alta en {{ $labels.instance }}"
           description: "Uso de memoria en {{ $labels.instance }} por encima del 90% durante 5m (actual: {{ $value | printf \"%.1f\" }}%)."
 
+        #declaramos una alerta llamada CriticalMemoryUsage que se activara cuando el uso de memoria supere el 95% durante 3 minutos.
       - alert: DBPoolNearExhaustion
         expr: (db_pool_active_connections / db_pool_max_connections) * 100 > 90
         for: 3m
@@ -43,8 +48,10 @@ groups:
           summary: "Pool de conexiones de DB casi agotado"
           description: "El pool de conexiones está al {{ $value | printf \"%.1f\" }}% de su capacidad durante más de 3m."
 
+
   - name: application.rules
     rules:
+        #declaramos una alerta llamada HighErrorRate que se activara cuando la tasa de errores HTTP 5xx en Flask supere el 5% durante 5 minutos.
       - alert: HighErrorRate
         expr: (sum(rate(flask_http_request_total{status=~"5.."}[5m])) / sum(rate(flask_http_request_total[5m]))) * 100 > 5
         for: 5m
@@ -56,6 +63,7 @@ groups:
           summary: "Tasa de error alta"
           description: "La tasa de errores 5xx lleva más de 5m por encima del 5% (actual: {{ $value | printf \"%.2f\" }}%)."
 
+        #declaramos una alerta llamada ElevatedErrorRate que se activara cuando la tasa de errores HTTP 5xx en Flask supere el 1% durante 10 minutos.
       - alert: ElevatedErrorRate
         expr: (sum(rate(flask_http_request_total{status=~"5.."}[5m])) / sum(rate(flask_http_request_total[5m]))) * 100 > 1
         for: 10m
@@ -67,6 +75,7 @@ groups:
           summary: "Tasa de error elevada"
           description: "La tasa de errores 5xx supera el 1% durante más de 10m (actual: {{ $value | printf \"%.2f\" }}%)."
 
+        #declaramos una alerta llamada HighLatencyP95 que se activara cuando la latencia p95 de las solicitudes HTTP en Flask supere 1 segundo durante 5 minutos.
       - alert: HighLatencyP95
         expr: histogram_quantile(0.95, sum(rate(flask_http_request_duration_seconds_bucket[5m])) by (le)) > 1
         for: 5m
@@ -79,6 +88,7 @@ groups:
 
   - name: security.rules
     rules:
+        #declaramos una alerta llamada HighAuthFailureRate que se activara cuando la tasa de fallos de autenticación supere 1 fallo/s durante 5 minutos.
       - alert: HighAuthFailureRate
         expr: sum(rate(auth_failures_total[5m])) > 1
         for: 5m
@@ -89,6 +99,7 @@ groups:
           summary: "Tasa alta de fallos de autenticación"
           description: "Se detectan más de 1 fallo/s de autenticación durante 5m (actual: {{ $value | printf \"%.2f\" }}/s). Posible ataque de fuerza bruta."
 
+        #declaramos una alerta llamada SpikeInvalidTokens que se activara cuando el número de tokens inválidos aumente en más de 50 en 15 minutos.
       - alert: SpikeInvalidTokens
         expr: increase(invalid_tokens_total[15m]) > 50
         for: 0m
@@ -99,6 +110,7 @@ groups:
           summary: "Pico de tokens inválidos"
           description: "Se registraron {{ $value }} tokens inválidos en los últimos 15 minutos."
 
+        #declaramos una alerta llamada AuthFailuresFromSingleIP que se activara cuando una misma IP genere más de 20 fallos de autenticación en 10 minutos.
       - alert: AuthFailuresFromSingleIP
         expr: sum by(source_ip) (increase(auth_failures_total[10m])) > 20
         for: 0m
