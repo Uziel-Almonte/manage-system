@@ -7,6 +7,7 @@ pipeline {
     }
 
     environment {
+        // Variables compartidas por todo el pipeline para construir, probar y limpiar el stack CI.
         IMAGE_NAME = 'manage-system'
         IMAGE_TAG = "${env.BUILD_NUMBER ?: 'local'}"
         PROJECT_CI = "manage-ci-${env.BUILD_NUMBER ?: 'local'}"
@@ -29,12 +30,14 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
+                // Trae el código exacto que disparó el build para que el resto del pipeline use esa versión.
                 checkout scm
             }
         }
 
         stage('Build') {
             steps {
+                // Construye la imagen de la aplicación y verifica que el import principal arranque correctamente.
                 sh '${DOCKER} build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
                 sh '${DOCKER} run --rm -e DATABASE_URL=sqlite:///:memory: ${IMAGE_NAME}:${IMAGE_TAG} python -c "from app.main import app; assert app is not None"'
             }
@@ -42,6 +45,7 @@ pipeline {
 
         stage('Prepare CI') {
             steps {
+                // Libera puertos del host antes de levantar servicios paralelos en el entorno de integración.
                 sh 'CI_KEEP_PROJECTS=${PROJECT_CI} bash scripts/ci-free-host-ports.sh'
             }
         }
@@ -50,18 +54,21 @@ pipeline {
             parallel {
                 stage('Unit tests') {
                     steps {
+                        // Ejecuta las pruebas rápidas de lógica de producto y stock dentro de la imagen construida.
                         sh '${DOCKER} run --rm ${IMAGE_NAME}:${IMAGE_TAG} pytest tests/test_products.py tests/test_stock.py -v --tb=short'
                     }
                 }
 
                 stage('API / contract tests') {
                     steps {
+                        // Valida el contrato HTTP y la API principal contra el esquema OpenAPI.
                         sh '${DOCKER} run --rm ${IMAGE_NAME}:${IMAGE_TAG} pytest tests/test_contract.py -v --tb=short'
                     }
                 }
 
                 stage('Data / migration tests') {
                     steps {
+                        // Levanta solo la base de datos, aplica migraciones y verifica que el esquema sea compatible.
                         sh '''
                             ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI}-data up -d db
                             for i in $(seq 1 30); do
@@ -86,6 +93,7 @@ pipeline {
 
         stage('Coverage') {
             steps {
+                // Corre toda la suite no-E2E y genera el reporte de cobertura para revisión posterior.
                 sh '''
                     ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI}-cov up -d db
                     for i in $(seq 1 30); do
@@ -108,6 +116,7 @@ pipeline {
 
         stage('Security') {
             steps {
+                // Ejecuta auditoría de dependencias para detectar vulnerabilidades conocidas.
                 sh '''
                     ${DOCKER} run --rm ${IMAGE_NAME}:${IMAGE_TAG} \
                       bash -lc "pip install -q pip-audit && pip-audit -r requirements.txt"
@@ -117,6 +126,7 @@ pipeline {
 
         stage('E2E') {
             steps {
+                // Despliega el stack completo y ejecuta las pruebas end-to-end contra la UI real.
                 sh '''
                     CI_KEEP_PROJECTS=${PROJECT_CI} bash scripts/ci-free-host-ports.sh
                     CI_PROJECT_DIR=${HOST_MOUNT} ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} up -d --build --wait --wait-timeout 600
@@ -151,6 +161,7 @@ pipeline {
 
         stage('Full stack + k6 smoke') {
             steps {
+                // Levanta el stack completo y ejecuta una prueba de humo de carga sobre la aplicación.
                 sh '''
                     if [ ! -f .env ]; then
                       cp .env.example .env
@@ -185,6 +196,7 @@ pipeline {
 
         stage('Docker image') {
             steps {
+                // Etiqueta la imagen construida para que pueda reutilizarse como build CI.
                 sh '${DOCKER} tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:ci'
             }
         }
@@ -192,6 +204,7 @@ pipeline {
 
     post {
         always {
+            // Limpieza final para dejar sin residuos los contenedores y proyectos creados por el pipeline.
             sh '''
                 ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI} down -v || true
                 ${DOCKER_COMPOSE} -f ${COMPOSE_CI} -p ${PROJECT_CI}-data down -v || true

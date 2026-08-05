@@ -13,9 +13,12 @@ services:
       - OTEL_ENABLED=${OTEL_ENABLED:-true}
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://alloy:4318/v1/traces}
       - OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME:-manage-system}
-      # Browser-facing issuer/authorize stay on localhost; server-side uses Docker DNS.
-      - KEYCLOAK_ISSUER=http://localhost:8080/realms/inventory-realm
-      - KEYCLOAK_AUTHORIZE_URL=http://localhost:8080/realms/inventory-realm/protocol/openid-connect/auth
+      # Browser-facing issuer/authorize default to localhost; override via .env.cloudflare
+      # (or any other env file) when running behind a tunnel/proxy. Server-side URLs
+      # always use Docker DNS since those calls never leave the container network.
+      - KEYCLOAK_ISSUER=${KEYCLOAK_ISSUER:-http://localhost:8080/realms/inventory-realm}
+      - KEYCLOAK_AUTHORIZE_URL=${KEYCLOAK_AUTHORIZE_URL:-http://localhost:8080/realms/inventory-realm/protocol/openid-connect/auth}
+      - KEYCLOAK_LOGOUT_BASE=${KEYCLOAK_LOGOUT_BASE:-http://localhost:8080/realms/inventory-realm/protocol/openid-connect/logout}
       - KEYCLOAK_TOKEN_URL=http://keycloak_auth:8080/realms/inventory-realm/protocol/openid-connect/token
       - KEYCLOAK_USERINFO_URL=http://keycloak_auth:8080/realms/inventory-realm/protocol/openid-connect/userinfo
       - KEYCLOAK_JWKS_URL=http://keycloak_auth:8080/realms/inventory-realm/protocol/openid-connect/certs
@@ -52,11 +55,14 @@ services:
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-password}
       KEYCLOAK_ADMIN: ${KEYCLOAK_USER:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_PASSWORD:-admin}
-      KC_HOSTNAME_URL: http://localhost:8080
-      KC_HOSTNAME_ADMIN_URL: http://localhost:8080
+      KC_HOSTNAME_URL: ${KC_HOSTNAME_URL:-http://localhost:8080}
+      KC_HOSTNAME_ADMIN_URL: ${KC_HOSTNAME_ADMIN_URL:-http://localhost:8080}
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_HOSTNAME_STRICT_BACKCHANNEL: "true"
+      # Left unset locally (Keycloak rejects an empty string here). Only gets a
+      # real value when .env.cloudflare is merged in via --env-file.
+      KC_PROXY_HEADERS:
     command: start-dev --import-realm
     ports:
       - "8080:8080"
@@ -167,8 +173,9 @@ services:
     ports:
       - "3000:3000"
     environment:
-      GF_AUTH_ANONYMOUS_ENABLED: "true"
-      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
     volumes:
       - ${CI_PROJECT_DIR:-.}/observability/grafana/provisioning:/etc/grafana/provisioning:ro
       - grafana_data:/var/lib/grafana

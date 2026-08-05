@@ -1,12 +1,15 @@
 name: CI
 
 on:
+  # Dispara la tubería en cambios hacia las ramas principales del proyecto.
   push:
     branches: [main, dev]
+  # Valida también los pull requests antes de mezclar cambios.
   pull_request:
     branches: [main, dev]
 
 env:
+  # Variables de entorno compartidas por todos los jobs del workflow.
   PYTHON_VERSION: "3.12"
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: ci_password
@@ -16,6 +19,7 @@ env:
   PYTHONPATH: .
 
 concurrency:
+  # Evita que dos ejecuciones del mismo branch se pisen entre sí.
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
@@ -24,17 +28,21 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
+      # Obtiene el código fuente de la rama o PR que disparó el workflow.
       - uses: actions/checkout@v4
 
+      # Instala Python con caché de pip para acelerar el resto del pipeline.
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: requirements.txt
 
+      # Instala dependencias de runtime y test.
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # Verifica que la aplicación principal importe correctamente.
       - name: Verify application imports
         run: python -c "from app.main import app; assert app is not None"
 
@@ -43,17 +51,21 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      # Repite checkout para ejecutar pruebas en el runner limpio de este job.
       - uses: actions/checkout@v4
 
+      # Prepara Python y reutiliza caché de pip.
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: requirements.txt
 
+      # Instala dependencias requeridas por los tests.
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # Ejecuta la batería rápida de pruebas unitarias.
       - name: Run unit tests
         run: pytest tests/test_products.py tests/test_stock.py -v --tb=short
 
@@ -62,17 +74,21 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      # Revisa el código exacto del build para validar la API sobre ese commit.
       - uses: actions/checkout@v4
 
+      # Prepara el entorno de ejecución para Schemathesis y Flask.
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: requirements.txt
 
+      # Instala dependencias de testing y contrato.
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # Verifica el contrato OpenAPI y la compatibilidad básica de endpoints.
       - name: Run Schemathesis contract tests
         run: pytest tests/test_contract.py -v --tb=short
 
@@ -81,6 +97,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     services:
+      # Levanta una base de datos temporal para probar migraciones y persistencia.
       postgres:
         image: postgres:16
         env:
@@ -95,20 +112,25 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
+      # Toma el código bajo prueba en este runner.
       - uses: actions/checkout@v4
 
+      # Instala Python y habilita caché de dependencias.
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: requirements.txt
 
+      # Instala dependencias necesarias para migraciones y tests.
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # Aplica el esquema a la base temporal antes de probar.
       - name: Apply database migrations
         run: flask db upgrade
 
+      # Valida datos y migraciones de forma aislada.
       - name: Run data and migration tests
         run: pytest tests/data/ -v --tb=short
 
@@ -117,6 +139,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [unit-tests, api-tests, integration-tests]
     services:
+      # Reutiliza una base temporal para correr la suite con cobertura.
       postgres:
         image: postgres:16
         env:
@@ -131,20 +154,25 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
+      # Obtiene el árbol de fuentes que se va a medir.
       - uses: actions/checkout@v4
 
+      # Prepara el runtime de Python para ejecutar la suite con cobertura.
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: requirements.txt
 
+      # Instala dependencias del proyecto.
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # Aplica migraciones antes de ejecutar pruebas de cobertura.
       - name: Apply database migrations
         run: flask db upgrade
 
+      # Ejecuta toda la suite no-E2E y genera métricas de cobertura.
       - name: Run tests with coverage (no E2E)
         run: |
           pytest tests/ -m "not e2e" \
@@ -153,6 +181,7 @@ jobs:
             --cov-report=term-missing \
             --tb=short
 
+      # Publica el XML de cobertura para consumo externo.
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
@@ -165,11 +194,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: [unit-tests, api-tests]
     steps:
+      # Descarga el código y los tests del commit actual.
       - uses: actions/checkout@v4
 
+      # Levanta el stack de CI completo para probar la app integrada con sus servicios.
       - name: Start CI stack (Postgres, Keycloak, Flask)
         run: docker compose -f docker-compose.ci.yml up -d --build
 
+      # Espera a que Keycloak publique su configuración OIDC antes de seguir.
       - name: Wait for Keycloak
         run: |
           for i in $(seq 1 36); do
@@ -182,6 +214,7 @@ jobs:
           docker compose -f docker-compose.ci.yml logs keycloak
           exit 1
 
+      # Espera a que Flask responda antes de ejecutar pruebas E2E.
       - name: Wait for Flask
         run: |
           for i in $(seq 1 36); do
@@ -194,9 +227,11 @@ jobs:
           docker compose -f docker-compose.ci.yml logs web
           exit 1
 
+      # Aplica migraciones en el contenedor web del stack E2E.
       - name: Ensure database migrations applied
         run: docker compose -f docker-compose.ci.yml exec -T web flask db upgrade
 
+      # Resetea credenciales de prueba para que los tests tengan usuarios previsibles.
       - name: Reset Keycloak user passwords for E2E
         run: |
           docker compose -f docker-compose.ci.yml exec -T keycloak bash -c '
@@ -219,18 +254,21 @@ jobs:
             done
           '
 
+      # Instala Python y Playwright para correr pruebas de navegador.
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: requirements.txt
 
+      # Prepara dependencias de app y navegador antes de lanzar E2E.
       - name: Install dependencies and Playwright
         run: |
           pip install -r requirements.txt
           playwright install chromium
           playwright install-deps chromium
 
+      # Ejecuta la suite E2E contra el stack ya levantado.
       - name: Run E2E tests
         env:
           E2E_BASE_URL: http://localhost:5000
@@ -240,10 +278,12 @@ jobs:
           E2E_MANAGER_PASSWORD: password123
         run: pytest tests/e2e -m e2e -v --tb=short
 
+      # Muestra logs si algo falla para facilitar el diagnóstico.
       - name: Dump logs on failure
         if: failure()
         run: docker compose -f docker-compose.ci.yml logs --no-color
 
+      # Apaga el stack E2E siempre, aunque haya errores.
       - name: Stop CI stack
         if: always()
         run: docker compose -f docker-compose.ci.yml down -v || true
@@ -253,12 +293,15 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      # Toma el código exacto que se va a auditar.
       - uses: actions/checkout@v4
 
+      # Prepara Python para instalar y ejecutar pip-audit.
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      # Ejecuta el escaneo de vulnerabilidades de dependencias.
       - name: Run pip-audit
         run: |
           pip install pip-audit
@@ -269,7 +312,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [unit-tests, api-tests, integration-tests]
     steps:
+      # Obtiene el código fuente que se va a empaquetar.
       - uses: actions/checkout@v4
 
+      # Construye la imagen final de la aplicación como validación de empaquetado.
       - name: Build application image
         run: docker build -t manage-system:ci .
