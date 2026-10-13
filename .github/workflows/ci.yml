@@ -67,7 +67,17 @@ jobs:
 
       # Ejecuta la batería rápida de pruebas unitarias.
       - name: Run unit tests
-        run: pytest tests/test_products.py tests/test_stock.py -v --tb=short
+        run: |
+          mkdir -p reports
+          pytest tests/test_products.py tests/test_stock.py -v --tb=short --junitxml=reports/junit-unit.xml
+
+      - name: Upload unit test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-unit
+          path: reports/junit-unit.xml
+          retention-days: 14
 
   api-tests:
     name: API / contract tests
@@ -90,7 +100,17 @@ jobs:
 
       # Verifica el contrato OpenAPI y la compatibilidad básica de endpoints.
       - name: Run Schemathesis contract tests
-        run: pytest tests/test_contract.py -v --tb=short
+        run: |
+          mkdir -p reports
+          pytest tests/test_contract.py -v --tb=short --junitxml=reports/junit-api.xml
+
+      - name: Upload API test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-api
+          path: reports/junit-api.xml
+          retention-days: 14
 
   integration-tests:
     name: Integration / data tests
@@ -132,7 +152,17 @@ jobs:
 
       # Valida datos y migraciones de forma aislada.
       - name: Run data and migration tests
-        run: pytest tests/data/ -v --tb=short
+        run: |
+          mkdir -p reports
+          pytest tests/data/ -v --tb=short --junitxml=reports/junit-data.xml
+
+      - name: Upload data test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-data
+          path: reports/junit-data.xml
+          retention-days: 14
 
   coverage:
     name: Coverage
@@ -175,19 +205,27 @@ jobs:
       # Ejecuta toda la suite no-E2E y genera métricas de cobertura.
       - name: Run tests with coverage (no E2E)
         run: |
+          mkdir -p reports
           pytest tests/ -m "not e2e" \
             --cov=app \
             --cov-report=xml \
+            --cov-report=html:reports/htmlcov \
             --cov-report=term-missing \
+            --junitxml=reports/junit-non-e2e.xml \
             --tb=short
 
       # Publica el XML de cobertura para consumo externo.
       - name: Upload coverage report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-xml
-          path: coverage.xml
+          path: |
+            coverage.xml
+            reports/junit-non-e2e.xml
+            reports/htmlcov/**
           retention-days: 14
+          if-no-files-found: ignore
 
   e2e:
     name: E2E tests
@@ -276,9 +314,23 @@ jobs:
           E2E_ALICE_PASSWORD: password123
           E2E_MANAGER_USER: kratos_boss
           E2E_MANAGER_PASSWORD: password123
-        run: pytest tests/e2e -m e2e -v --tb=short
+        run: |
+          mkdir -p reports
+          pytest tests/e2e -m e2e -v --tb=short --junitxml=reports/junit-e2e.xml
 
       # Muestra logs si algo falla para facilitar el diagnóstico.
+      - name: Upload E2E report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-e2e
+          path: |
+            reports/junit-e2e.xml
+            test-results/**
+            tests/e2e/screenshots/**
+          retention-days: 14
+          if-no-files-found: ignore
+
       - name: Dump logs on failure
         if: failure()
         run: docker compose -f docker-compose.ci.yml logs --no-color
@@ -305,7 +357,16 @@ jobs:
       - name: Run pip-audit
         run: |
           pip install pip-audit
-          pip-audit -r requirements.txt
+          mkdir -p reports
+          pip-audit -r requirements.txt --format json -o reports/pip-audit.json
+
+      - name: Upload dependency audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit
+          path: reports/pip-audit.json
+          retention-days: 14
 
   docker-build:
     name: Docker build

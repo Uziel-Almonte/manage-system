@@ -22,7 +22,7 @@ def init_oauth(app):
     
     oauth.register(
         name='keycloak',
-        client_id=os.getenv('KEYCLOAK_CLIENT_ID', 'flask-app'),
+        client_id=os.getenv('KEYCLOAK_CLIENT_ID', 'flask-backend'),
         client_secret=os.getenv('KEYCLOAK_CLIENT_SECRET', ''),
         # The URL the user's browser is redirected to (must be accessible from the outside)
         authorize_url=os.getenv('KEYCLOAK_AUTHORIZE_URL', "http://localhost:8080/realms/inventory-realm/protocol/openid-connect/auth"),

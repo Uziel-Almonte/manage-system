@@ -25,6 +25,7 @@ services:
       - KEYCLOAK_REALM_URL=http://keycloak_auth:8080/realms/inventory-realm
       - KEYCLOAK_ADMIN_API_URL=http://keycloak_auth:8080/admin
       - KEYCLOAK_ADMIN_TOKEN_URL=http://keycloak_auth:8080/realms/master/protocol/openid-connect/token
+      - KEYCLOAK_CLIENT_ID=flask-backend
       - KEYCLOAK_TOKEN_CLIENT_ID=flask-backend
     depends_on:
       - db
@@ -203,7 +204,7 @@ services:
       - "12345:12345"
     volumes:
       - ${CI_PROJECT_DIR:-.}/observability/alloy/config.alloy:/etc/alloy/config.alloy:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock:ro
       - alloy_data:/var/lib/alloy
     command:
       - run
