@@ -104,6 +104,13 @@ prometheus-data/
 loki-data/
 
 # =========================
+# Cloudflare tunnel (local demo)
+# =========================
+.tools/
+.cloudflare-tunnel/
+.env.cloudflare
+
+# =========================
 # SonarCloud
 # =========================
 .scannerwork/

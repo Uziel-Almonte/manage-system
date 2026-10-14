@@ -1,34 +1,52 @@
+#desactivamos la autenticacion para que no nos pida usuario y contraseña
 auth_enabled: false
 
+#Aqui determinamos el puerto http en el que se ejecutara loki
 server:
   http_listen_port: 3100
 
+
 common:
+  #Define /loki como directorio base utilizado por Loki para determinados archivos y datos.
   path_prefix: /loki
   storage:
     filesystem:
+      #aqui de se dfine el directorio donde se almacenaran los chunks de datos y las reglas de alertas
       chunks_directory: /loki/chunks
       rules_directory: /loki/rules
+  #se define que no habra replicacion de datos.
   replication_factor: 1
+  #Configura el mecanismo que Loki utiliza para mantener información sobre los miembros de su ring.
   ring:
     kvstore:
       store: inmemory
 
 schema_config:
   configs:
+      #Indicamos que fecha se aplica esta configuracion de almacenamiento.
     - from: 2024-01-01
+      #Definimos que el tipo de almacenamiento sera en disco y sera tsdb, que es un motor de almacenamiento de series temporales.
       store: tsdb
+      #Aqui determinamos que se almacerana de manera local. 
       object_store: filesystem
+      #Aqui determinamos la version del esquima de almacenamiento/
       schema: v13
+      #Aqui se determina que el identificador claramente es el archivo de indice, y se define un periodo de 24 horas. 
       index:
         prefix: index_
         period: 24h
 
+#aqui determinamos limites en los datos que loki acepta
 limits_config:
+  #Permite que loki acepte structured metada asociada a los logs.
   allow_structured_metadata: true
+  #Habilita funcionalidades relacionadas con la consulta de volumen de logs.
   volume_enabled: true
+  #Indica que Loki debe rechazar logs demasiado antiguos según el límite establecido.
   reject_old_samples: true
+  #Aqui se determina el limite para la afirmacon anterior
   reject_old_samples_max_age: 168h  # aumenta esto (ej: 7 días en vez del default ~1 semana o menos)
 
+#desactimaos el reporte analitco de loki para evitar analitica desde la instancia. 
 analytics:
   reporting_enabled: false

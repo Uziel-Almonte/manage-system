@@ -35,6 +35,14 @@ products_bp = Blueprint('products', 'products', url_prefix='/api/products', desc
 @products_bp.route('', methods=['GET'])
 @require_scope('product:view')
 def get_products():
+    """
+    Qué hace: devuelve una lista paginada de productos con búsqueda, filtro y ordenamiento.
+    Por qué lo hace: para exponer el inventario a clientes o pantallas que lo necesiten consumir.
+    Cómo lo hace: lee query params, construye una consulta SQLAlchemy, aplica filtros y paginación, y serializa cada producto.
+    De dónde viene: la petición llega desde `GET /api/products` con parámetros opcionales en la URL.
+    A dónde va: responde con un JSON que contiene total de páginas, página actual y la lista de productos.
+    Librerías externas: usa Flask para leer la request y SQLAlchemy/Marshmallow para la consulta y serialización.
+    """
     search = request.args.get('search')
     category = request.args.get('category')
     page = request.args.get('page', 1, type=int)
@@ -71,6 +79,14 @@ def get_products():
 @require_scope('product:manage')
 @products_bp.arguments(ProductSchema)
 def create_product(data):
+    """
+    Qué hace: crea un producto nuevo a partir de datos validados por Marshmallow.
+    Por qué lo hace: para persistir productos desde la API y mantener el inventario actualizado.
+    Cómo lo hace: valida el payload, evita SKU duplicado, guarda el registro en la base de datos y actualiza métricas de telemetría.
+    De dónde viene: los datos llegan de un cliente que hace `POST /api/products` con JSON.
+    A dónde va: responde con el producto creado o un error si la validación o la base de datos fallan.
+    Librerías externas: usa Flask, Flask-Smorest/Marshmallow para validar el body, SQLAlchemy para persistir y telemetría para métricas.
+    """
     if not data or not data.get('name') or not data.get('sku') or not data.get('price'):
         return jsonify({'error': 'Name, SKU, and price are required fields'}), 400
     
@@ -101,6 +117,14 @@ def create_product(data):
 @require_scope('product:manage')
 @products_bp.arguments(ProductUpdateSchema)
 def update_product(data, product_id):
+    """
+    Qué hace: actualiza un producto existente con los campos enviados.
+    Por qué lo hace: para mantener la información del inventario sincronizada con la API.
+    Cómo lo hace: carga el producto, aplica cambios parciales, valida SKU duplicado y registra movimientos si cambió la cantidad.
+    De dónde viene: la orden llega desde `PUT /api/products/<product_id>` con un payload JSON.
+    A dónde va: responde con el producto actualizado o un error si el ID no existe o la validación falla.
+    Librerías externas: usa Flask, SQLAlchemy y la capa de stock/telemetría para crear el movimiento y actualizar métricas.
+    """
     try:
         product = Product.query.get(product_id)
     except OverflowError:
@@ -143,6 +167,14 @@ def update_product(data, product_id):
 @products_bp.route('/<int:product_id>', methods=['GET'])
 @require_scope('product:view')
 def get_single_product(product_id):
+    """
+    Qué hace: devuelve un producto específico por su identificador.
+    Por qué lo hace: para consultar el detalle de un elemento del inventario.
+    Cómo lo hace: busca el registro por ID y lo serializa a JSON.
+    De dónde viene: la petición llega desde `GET /api/products/<product_id>`.
+    A dónde va: responde con el producto encontrado o un error si no existe.
+    Librerías externas: usa Flask y SQLAlchemy para obtener el registro.
+    """
     try:
         product = Product.query.get(product_id)
     except OverflowError:
@@ -154,6 +186,14 @@ def get_single_product(product_id):
 @products_bp.route('/<int:product_id>', methods=['DELETE'])
 @require_scope('product:manage')
 def delete_product(product_id):
+    """
+    Qué hace: elimina un producto del sistema.
+    Por qué lo hace: para retirar registros que ya no deben permanecer activos.
+    Cómo lo hace: busca el producto por ID, lo borra de la base de datos y actualiza métricas de inventario.
+    De dónde viene: la petición llega desde `DELETE /api/products/<product_id>`.
+    A dónde va: responde con un mensaje de éxito o un error si el producto no existe.
+    Librerías externas: usa Flask y SQLAlchemy para borrar el registro, y telemetría para recalcular métricas.
+    """
     try:
         product = Product.query.get(product_id)
     except OverflowError:

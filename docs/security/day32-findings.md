@@ -40,6 +40,10 @@ The ZAP **baseline** scan is passive and **unauthenticated**. It only crawls pub
 
 ---
 
+## Staging re-scan (2026-10-13)
+
+`bash scripts/run-staging-qa.sh` brought up `docker-compose.staging.yml` and repeated the baseline scan against the staging web service (`http://web:5000`). Result: **FAIL 0, WARN 13, PASS 54**. The warnings are the same set as the original scan below (missing headers, CORS `*`, CDN scripts). No new failure was introduced. Playwright against http://localhost:5000 passed after the OAuth client id was set to `flask-backend`.
+
 ## OWASP ZAP baseline — summary
 
 | Result | Count |

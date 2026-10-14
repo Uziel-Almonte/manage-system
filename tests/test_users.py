@@ -5,6 +5,14 @@ from unittest.mock import patch
 @patch('app.users.views.get_user_realm_roles', return_value=[{'name': 'group:manager'}])
 @patch('app.users.views.list_users')
 def test_list_users_ok(mock_list, mock_roles, app_client):
+    """
+    Qué hace: valida que el listado de usuarios API responda con datos y roles.
+    Por qué lo hace: para asegurar que la vista de administración agrupa correctamente la información.
+    Cómo lo hace: parchea los helpers de Keycloak y comprueba la forma del JSON devuelto.
+    De dónde viene: la petición sale de `GET /api/users`.
+    A dónde va: espera un payload con `data` y `manageable_roles`.
+    Librerías externas: usa Pytest `patch` para simular Keycloak y Flask para la request.
+    """
     mock_list.return_value = [
         {
             'id': 'u1',
@@ -27,6 +35,14 @@ def test_list_users_ok(mock_list, mock_roles, app_client):
 @patch('app.users.views.get_user_realm_roles', return_value=[{'name': 'group:employee'}])
 @patch('app.users.views.create_user')
 def test_create_user_issues_token(mock_create, mock_roles, mock_token, app_client):
+    """
+    Qué hace: comprueba que crear un usuario también emita un token.
+    Por qué lo hace: para verificar el flujo completo de alta de usuario y autenticación.
+    Cómo lo hace: simula la creación en Keycloak y la emisión del JWT, luego valida la respuesta.
+    De dónde viene: la petición sale de `POST /api/users`.
+    A dónde va: espera un JSON con `user` y `token`.
+    Librerías externas: usa `patch` de Pytest para aislar llamadas a Keycloak.
+    """
     mock_create.return_value = {
         'id': 'u2',
         'username': 'newbie',
@@ -61,6 +77,14 @@ def test_create_user_issues_token(mock_create, mock_roles, mock_token, app_clien
 @patch('app.users.views.set_user_roles', return_value=['product:view', 'stock:view'])
 @patch('app.users.views.get_user')
 def test_set_roles(mock_get, mock_set, app_client):
+    """
+    Qué hace: verifica que la API actualice roles de usuario correctamente.
+    Por qué lo hace: para asegurar que el endpoint de permisos funcione.
+    Cómo lo hace: simula el usuario y la asignación de roles, luego revisa la respuesta.
+    De dónde viene: la petición sale de `PUT /api/users/u1/roles`.
+    A dónde va: espera que el JSON contenga los roles actualizados.
+    Librerías externas: usa `patch` de Pytest para aislar Keycloak.
+    """
     mock_get.return_value = {
         'id': 'u1',
         'username': 'alice_worker',

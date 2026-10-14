@@ -1,32 +1,42 @@
+# configuracion del archivo completo. determina el tiempo de resolucion de alertas, la ruta de las alertas y los receptores 
+# para cada equipo y severidad.
 global:
   resolve_timeout: 5m
 
 route:
-  receiver: default
-  group_by: [alertname, team]
-  group_wait: 30s
-  group_interval: 5m
-  repeat_interval: 1h
+  receiver: default #define como default todas las alertas que no tengan un receptor especifico
+  group_by: [alertname, team] #indica que las alertas se agruparan por nombre de alerta y equipo
+  group_wait: 30s #indica el tiempo de espera para agrupar alertas es de 30 segundos
+  group_interval: 5m #indica el tiempo que debe pasar antes de volver a notificar sobre cambios dentro de un grupo existente.
+  repeat_interval: 1h #indica el tiempo que debe pasar antes de repetir una notificación de una alerta que continúa activa.
   routes:
+      #Se busca las alertas de severity=critical y team=security, las manda al receptor security-critical y se repite cada 30 minutos
     - match: {severity: critical, team: security}
       receiver: security-critical
       repeat_interval: 30m
 
+      #Se busca las alertas de severity=critical y team=infra, las manda al receptor infra-critical y se repite cada 30 minutos
     - match: {severity: critical, team: infra}
       receiver: infra-critical
 
+      #Se busca las alertas de severity=critical y team=backend, las manda al receptor backend-critical y se repite cada 30 minutos
     - match: {severity: critical, team: backend}
       receiver: backend-critical
 
+      #Se busca las alertas de team=backend, las manda al receptor backend-team
     - match: {team: backend}
       receiver: backend-team
 
+      #Se busca las alertas de team=security, las manda al receptor security-team
     - match: {team: security}
       receiver: security-team
 
+      #Se busca las alertas de team=infra, las manda al receptor infra-team
     - match: {team: infra}
       receiver: infra-team
 
+#aqui se definen el destino de las notificaciones
+#aqui no hay ningun webhook configurado. 
 receivers:
   - name: default
     webhook_configs: []
@@ -49,6 +59,7 @@ receivers:
   - name: security-critical
     webhook_configs: []
 
+#Aqui se define que cuando haya una alerta de critical y otra de warning del mismo grupo la alerta de warning se silenciara.
 inhibit_rules:
   - source_match:
       severity: critical

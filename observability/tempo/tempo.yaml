@@ -1,24 +1,32 @@
+#comenzamos deviniendo el puesto en el que se escuchara.
 server:
   http_listen_port: 3200
 
 distributor:
   receivers:
+    #definimos para Recibe trazas mediante OpenTelemetry Protocol (OTLP).
     otlp:
       protocols:
+        #Hace que Tempo acepte trazas mediante OTLP/gRPC en el puerto:4317
         grpc:
           endpoint: 0.0.0.0:4317
+        #Permite que Tempo reciba trazas mediante el puerto 4318
         http:
           endpoint: 0.0.0.0:4318
 
+#Aqui se configura cuánto tiempo puede permanecer un bloque de trazas en proceso de construcción antes de cerrarse.
 ingester:
   max_block_duration: 5m
 
+#Define una política de retención para los bloques de trazas de 24 horas
 compactor:
   compaction:
     block_retention: 24h
 
 storage:
   trace:
+    #se determina que se guardara de manera local
     backend: local
     local:
+      #Y aqui se determina la direccion del archivo
       path: /var/tempo/traces

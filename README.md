@@ -48,7 +48,7 @@ docker compose --profile e2e run --rm e2e
 
 ### Everything (full matrix)
 
-Runs unit, API, data, coverage, pip-audit, E2E, observability health checks, and k6 smoke:
+Runs unit, API, data, coverage, pip-audit, E2E, observability health checks, and k6 smoke. JUnit XML, coverage HTML, and the k6 summary are written under `reports/` (open `reports/index.html`).
 
 ```bash
 bash scripts/run-full-test-suite.sh
@@ -148,6 +148,30 @@ Start only observability helpers:
 bash scripts/start-observability.sh
 ```
 
+## Staging
+
+Same host ports as the local stack. Stop the local stack first. The staging file runs Gunicorn from the built image, checks health, and keeps Keycloak in its own database.
+
+```bash
+bash scripts/run-staging-qa.sh
+```
+
+The script starts staging, runs the Playwright suite against http://localhost:5000, and writes an OWASP ZAP baseline report to `security-reports/staging-zap-baseline.html`.
+
+## Documentation
+
+| Document | Contents |
+|----------|----------|
+| [docs/INSTALL.md](docs/INSTALL.md) | Install and start with Compose |
+| [docs/requirements.md](docs/requirements.md) | Functional and non-functional requirements |
+| [docs/architecture.md](docs/architecture.md) | Context, container, login, and data diagrams |
+| [docs/DEMO.md](docs/DEMO.md) | Live demo script |
+| [docs/BRANCHES.md](docs/BRANCHES.md) | `main`, `dev`, and `feature/*` |
+| [docs/APP_FLOW.md](docs/APP_FLOW.md) | Request and data flow |
+| [docs/FULL_APP_GUIDE.md](docs/FULL_APP_GUIDE.md) | File-by-file walkthrough |
+| [docs/contributions.md](docs/contributions.md) | Commit, pull request, and issue counts |
+| [docs/SONARCLOUD.md](docs/SONARCLOUD.md) | Optional SonarCloud hook (not part of CI) |
+
 ## Project layout
 
 ```
@@ -157,6 +181,7 @@ observability/        Prometheus, Grafana, Loki, Tempo, Alloy configs
 jenkins/              Jenkins image + plugins
 scripts/              test runners and stack verification
 docker-compose.yml    full stack
+docker-compose.staging.yml  staging stack (Gunicorn, isolated Keycloak DB)
 docker-compose.ci.yml minimal stack for CI/E2E
 Jenkinsfile           Jenkins pipeline
 ```

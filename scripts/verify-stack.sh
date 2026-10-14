@@ -8,6 +8,16 @@ cd "$ROOT_DIR"
 # shellcheck disable=SC1091
 source "$ROOT_DIR/scripts/ci-http-check.sh"
 
+# Pick up GRAFANA_ADMIN_USER/PASSWORD (and anything else) exactly as configured
+# for the running containers, rather than guessing a default that could drift
+# from whatever .env actually contains.
+if [[ -f "$ROOT_DIR/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$ROOT_DIR/.env"
+  set +a
+fi
+
 CI_HOST="${CI_HOST:-localhost}"
 
 json_query() {
@@ -41,8 +51,10 @@ print(sum(1 for t in data["data"]["activeTargets"] if t["labels"].get("job") == 
   echo "OK  Prometheus job=$job is UP"
 done
 
+GRAFANA_AUTH=(-u "${GRAFANA_ADMIN_USER:-admin}:${GRAFANA_ADMIN_PASSWORD:-admin}")
+
 echo "==> Grafana dashboards (provisioned)"
-DASHBOARDS="$(ci_curl "http://${CI_HOST}:3000/api/search?type=dash-db")"
+DASHBOARDS="$(ci_curl "${GRAFANA_AUTH[@]}" "http://${CI_HOST}:3000/api/search?type=dash-db")"
 DASH_COUNT="$(DASHBOARDS="$DASHBOARDS" json_query 'import json, os; print(len(json.loads(os.environ["DASHBOARDS"])))')"
 if [[ "$DASH_COUNT" -lt 4 ]]; then
   echo "FAIL Expected at least 4 Grafana dashboards, found $DASH_COUNT" >&2
@@ -69,7 +81,7 @@ print(any(d.get("title") == title for d in dashboards))
 done
 
 echo "==> Grafana datasources"
-DS_COUNT="$(ci_curl "http://${CI_HOST}:3000/api/datasources" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')"
+DS_COUNT="$(ci_curl "${GRAFANA_AUTH[@]}" "http://${CI_HOST}:3000/api/datasources" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')"
 if [[ "$DS_COUNT" -lt 3 ]]; then
   echo "FAIL Expected Prometheus, Loki, and Tempo datasources (found $DS_COUNT)" >&2
   exit 1

@@ -9,7 +9,7 @@
 
 **Day 1 — Repo & Structure**
 - [x] Create public GitHub repo
-- [ ] Set up branch strategy (main, develop, feature/*)
+- [x] Set up branch strategy (main, develop, feature/*) — see docs/BRANCHES.md (`dev` is develop)
 - [x] Add .gitignore, initial README
 - [ ] Enable branch protection on main
 
@@ -205,9 +205,9 @@
 - [x] Manual exploratory testing: write 2-3 charters, log bugs found as GitHub Issues
 
 **Day 35 — Rest & Catch Up**
-- [ ] Run full test suite end to end
-- [ ] Fix failing tests
-- [ ] Export all test reports (HTML/XML)
+- [x] Run full test suite end to end
+- [x] Fix failing tests
+- [x] Export all test reports (HTML/XML)
 
 ---
 
@@ -243,18 +243,41 @@
 - [ ] Verify visual pipeline runs and is green in Jenkins UI
 
 **Day 41 — Staging Environment & Final QA**
-- [ ] Write docker-compose.staging.yml replicating production
-- [ ] Deploy staging and run E2E + OWASP ZAP against the live staging URL
-- [ ] Fix any last issues found
+- [x] Write docker-compose.staging.yml replicating production
+- [x] Deploy staging and run E2E + OWASP ZAP against the live staging URL
+- [x] Fix any last issues found
 
 **Day 42 — Documentation & Presentation**
-- [ ] Write requirements document (functional & non-functional)
-- [ ] Write architecture diagrams
-- [ ] Write installation guide (docker compose up and you're done)
-- [ ] Finalize README
-- [ ] Prepare live demo for presentation
+- [x] Write requirements document (functional & non-functional)
+- [x] Write architecture diagrams
+- [x] Write installation guide (docker compose up and you're done)
+- [x] Finalize README
+- [x] Prepare live demo for presentation
 - [ ] Verify both teammates have equitable commits, PRs, and issues
 
 ---
 
 ## 🏗️ Project Structure
+
+```
+app/                  Flask app, blueprints, Jinja templates
+migrations/           Alembic revisions
+keycloak/             Realm import (roles, clients, test users)
+tests/                unit, contract, data, e2e, k6
+observability/        Prometheus, Grafana, Loki, Tempo, Alloy, Alertmanager
+jenkins/              Jenkins image and job seed
+scripts/              test runner, staging QA, stack checks
+docs/                 requirements, architecture, install, demo, flow
+docker-compose.yml            local stack (source mounted, Flask dev server)
+docker-compose.staging.yml    staging stack (image, Gunicorn, Keycloak DB)
+docker-compose.ci.yml         Postgres + Keycloak + Flask for CI
+Jenkinsfile                   Jenkins pipeline
+.github/workflows/ci.yml      GitHub Actions
+```
+
+Still open, because they need a GitHub admin, a SonarCloud token, or a running Jenkins UI:
+
+- Enable branch protection on `main` (`docs/BRANCHES.md`)
+- Connect SonarCloud (`docs/SONARCLOUD.md`, workflow is manual and not part of CI)
+- Confirm the Jenkins job `manage-system` is green in the UI
+- Confirm teammate commit and pull-request counts are even (`docs/contributions.md`)
