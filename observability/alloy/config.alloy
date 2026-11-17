@@ -1,4 +1,6 @@
 // Receive OTLP traces and logs from the Flask app.
+// este es el receptor otpl(OpenTelemetry protocol) y habre edpoints para que otras aplicaciones puedan enviar telemetría a Alloy mediante OpenTelemetry.
+// Aqui se recibe informacion de tanto tempo como de loki 
 otelcol.receiver.otlp "default" {
   grpc {
     endpoint = "0.0.0.0:4317"
