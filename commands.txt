@@ -1,0 +1,257 @@
+manage-system — commands for the presentation
+=============================================
+
+All commands assume you are in the project folder:
+
+    cd /home/thewanderer/manage-system
+
+This machine does not have Docker. In every new terminal, run this once
+so the docker command talks to Podman:
+
+    export PATH="$HOME/.local/bin:$PATH"
+    export DOCKER_HOST="unix://${XDG_RUNTIME_DIR}/podman/podman.sock"
+    export DOCKER_SOCK="${XDG_RUNTIME_DIR}/podman/podman.sock"
+
+.env is already in the project folder. You do not need to copy it again.
+
+
+1. Open the app (no tests)
+--------------------------
+
+    docker compose up -d --build
+    docker compose exec web flask db upgrade
+
+Then open:
+
+    App          http://localhost:5000
+    API docs     http://localhost:5000/docs
+    Health       http://localhost:5000/health
+    Keycloak     http://localhost:8080
+    Grafana      http://localhost:3000
+    Prometheus   http://localhost:9090
+
+Keycloak's first start can take a minute. Wait until
+http://localhost:8080 answers before you sign in.
+
+Sign in from the app with "Continuar con Keycloak".
+
+    alice_worker   password123
+        Employee. Dashboard, products, and stock.
+        Reports, audit, and users stay hidden.
+
+    kratos_boss    password123
+        Manager. Add a product, reject a duplicate SKU, record a
+        stock exit, then open reports, audit, and users.
+
+Suggested order in the room:
+
+    1. Sign in as alice_worker.
+    2. Show the dashboard, search products, record a stock entry.
+    3. Sign out.
+    4. Sign in as kratos_boss.
+    5. Add a product, try the same SKU again, record an exit.
+    6. Open reports, audit, and users.
+    7. Open /docs and Grafana if you want the API and dashboards.
+
+Stop the app when you are done. The database volume is kept.
+
+    docker compose down
+
+
+2. Tests
+--------
+
+The normal app can stay up for a quick service check.
+The full suite and staging use ports 5000, 8080, and 5432,
+so stop the app first if you run those:
+
+    docker compose down
+
+Full suite. Unit tests, contract tests, migrations, coverage,
+dependency audit, Playwright, observability stack, and a short
+k6 smoke test. Reports are written to reports/. Open
+reports/index.html when it finishes.
+
+    bash scripts/run-full-test-suite.sh
+
+Same suite without the browser tests and without the full stack:
+
+    RUN_E2E=false RUN_STACK=false bash scripts/run-full-test-suite.sh
+
+App is already up, and you only want to show that every service
+answers (Flask, Keycloak, Prometheus, Grafana, Loki, Tempo,
+Alertmanager, Alloy, and an authenticated API call):
+
+    bash scripts/verify-stack.sh
+
+
+3. Individual tests
+-------------------
+
+Unit and contract tests do not need the app running.
+Browser tests, k6, and verify-stack.sh do. Leave
+"docker compose up" running for those.
+
+Products, stock, and users:
+
+    pytest tests/test_products.py tests/test_stock.py tests/test_users.py -v
+
+One file, or one test inside a file:
+
+    pytest tests/test_products.py -v
+    pytest tests/test_products.py::TestProductCRUD::test_create_and_get_product -v
+
+API contract (Schemathesis):
+
+    pytest tests/test_contract.py -v
+
+Migrations and the duplicate-SKU rule. These need Postgres.
+With the demo stack already up, point them at that database:
+
+    export FLASK_APP=app.main
+    export DATABASE_URL=postgresql://postgres:your_password_here@localhost:5432/inventory_db
+    flask db upgrade
+    pytest tests/data/ -v
+
+Browser tests. The app from "docker compose up" has to be running.
+
+    export E2E_BASE_URL=http://localhost:5000
+    export E2E_ALICE_USER=alice_worker
+    export E2E_ALICE_PASSWORD=password123
+    export E2E_MANAGER_USER=kratos_boss
+    export E2E_MANAGER_PASSWORD=password123
+    pytest tests/e2e/test_auth.py -m e2e -v
+
+The other browser files are tests/e2e/test_products.py,
+tests/e2e/test_stock.py, and tests/e2e/test_audit.py.
+All four at once:
+
+    pytest tests/e2e -m e2e -v
+
+Load smoke. The app must be up.
+
+    docker run --rm --network host -v "$PWD:/app" -w /app \
+      -e BASE_URL=http://localhost:5000 \
+      -e KEYCLOAK_URL=http://localhost:8080 \
+      grafana/k6:0.53.0 run tests/k6/smoke-test.js
+
+tests/k6/load-test.js is the 50-user products test.
+tests/k6/stress-test.js is the stock-movement stress test.
+
+Do not run the full suite or staging while this app is up.
+Both need ports 5000, 8080, and 5432, and the full suite
+stops whatever is already using them.
+
+
+4. Staging
+----------
+
+Same app, but from the built image, with Gunicorn, health checks,
+and Keycloak in its own database. Stop the normal stack first.
+Staging uses the same host ports.
+
+    docker compose down
+    bash scripts/run-staging-qa.sh
+
+That starts staging, runs the 4 browser tests against
+http://localhost:5000, and writes the OWASP ZAP report to:
+
+    security-reports/staging-zap-baseline.html
+
+Start staging without the tests:
+
+    docker compose -f docker-compose.staging.yml -p manage-system-staging up -d --build
+
+Stop staging:
+
+    docker compose -f docker-compose.staging.yml -p manage-system-staging down
+
+
+5. Jenkins
+----------
+
+Only if you want the pipeline on screen. The app does not need
+to be running.
+
+    docker compose --profile jenkins up -d --build jenkins
+
+Open http://localhost:8090 and run the job named manage-system.
+It reads the Jenkinsfile and runs the same stages as the full
+test script: build, unit, API, migrations, coverage, security,
+Playwright, full stack plus k6, and a final Docker image.
+
+Stop Jenkins:
+
+    docker compose --profile jenkins down
+
+
+6. What you do not run by hand
+------------------------------
+
+GitHub Actions runs by itself on a push or pull request to main
+or dev. It builds, then runs unit tests, contract tests, migration
+tests, coverage, Playwright, the dependency audit, and a Docker
+image build. It does not start Grafana or k6. That extra stage is
+only in:
+
+    bash scripts/run-full-test-suite.sh
+
+and in the Jenkins job.
+
+
+7. SonarQube (local, optional)
+------------------------------
+
+Separate from the app stack. Does not touch its data.
+
+    docker compose -f docker-compose.sonar.yml -p manage-system-sonar up -d
+
+Wait about 2 minutes, open http://localhost:9000 (admin / admin, then
+change the password). Create a project with key "manage-system", then
+My Account > Security > generate a token. Then:
+
+    export SONAR_TOKEN=<your token>
+    bash scripts/run-sonar-scan.sh
+
+Results: http://localhost:9000/dashboard?id=manage-system
+
+Stop it (keeps its data):
+
+    docker compose -f docker-compose.sonar.yml -p manage-system-sonar down
+
+
+8. Python coverage (local)
+--------------------------
+
+Report from the last full test run:
+
+    xdg-open reports/htmlcov/index.html
+
+Regenerate it. Needs Postgres, so use the full suite instead:
+
+    RUN_E2E=false RUN_STACK=false bash scripts/run-full-test-suite.sh
+
+(This wipes the app database. Do not run it before the presentation.)
+
+Quick coverage without a database (unit + contract tests only, in Docker):
+
+    docker run --rm -v "$PWD:/app" -w /app -e PYTHONPATH=/app -e FLASK_APP=app.main \
+      python:3.12-slim bash -lc "pip install -q -r requirements.txt && \
+      pytest tests/test_products.py tests/test_stock.py tests/test_contract.py \
+      --cov=app --cov-report=term-missing --cov-report=html:htmlcov -q"
+
+Then open htmlcov/index.html. Or print the total from the existing XML:
+
+    python3 -c "import xml.etree.ElementTree as E;print(round(float(E.parse('reports/coverage.xml').getroot().get('line-rate'))*100,1),'%')"
+
+
+Fast coverage with no database and no Docker (unit, API, UI and auth tests,
+about 98% of app/). From the project folder:
+
+    python3 -m venv /tmp/venv && /tmp/venv/bin/pip install -q -r requirements.txt
+    DATABASE_URL=sqlite:///:memory: /tmp/venv/bin/pytest tests/ -m "not e2e" \
+      --ignore=tests/e2e --ignore=tests/data --cov=app --cov-report=term-missing \
+      --cov-report=html:htmlcov -q
+
+New test files: tests/test_ui_routes.py, tests/test_keycloak_admin.py,
+tests/test_auth_security.py, tests/test_api_edge_cases.py.

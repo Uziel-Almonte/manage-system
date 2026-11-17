@@ -37,24 +37,33 @@ def get_audit_logs():
     GET /audit?table=products&record_id=1&action=UPDATE&limit=50&offset=0
     Obtiene logs de auditoría con filtros opcionales
     """
-    table = request.args.get('table', None)
+    # Los filtros opcionales se sacan de la url mediante request.args.get 
+    # Si no se pasan, se asigna None.
+    table = request.args.get('table', None) 
     record_id = request.args.get('record_id', None, type=int)
     action = request.args.get('action', None)
     limit = request.args.get('limit', 50, type=int)
     offset = request.args.get('offset', 0, type=int)
-    
+
+    # Aqui comenzamos a construir la query sobre AuditLog. 
+    # Inicialmente es una query sin filtros.
     query = AuditLog.query
-    
+
+    # comenzamos a agregar los filtros a la query
     if table:
         query = query.filter_by(table_name=table)
     if record_id:
         query = query.filter_by(record_id=record_id)
     if action:
         query = query.filter_by(action=action)
-    
+
+    # se obtiene el total de los registros obtenido despues del filtro.
     total = query.count()
+    # se obtienen los registros aplicando limit y offset para paginar.
     logs = query.order_by(AuditLog.timestamp.desc()).limit(limit).offset(offset).all()
-    
+
+    # devolvemos la respuesta en formato JSON con el total, el limit y el offset
+    # y los registros convertidos a diccionarios mediante to_dict().
     return jsonify({
         'total': total,
         'limit': limit,
@@ -85,25 +94,35 @@ A DÓNDE VA:
     Devuelve los registros de auditoría del producto en formato JSON.
     Si no existen registros, devuelve un error 404.
 """
+# determinamos que el id del producto se pasa como parte de la url
+#  y se recibe como argumento de la funcion.
 @audit_bp.route('/product/<int:product_id>', methods=['GET'])
 @require_scope('audit:view')
 def get_product_audit(product_id):
+    # se determina el limit y offset desde los parametros de la url
+    # si no hay se ponen 50 y 0 respectivamente.
     limit = request.args.get('limit', 50, type=int)
     offset = request.args.get('offset', 0, type=int)
 
     try:
+        # hacemos la query filtrando por tabla 'products' y por el id del producto
         query = AuditLog.query.filter_by(
             table_name='products',
             record_id=product_id
         )
+        # determinamos el total de registros encontrados con los filtros aplicados
         total = query.count()
+        # obtenemos los registros aplicando limit y offset para paginar
         logs = query.order_by(AuditLog.timestamp.desc()).limit(limit).offset(offset).all()
+    # en caso de que el total sea demasiado grande y cause un OverflowError    
     except OverflowError:
         return jsonify({'total': 0, 'limit': limit, 'offset': offset, 'data': []}), 200
 
+    # en caso de que no se encuentren registros, devolvemos un error 404 con un mensaje
     if total == 0:
         return jsonify({'error': 'No audit logs found for this product'}), 404
 
+    # devolvemos la respuesta en formato JSON con el total, el limit y el offset
     return jsonify({
         'total': total,
         'limit': limit,
@@ -135,25 +154,35 @@ A DÓNDE VA:
     Devuelve los registros de auditoría del movimiento en formato JSON.
     Si no existen registros asociados, devuelve una respuesta 404.
 """
+# se determina que el id del movimiento se pasa como parte de la url
 @audit_bp.route('/movement/<int:movement_id>', methods=['GET'])
 @require_scope('audit:view')
 def get_movement_audit(movement_id):
+    # se determina el limit y offset desde los parametros de la url
+    # si no hay se ponen 50 y 0 respectivamente.
     limit = request.args.get('limit', 50, type=int)
     offset = request.args.get('offset', 0, type=int)
 
     try:
+        # hacemos la query filtrando por tabla 'stock_movements' 
+        # y por el id del movimiento
         query = AuditLog.query.filter_by(
             table_name='stock_movements',
             record_id=movement_id
         )
+        # determinamos el total de registros encontrados con los filtros aplicados
         total = query.count()
+        # obtenemos los registros aplicando limit y offset para paginar
         logs = query.order_by(AuditLog.timestamp.desc()).limit(limit).offset(offset).all()
+    # en caso de que el total sea demasiado grande y cause un OverflowError    
     except OverflowError:
         return jsonify({'total': 0, 'limit': limit, 'offset': offset, 'data': []}), 200
 
+    # en caso de que no se encuentren registros, devolvemos un error 404 con un mensaje
     if total == 0:
         return jsonify({'error': 'No audit logs found for this movement'}), 404
 
+    # devolvemos la respuesta en formato JSON con el total, el limit y el offset
     return jsonify({
         'total': total,
         'limit': limit,

@@ -36,6 +36,7 @@ A DÓNDE VA:
     lo persista mediante commit().
 """
 def register_stock_movement(product, movement_type, previous_qty, new_qty, user='system', notes=''):
+    # se crea un objeto StockMovement con los datos recibidos
     movement = StockMovement(
         product_id=product.id,
         user=user,
@@ -44,7 +45,11 @@ def register_stock_movement(product, movement_type, previous_qty, new_qty, user=
         new_qty=new_qty,
         notes=notes,
     )
+    # se agrega el movimiento a la sesión de SQLAlchemy 
+    # para que se suba a la base de datos cuando se haga commit
     db.session.add(movement)
+    # se devuelve el objeto movement creado para que pueda ser 
+    # usado por quien llamó a la función
     return movement
 
 """
@@ -81,7 +86,10 @@ A DÓNDE VA:
     Al igual que la función anterior, no ejecuta commit() por sí misma.
 """
 def register_qty_change_movement(product, previous_qty, new_qty, user='system', notes='Actualización manual de stock'):
+    # se determina el tipo de movimiento según la comparación 
+    # entre la cantidad anterior y la nueva
     movement_type = 'entry' if new_qty > previous_qty else 'exit'
+    # se delega el registro del movimiento a register_stock_movement()
     return register_stock_movement(
         product,
         movement_type,

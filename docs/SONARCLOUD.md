@@ -14,3 +14,7 @@ Coverage is read from `coverage.xml`, which the Coverage job already uploads as 
 ```bash
 pytest tests/ -m "not e2e" --cov=app --cov-report=xml --cov-report=term-missing
 ```
+
+## Local SonarQube
+
+For a local server instead of SonarCloud, use `docker-compose.sonar.yml` and `scripts/run-sonar-scan.sh`. See section 7 of `commands.txt`. Both ports and volumes are separate from the app stack.
