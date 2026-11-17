@@ -1,0 +1,256 @@
+# Staging stack. Same services as docker-compose.yml, with a built image,
+# Gunicorn, health checks, and a database reserved for Keycloak.
+# Uses the same host ports as local development. Stop the other stack first.
+#
+#   docker compose -f docker-compose.staging.yml -p manage-system-staging up -d --build
+
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /app
+      FLASK_APP: app.main
+      FLASK_SECRET_KEY: ${FLASK_SECRET_KEY:-staging-secret-change-me}
+      OTEL_ENABLED: ${OTEL_ENABLED:-true}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://alloy:4318/v1/traces}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-manage-system}
+      KEYCLOAK_HOST: keycloak
+      KEYCLOAK_WAIT_ATTEMPTS: "180"
+      KEYCLOAK_WAIT_DELAY: "2"
+      KEYCLOAK_ISSUER: http://localhost:8080/realms/inventory-realm
+      KEYCLOAK_AUTHORIZE_URL: http://localhost:8080/realms/inventory-realm/protocol/openid-connect/auth
+      KEYCLOAK_TOKEN_URL: http://keycloak:8080/realms/inventory-realm/protocol/openid-connect/token
+      KEYCLOAK_USERINFO_URL: http://keycloak:8080/realms/inventory-realm/protocol/openid-connect/userinfo
+      KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/inventory-realm/protocol/openid-connect/certs
+      KEYCLOAK_REALM_URL: http://keycloak:8080/realms/inventory-realm
+      KEYCLOAK_ADMIN_API_URL: http://keycloak:8080/admin
+      KEYCLOAK_ADMIN_TOKEN_URL: http://keycloak:8080/realms/master/protocol/openid-connect/token
+      KEYCLOAK_CLIENT_ID: flask-backend
+      KEYCLOAK_TOKEN_CLIENT_ID: flask-backend
+    command: >
+      sh -c "set -eu;
+             python scripts/wait-for-keycloak-realm.py;
+             flask db upgrade;
+             exec gunicorn --bind 0.0.0.0:5000 --workers 1 --timeout 120 app.main:app"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/auth/login-page', timeout=3)\""]
+      interval: 5s
+      timeout: 5s
+      retries: 36
+      start_period: 120s
+    depends_on:
+      db:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      alloy:
+        condition: service_started
+
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-inventory_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  keycloak-db-init:
+    image: postgres:16
+    env_file:
+      - .env
+    entrypoint:
+      - bash
+      - -ec
+      - |
+        export PGPASSWORD="$POSTGRES_PASSWORD"
+        until pg_isready -h db -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do sleep 1; done
+        if ! psql -h db -U "$POSTGRES_USER" -d postgres -tc "SELECT 1 FROM pg_database WHERE datname='keycloak'" | grep -q 1; then
+          psql -h db -U "$POSTGRES_USER" -d postgres -c 'CREATE DATABASE keycloak'
+        fi
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.1
+    restart: unless-stopped
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: db
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: ${POSTGRES_USER:-postgres}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_USER:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_PASSWORD:-admin}
+      KC_HOSTNAME_URL: http://localhost:8080
+      KC_HOSTNAME_ADMIN_URL: http://localhost:8080
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HOSTNAME_STRICT_BACKCHANNEL: "false"
+      KC_HEALTH_ENABLED: "true"
+      KC_HTTP_RELATIVE_PATH: /
+    command: start-dev --import-realm
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080 && echo -e \"GET /realms/inventory-realm/.well-known/openid-configuration HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3 && head -1 <&3 | grep -q \"200\"'"]
+      interval: 10s
+      timeout: 10s
+      retries: 60
+      start_period: 300s
+    depends_on:
+      db:
+        condition: service_healthy
+      keycloak-db-init:
+        condition: service_completed_successfully
+    volumes:
+      - ${CI_PROJECT_DIR:-.}/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+
+  zap:
+    image: zaproxy/zap-stable
+    profiles:
+      - security
+    user: zap
+    environment:
+      SECURITY_SCAN_TARGET: ${SECURITY_SCAN_TARGET:-http://web:5000}
+    command: >
+      sh -c "zap-baseline.py
+      -t $$SECURITY_SCAN_TARGET
+      -r staging-zap-baseline.html
+      -J staging-zap-baseline.json
+      -I"
+    volumes:
+      - ${CI_PROJECT_DIR:-.}/security-reports:/zap/wrk:rw
+    depends_on:
+      - web
+
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ${CI_PROJECT_DIR:-.}/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ${CI_PROJECT_DIR:-.}/observability/prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-inventory_db}?sslmode=disable"
+    ports:
+      - "9187:9187"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  tempo:
+    image: grafana/tempo:2.7.1
+    restart: unless-stopped
+    ports:
+      - "3200:3200"
+    volumes:
+      - ${CI_PROJECT_DIR:-.}/observability/tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo_data:/var/tempo
+    command: ["-config.file=/etc/tempo.yaml"]
+
+  loki:
+    image: grafana/loki:3.4.2
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ${CI_PROJECT_DIR:-.}/observability/loki/loki.yaml:/etc/loki/loki.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/loki.yaml
+
+  grafana:
+    image: grafana/grafana:11.5.2
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - ${CI_PROJECT_DIR:-.}/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - ${CI_PROJECT_DIR:-.}/observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+
+  alloy:
+    image: grafana/alloy:v1.6.1
+    restart: unless-stopped
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "12345:12345"
+    volumes:
+      - ${CI_PROJECT_DIR:-.}/observability/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - ${DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock:ro
+      - alloy_data:/var/lib/alloy
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    depends_on:
+      - tempo
+      - loki
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "9100:9100"
+
+volumes:
+  postgres_data:
+  prometheus_data:
+  tempo_data:
+  loki_data:
+  grafana_data:
+  alloy_data:
