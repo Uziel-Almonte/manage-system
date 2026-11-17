@@ -115,16 +115,24 @@ def capture_changes(mapper, connection, target):
         
         if not new_values:  # Sin cambios registrados
             return
-        
+
+        # Guardamos los valores en formato serializado en json para almacenarlo 
+        # en la base de datos.
         new_values = json_serialize(new_values)
         old_values = json_serialize(old_values)
+    # se entra a este else si la data no es persistente osea es data nueva osea es un insert
     else:
+        # Comenzamos poniendo que la action es un insert y que no hay valores antiguos.
         action = 'INSERT'
         old_values = None
-        # Obtén valores nuevos
+        # Obtenemos los valores nuevos
         new_values = {col.name: getattr(target, col.name) for col in mapper.columns}
+        # Guardamos los valores en formato serializado en json para almacenarlo en la 
+        # base de datos.
         new_values = json_serialize(new_values)
-    
+
+    # llegado aqui ya se tiene toda la informacion necesaria y se crea el audit en base
+    # a la informacion recolectada. 
     audit = AuditLog(
         table_name=table_name,
         record_id=target.id,
@@ -133,7 +141,8 @@ def capture_changes(mapper, connection, target):
         new_values=new_values,
         user=get_current_user(),
     )
-    db.session.add(audit)
+    db.session.add(audit) # se agrega el audit creado a la sesion de base de datos
+    # para que se suba cuando se haga commit de la sesion.
 
 """
 QUÉ HACE:
@@ -160,13 +169,21 @@ A DÓNDE VA:
 """
 def capture_deletion(mapper, connection, target):
     """Captura eliminaciones"""
+    # Se obtiene el nombre de la tabla del objeto eliminado.
     table_name = target.__tablename__
+    # comprobamos si la tabla es products o stock_movements, si no lo es, hace un return.
     if table_name not in ['products', 'stock_movements']:
         return
-    
+
+    # obtenemos los valores antiguos del objeto eliminado recorriendo 
+    # sus columnas y obteniendo el valor de cada una.
     old_values = {col.name: getattr(target, col.name) for col in mapper.columns}
+    # Se guardan los valores antiguos en formato serializado de json para 
+    # almacenarlos en la base de datos.
     old_values = json_serialize(old_values)
-    
+
+    # llegado aqui ya se tiene toda la informacion necesaria y se crea el audit en base
+    # a la informacion recolectada.
     audit = AuditLog(
         table_name=table_name,
         record_id=target.id,
@@ -175,7 +192,7 @@ def capture_deletion(mapper, connection, target):
         new_values=None,
         user=get_current_user(),
     )
-    db.session.add(audit)
+    db.session.add(audit) # se agrega el audit creado a la sesion de base de datos
 
 """
     QUÉ HACE:
@@ -203,14 +220,19 @@ A DÓNDE VA:
     correspondientes.
 """
 def register_audit_listeners():
-    """Registra los listeners en SQLAlchemy"""
+    # Importamos las clases Product y StockMovement para 
+    # registrar los listeners de auditoría.
     from app.products.models import Product
     from app.stock.models import StockMovement
-    
+
+    # hacemos listeners para que se lance despues de cada insert, 
+    # update o delete de los modelos Product
     event.listen(Product, 'after_insert', capture_changes, propagate=True)
     event.listen(Product, 'after_update', capture_changes, propagate=True)
     event.listen(Product, 'after_delete', capture_deletion, propagate=True)
-    
+
+    # hacemos listeners para que se lance despues de cada insert,
+    # update o delete de los modelos StockMovement
     event.listen(StockMovement, 'after_insert', capture_changes, propagate=True)
     event.listen(StockMovement, 'after_update', capture_changes, propagate=True)
     event.listen(StockMovement, 'after_delete', capture_deletion, propagate=True)
