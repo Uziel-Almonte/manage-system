@@ -15,7 +15,7 @@ A DÓNDE VA: El usuario obtenido se utiliza posteriormente al crear un registro 
             en la columna 'user' de la tabla audit_logs. 
 """
 def get_current_user():
-    """Obtiene el usuario actual de Flask context"""
+    # se usa para obtener el usuario actual por medio de g.user. 
     return getattr(g, 'user', 'system')
 
 """ 
@@ -28,17 +28,23 @@ DE DÓNDE VIENE: Recibe un diccionario construido a partir de los atributos de l
 A DÓNDE VA: Devuelve un nuevo diccionario serializado que posteriormente se almacena en old_values o new_values del AuditLog. 
 """
 def json_serialize(data):
-    """Convierte valores no JSON-serializables"""
+    # Comenzamos creando un json vacio 
     result = {}
+    # Recorremos cada par clave-valor del diccionario original
     for key, value in data.items():
+        #comprobamos si el valor es de tipo decimal, si es asi lo convertimos a float
         if isinstance(value, Decimal):
             result[key] = float(value)
+        # comprobamos si el valor es de tipo datetime, si es asi lo convertimos a string en formato ISO 8601
         elif isinstance(value, datetime):
             result[key] = value.isoformat()
+        # comprobamos si el valor es None, si es asi lo dejamos como None
         elif value is None:
             result[key] = None
+        # si no da ninguna de las anteriores, dejamos el valor tal cual
         else:
             result[key] = value
+    # devolvemos el diccionario resultante, que contiene los valores convertidos a tipos compatibles con JSON        
     return result
 
 """
@@ -79,7 +85,8 @@ def capture_changes(mapper, connection, target):
     # con una tabla asociada.
     if not hasattr(target, '__tablename__'):
         return
-    
+
+    #comprobamos si la tabla es products o stock_movements, si no lo es, regresamos.
     table_name = target.__tablename__
     if table_name not in ['products', 'stock_movements']:
         return
@@ -87,17 +94,22 @@ def capture_changes(mapper, connection, target):
     # Obtén el estado actual del objeto
     state = inspect(target)
     
-    # Determina si es INSERT o UPDATE
+    # Determina si es un insert
     if state.persistent:
         action = 'UPDATE'
-        # Obtén los cambios
+        # Creamos donde se van a guardar los valores antiguos y nuevos
         old_values = {}
         new_values = {}
-        
+
+        # Recorremos los atributos del objeto 
         for attr in state.attrs:
+            # usa la propiedad history de SQLAlchemy para determinar si el atributo ha cambiado o no
             if attr.history.has_changes():
+                # obtenemos el valor anterior con attr.history.deleted y si no hay valor se pone none.
                 old_val = attr.history.deleted[0] if attr.history.deleted else None
+                # obtenemos el valor nuevo o actual del sistema
                 new_val = attr.value
+                # y guardamos cada valor en su respectivo diccionario.
                 old_values[attr.key] = old_val
                 new_values[attr.key] = new_val
         

@@ -277,18 +277,30 @@ def init_telemetry(app: Flask, db: SQLAlchemy) -> None:
     provider.add_span_processor(
         BatchSpanProcessor(OTLPSpanExporter(endpoint=otlp_endpoint))
     )
+    # se declara que este sera el proveedor goblar que usara open telemetry 
     trace.set_tracer_provider(provider)
 
+    # creacion de instrumentacion y se le pone la instancia de flask para automatizar las trazas con cada peticion.
     FlaskInstrumentor().instrument_app(app)
+    # Se crea la instrumentacion de los logging para poder relaciones los logs con las trazas de open 
+    # telemetry y se evitar sobre escribir el formato se pone en false el set_logging_format
     LoggingInstrumentor().instrument(set_logging_format=False)
 
+    # se crea la instrumentacion de SQLalchemy para poder tener informacion de las consultas a la base de datos.
+    # se puede usar para por ejemplo comparar tiempos. 
     with app.app_context():
+        # se establece el contexto de la aplicacion para poder tener acceso a la base de datos 
+        # y despues se crea la intrumentacion de SQLAlchemy se le pasa el engine de la base de datos 
+        # y se habilita el comentarista para que se pueda ver en las trazas las consultas SQL.
         SQLAlchemyInstrumentor().instrument(
             engine=db.engine,
             enable_commenter=True,
         )
 
+    # se pone la variable global para marcar que esta iniciado telemetry.     
     _telemetry_initialized = True
+    # se genera un log informando que se telemetry esta prendido y se da la informacion del nombre del servidor 
+    # y el endpoint de OTLP que se esta usando para enviar las trazas.
     app.logger.info(
         "OpenTelemetry enabled service=%s endpoint=%s",
         service_name,
@@ -305,37 +317,51 @@ def init_metrics(app: Flask) -> None:
     A dónde va: las métricas quedan disponibles para Prometheus o un scraper similar.
     Librerías externas: sí, usa `prometheus_client` y Flask.
     """
+    # se verifica si open telemetry esta habilitado y si no existe se toma como false. 
     if os.getenv("OTEL_ENABLED", "false").lower() != "true":
         return
 
+    # aqui se importa librerias de prometheus_client y si da error se termina la funcion.
     try:
         from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
     except ImportError:
         return
 
+    # Aqui se crea el contador para determinal el total de request HTTP y se le pone etiquetas 
+    # de method, endpoint y status para poder filtrar por esos valores.
     request_count = Counter(
         "flask_http_request_total",
         "Total HTTP requests",
         ["method", "endpoint", "status"],
     )
+
+    # Aqui se crea un histograma para poder medir la latencia de los request http 
+    # y se pone etiquetas de method y endpoint para poder filtrar por esos valores.
     request_latency = Histogram(
         "flask_http_request_duration_seconds",
         "HTTP request latency",
         ["method", "endpoint"],
     )
 
+    # Aqui se crean el Gauge para poder medir las conexiones activas de la base de datos 
     db_pool_active_connections = Gauge(
         "db_pool_active_connections", "Conexiones activas del pool de DB"
     )
+    # aqui se crea el Gauge para poder medir el tamaño del pool de la base de datos.
     db_pool_max_connections = Gauge(
         "db_pool_max_connections", "Tamaño máximo configurado del pool de DB"
     )
-    
+
+    # Aqui se crea una funcion para obtener el pool de la conexion con la base de datos
     def _pool():
+        # se establece una conexion con la base de datos y se retorna el pool de conexiones.
         with app.app_context():
             return db.engine.pool
 
+    # aqui se hace un funcion lambda para obtener la cantidad de conexiones activas 
+    # del pool de la base de datos y se le asigna al Gauge.    
     db_pool_active_connections.set_function(lambda: _pool().checkedout())
+    # aqui se hace un funcion lambda para obtener el tamaño del pool de la base de datos
     db_pool_max_connections.set_function(lambda: _pool().size())
 
     @app.before_request
@@ -348,9 +374,11 @@ def init_metrics(app: Flask) -> None:
         A dónde va: el valor lo consume `_metrics_record()` al terminar la respuesta.
         Librerías externas: sí, usa Flask y `time.perf_counter`.
         """
+        #almacena el tiempo en el que se hizo la peticion.
         g._request_start_time = __import__("time").perf_counter()
 
     @app.after_request
+    # se recibe response que contiene informacion de la respuesta HTTP.
     def _metrics_record(response):
         """
         Qué hace: registra latencia y conteo de requests HTTP.
@@ -360,10 +388,14 @@ def init_metrics(app: Flask) -> None:
         A dónde va: los datos quedan expuestos en las métricas de Prometheus.
         Librerías externas: sí, usa `prometheus_client` y Flask.
         """
+        # Se obtiene el tiempo inicial del request con g.
         start = getattr(g, "_request_start_time", None)
         if start is not None:
+            # si se obtivo el inicio del tiempo se comiensa calculando el tiempo que trancurrio desde la peticion.
             elapsed = __import__("time").perf_counter() - start
+            #ahora se consigue el edpoint de la peticion y si no se consigue se pone unknown.
             endpoint = request.endpoint or "unknown"
+            # Aqui se registra la latencia y el conteo de request en prometheus con las etiquetas correspondientes.
             request_latency.labels(request.method, endpoint).observe(elapsed)
             request_count.labels(request.method, endpoint, str(response.status_code)).inc()
         return response
@@ -378,4 +410,5 @@ def init_metrics(app: Flask) -> None:
         A dónde va: responde directamente al cliente que recolecta métricas.
         Librerías externas: sí, usa `prometheus_client` y Flask.
         """
+        # se envia la respuesta con el contenido de las metricas y el content type de prometheus.
         return generate_latest(), 200, {"Content-Type": CONTENT_TYPE_LATEST}

@@ -10,6 +10,7 @@ from app.telemetry import record_invalid_token
 
 _public_keys = None
 
+# Esta funcion se llama en la siguiente funcion. 
 def get_keycloak_public_keys():
     """
     Qué hace: descarga y construye el conjunto de claves públicas de Keycloak.
@@ -19,21 +20,28 @@ def get_keycloak_public_keys():
     A dónde va: devuelve un diccionario indexado por `kid` para que `require_jwt` pueda validar tokens.
     Librerías externas: `urllib.request` obtiene el JWKS, `json` lo parsea y `PyJWT` reconstruye las claves.
     """
-    # Prefer KEYCLOAK_JWKS_URL so browser-facing KEYCLOAK_REALM_URL can stay on
-    # localhost while containers reach Keycloak via Docker DNS.
+    # obtenemos la URl de los .env
+    # tratamos de obtener la URL de KEYCLOAK_JWKS_URL 
     certs_url = os.environ.get('KEYCLOAK_JWKS_URL')
+    # si no se encuentra en .env
     if not certs_url:
+        # se optiene de KEYCLOAK_REALM_URL y se construye la URL de los certificados
         realm_url = os.environ.get('KEYCLOAK_REALM_URL')
         if not realm_url:
+            # si al ginal no se consiguio de ninguna de las dos da un error de que se debe configurar ambos. 
             raise ValueError("KEYCLOAK_JWKS_URL or KEYCLOAK_REALM_URL must be set")
         certs_url = f"{realm_url}/protocol/openid-connect/certs"
     try:
+        # aqui se descangan los certificados de la URL y se decodifican a JSON
         with urllib.request.urlopen(certs_url) as response:
             jwks = json.loads(response.read().decode())
+    # si hay un error al descargar los certificados con las URl se muestra el error en el log 
+    # y rompe la funcion regresando un diccionario vacio. 
     except Exception as e:
         current_app.logger.error(f"Failed to fetch JWKS from {certs_url}: {e}")
         return {}
 
+    
     public_keys = {}
     for jwk in jwks.get('keys', []):
         kid = jwk.get('kid')

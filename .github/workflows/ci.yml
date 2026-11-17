@@ -229,7 +229,8 @@ jobs:
 
   e2e:
     name: E2E tests
-    runs-on: ubuntu-latest
+    # Pinned: Playwright's browser dependencies are not available on the newer ubuntu-latest image.
+    runs-on: ubuntu-24.04
     needs: [unit-tests, api-tests]
     steps:
       # Descarga el código y los tests del commit actual.
