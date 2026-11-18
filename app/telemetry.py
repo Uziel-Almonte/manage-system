@@ -410,5 +410,11 @@ def init_metrics(app: Flask) -> None:
         A dónde va: responde directamente al cliente que recolecta métricas.
         Librerías externas: sí, usa `prometheus_client` y Flask.
         """
+        # el gauge products_total solo se actualizaba al crear/editar/borrar productos, asi que tras
+        # reiniciar la app marcaba 0 aunque la BD tuviera productos. Se refresca en cada scrape.
+        try:
+            sync_active_products_total()
+        except Exception:  # noqa: BLE001 - la BD caida no debe romper /metrics
+            logging.getLogger(__name__).warning("No se pudo sincronizar products_total", exc_info=True)
         # se envia la respuesta con el contenido de las metricas y el content type de prometheus.
         return generate_latest(), 200, {"Content-Type": CONTENT_TYPE_LATEST}

@@ -275,3 +275,20 @@ def test_logout_clears_session_and_redirects(app_client, monkeypatch):
     assert 'post_logout_redirect_uri=' in loc
     with app_client.session_transaction() as s:
         assert 'user' not in s
+
+
+class TestAuthFailureMetrics:
+    """Bad API tokens must feed the security dashboard/alert metrics (per-IP and total)."""
+
+    def test_missing_token_counts_failure_by_ip(self, client):
+        from app.telemetry import auth_failures_total, invalid_tokens_total
+
+        ip = '10.9.8.7'
+        before_ip = auth_failures_total.labels(source_ip=ip)._value.get()
+        before_total = invalid_tokens_total._value.get()
+
+        resp = client.get('/api/products', environ_overrides={'REMOTE_ADDR': ip})
+
+        assert resp.status_code == 401
+        assert auth_failures_total.labels(source_ip=ip)._value.get() == before_ip + 1
+        assert invalid_tokens_total._value.get() == before_total + 1

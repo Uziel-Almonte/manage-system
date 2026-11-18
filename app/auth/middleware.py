@@ -6,7 +6,7 @@ from functools import wraps
 from flask import request, jsonify, current_app, session, redirect, url_for
 import jwt
 from jwt.algorithms import RSAAlgorithm
-from app.telemetry import record_invalid_token
+from app.telemetry import record_auth_failure, record_invalid_token
 
 _public_keys = None
 
@@ -74,6 +74,7 @@ def require_jwt(f):
         auth_header = request.headers.get("Authorization", None)
         if not auth_header or not auth_header.startswith("Bearer "):
             record_invalid_token()
+            record_auth_failure(request.remote_addr)
             return jsonify({"message": "Missing or invalid authorization header"}), 401
 
         token = auth_header.split(" ")[1]
@@ -88,6 +89,7 @@ def require_jwt(f):
             
             if not kid or kid not in _public_keys:
                 record_invalid_token()
+                record_auth_failure(request.remote_addr)
                 return jsonify({"message": "Invalid token header or key not found"}), 401
 
             public_key = _public_keys[kid]
@@ -105,9 +107,11 @@ def require_jwt(f):
             
         except jwt.ExpiredSignatureError:
             record_invalid_token()
+            record_auth_failure(request.remote_addr)
             return jsonify({"message": "Token has expired"}), 401
         except jwt.InvalidTokenError as e:
             record_invalid_token()
+            record_auth_failure(request.remote_addr)
             return jsonify({"message": f"Invalid token: {str(e)}"}), 401
         except Exception as e:
             current_app.logger.error(f"JWT Verification failed: {e}")
