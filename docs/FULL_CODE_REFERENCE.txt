@@ -25,7 +25,7 @@ CONTENTS
    9. Testing strategy and how to run everything
   10. Appendix - full source of every file, with line numbers
 
-Size: 20 application modules (3445 lines), 18 test modules (3076 lines), 115 files in the appendix.
+Size: 20 application modules (3474 lines), 18 test modules (3076 lines), 115 files in the appendix.
 
 
 ====================================================================================================
@@ -262,24 +262,27 @@ id.
     (documentation written above the function in the source:)
     se determina que el id del movimiento se pasa como parte de la url
 
-app/auth/keycloak_admin.py   (476 lines)
+app/auth/keycloak_admin.py   (485 lines)
 ----------------------------------------
 Thin client for Keycloak's Admin REST API and token endpoint: URL/realm/env helpers, admin token,
 list/get/create users, realm roles, replace a user's roles, issue a user token for the demo panel,
 and a summary formatter. Errors are raised as KeycloakAdminError carrying an HTTP status.
   Functions and classes: 19
 
-  [class] KeycloakAdminError   (lines 24-30)
+  [class] KeycloakAdminError   (lines 25-33)
     class KeycloakAdminError(Exception)
-    Error controlado para operaciones fallidas contra la API de Keycloak.
+    (documentation written above the function in the source:)
+    clase para dar un error personalizado cuando hay un fallo en la comunicación
+    con Keycloak o en la lógica de administración
 
-      [function] KeycloakAdminError.__init__   (lines 27-30)
+      [function] KeycloakAdminError.__init__   (lines 28-33)
         def __init__(self, message: str, status_code: int=500)
         (documentation written above the function in the source:)
-        Error controlado para operaciones fallidas contra la API de Keycloak.
+        se inicializa con un mensaje y un codigo de estado HTTP opcional
+        por defecto 500)
         Summary: Stores the message and the HTTP status code to answer with (default 500).
 
-  [function] _admin_base_url   (lines 33-45)
+  [function] _admin_base_url   (lines 36-53)
     def _admin_base_url() -> str
     Qué hace: resuelve la URL base del API de administración de Keycloak.
     Por qué lo hace: para centralizar la dirección del servidor y evitar repetirla.
@@ -288,7 +291,7 @@ and a summary formatter. Errors are raised as KeycloakAdminError carrying an HTT
     A dónde va: se usa como base para construir las rutas de administración.
     Librerías externas: aquí no interviene una librería externa; solo `os.getenv`.
 
-  [function] _realm   (lines 48-57)
+  [function] _realm   (lines 56-66)
     def _realm() -> str
     Qué hace: obtiene el nombre del realm configurado.
     Por qué lo hace: para dirigir las operaciones al realm correcto de Keycloak.
@@ -297,7 +300,7 @@ and a summary formatter. Errors are raised as KeycloakAdminError carrying an HTT
     A dónde va: se inserta en todas las URLs de administración del realm.
     Librerías externas: no usa librerías externas; solo configuración del entorno.
 
-  [function] _token_url   (lines 60-80)
+  [function] _token_url   (lines 69-89)
     def _token_url() -> str
     Qué hace: construye la URL para pedir el token de administrador de Keycloak.
     Por qué lo hace: para autenticar llamadas al API de administración.
@@ -306,7 +309,7 @@ and a summary formatter. Errors are raised as KeycloakAdminError carrying an HTT
     A dónde va: se usa en `get_admin_access_token()` para solicitar el token.
     Librerías externas: no hay librerías externas aquí; solo string handling y `os.getenv`.
 
-  [function] _app_token_url   (lines 83-95)
+  [function] _app_token_url   (lines 92-104)
     def _app_token_url() -> str
     Qué hace: obtiene la URL del endpoint de token usado por la aplicación.
     Por qué lo hace: para pedir JWTs del cliente de frontend/backend sin mezclarlo con el token de admin.
@@ -315,7 +318,7 @@ and a summary formatter. Errors are raised as KeycloakAdminError carrying an HTT
     A dónde va: se consume en `fetch_user_access_token()`.
     Librerías externas: no usa librerías externas; solo configuración.
 
-  [function] get_admin_access_token   (lines 98-133)
+  [function] get_admin_access_token   (lines 107-142)
     def get_admin_access_token() -> str
     Qué hace: solicita un access token de administración para Keycloak.
     Por qué lo hace: porque la API admin requiere autenticación Bearer.
@@ -324,7 +327,7 @@ and a summary formatter. Errors are raised as KeycloakAdminError carrying an HTT
     A dónde va: el token resultante se reutiliza en `_headers()` para llamadas posteriores.
     Librerías externas: sí, usa `requests` para la petición HTTP.
 
-  [function] _headers   (lines 136-148)
+  [function] _headers   (lines 145-157)
     def _headers() -> dict[str, str]
     Qué hace: arma los encabezados HTTP estándar para el API de Keycloak.
     Por qué lo hace: para reutilizar autenticación y tipo de contenido en todas las llamadas.
@@ -333,7 +336,7 @@ and a summary formatter. Errors are raised as KeycloakAdminError carrying an HTT
     A dónde va: se pasa a `requests.get/post/delete` en el resto de funciones.
     Librerías externas: el header se usa para peticiones con `requests`, pero aquí no se llama directamente a una librería externa.
 
-  [function] _realm_url   (lines 151-160)
+  [function] _realm_url   (lines 160-169)
     def _realm_url(path: str='') -> str
     Qué hace: construye una URL completa del realm de administración.
     Por qué lo hace: para evitar repetir concatenación de rutas en cada función.
@@ -342,7 +345,7 @@ and a summary formatter. Errors are raised as KeycloakAdminError carrying an HTT
     A dónde va: se usa en casi todas las operaciones contra Keycloak.
     Librerías externas: no usa librerías externas; solo composición de strings.
 
-  [function] list_users   (lines 163-178)
+  [function] list_users   (lines 172-187)
     def list_users(search: str | None=None, max_results: int=50) -> list[dict[str, Any]]
     Qué hace: lista usuarios del realm con soporte opcional de búsqueda.
     Por qué lo hace: para alimentar pantallas de administración de usuarios.
@@ -351,7 +354,7 @@ and a summary formatter. Errors are raised as KeycloakAdminError carrying an HTT
     A dónde va: devuelve una lista de diccionarios listos para ser renderizados o procesados.
     Librerías externas: sí, usa `requests` para hablar con Keycloak.
 
-  [function] get_user   (lines 181-195)
+  [function] get_user   (lines 190-204)
     def get_user(user_id: str) -> dict[str, Any]
     Qué hace: obtiene los detalles de un usuario por su ID.
     Por qué lo hace: para mostrar o actualizar información concreta de la cuenta.
@@ -360,7 +363,7 @@ and a summary formatter. Errors are raised as KeycloakAdminError carrying an HTT
     A dónde va: retorna el JSON del usuario o un error controlado si no existe.
     Librerías externas: sí, usa `requests`.
 
-  [function] find_user_id_by_username   (lines 198-216)
+  [function] find_user_id_by_username   (lines 207-225)
     def find_user_id_by_username(username: str) -> str | None
     Qué hace: busca el ID de un usuario por nombre de usuario exacto.
     Por qué lo hace: porque varias operaciones de Keycloak necesitan el ID interno y no el username.
@@ -369,7 +372,7 @@ and a summary formatter. Errors are raised as KeycloakAdminError carrying an HTT
     A dónde va: devuelve el ID o `None` si no se encuentra.
     Librerías externas: sí, usa `requests` para consultar Keycloak.
 
-  [function] create_user   (lines 219-265)
+  [function] create_user   (lines 228-274)
     def create_user(*, username: str, email: str, first_name: str, last_name: str, password: str, enabled: bool=True, roles: list[str] | None=None) -> dict[str, Any]
     Qué hace: crea un usuario nuevo en Keycloak y opcionalmente le asigna roles.
     Por qué lo hace: para registrar cuentas administrables desde la aplicación.
@@ -378,7 +381,7 @@ and a summary formatter. Errors are raised as KeycloakAdminError carrying an HTT
     A dónde va: devuelve el usuario recién creado como diccionario de Keycloak.
     Librerías externas: sí, usa `requests` para crear y `Keycloak` para persistir el usuario.
 
-  [function] get_realm_roles   (lines 268-280)
+  [function] get_realm_roles   (lines 277-289)
     def get_realm_roles() -> list[dict[str, Any]]
     Qué hace: lista todos los roles del realm.
     Por qué lo hace: para validar y traducir nombres de roles antes de asignarlos.
@@ -387,7 +390,7 @@ and a summary formatter. Errors are raised as KeycloakAdminError carrying an HTT
     A dónde va: devuelve la lista completa de roles disponibles.
     Librerías externas: sí, usa `requests`.
 
-  [function] get_user_realm_roles   (lines 283-301)
+  [function] get_user_realm_roles   (lines 292-310)
     def get_user_realm_roles(user_id: str) -> list[dict[str, Any]]
     Qué hace: obtiene los roles de realm asignados a un usuario.
     Por qué lo hace: para mostrar permisos actuales o calcular cambios.
@@ -396,7 +399,7 @@ and a summary formatter. Errors are raised as KeycloakAdminError carrying an HTT
     A dónde va: retorna los roles asignados al usuario.
     Librerías externas: sí, usa `requests`.
 
-  [function] _role_reps   (lines 304-319)
+  [function] _role_reps   (lines 313-328)
     def _role_reps(role_names: list[str]) -> list[dict[str, Any]]
     Qué hace: convierte nombres de roles en representaciones completas de Keycloak.
     Por qué lo hace: porque la API de asignación espera objetos con `id` y `name`.
@@ -405,7 +408,7 @@ and a summary formatter. Errors are raised as KeycloakAdminError carrying an HTT
     A dónde va: devuelve una lista lista para enviarse al endpoint de asignación.
     Librerías externas: la consulta de roles usa `requests` indirectamente a través de `get_realm_roles()`.
 
-  [function] set_user_roles   (lines 322-379)
+  [function] set_user_roles   (lines 331-388)
     def set_user_roles(user_id: str, role_names: list[str]) -> list[str]
     Qué hace: reemplaza los roles administrables de un usuario por un nuevo conjunto.
     Por qué lo hace: para mantener permisos consistentes sin tocar roles externos a la app.
@@ -414,7 +417,7 @@ and a summary formatter. Errors are raised as KeycloakAdminError carrying an HTT
     A dónde va: devuelve la lista final de roles administrables activos para ese usuario.
     Librerías externas: sí, usa `requests` para modificar roles y `current_app` para registrar fallos de logout.
 
-  [function] fetch_user_access_token   (lines 382-456)
+  [function] fetch_user_access_token   (lines 391-465)
     def fetch_user_access_token(username: str, password: str) -> dict[str, Any]
     Qué hace: solicita un JWT de usuario mediante password grant y devuelve metadatos del token.
     Por qué lo hace: para mostrar o verificar la autenticación del usuario en la interfaz.
@@ -423,7 +426,7 @@ and a summary formatter. Errors are raised as KeycloakAdminError carrying an HTT
     A dónde va: retorna un diccionario con el token, tiempos y claims resumidos.
     Librerías externas: sí, usa `requests` para pedir el token y `PyJWT` para decodificarlo.
 
-  [function] user_summary   (lines 459-476)
+  [function] user_summary   (lines 468-485)
     def user_summary(user: dict[str, Any], roles: list[str] | None=None) -> dict[str, Any]
     Qué hace: normaliza la estructura de un usuario para la interfaz.
     Por qué lo hace: para unificar el formato que consumen las plantillas.
@@ -432,7 +435,7 @@ and a summary formatter. Errors are raised as KeycloakAdminError carrying an HTT
     A dónde va: devuelve un diccionario compacto listo para renderizar.
     Librerías externas: no usa librerías externas; solo transforma datos ya obtenidos.
 
-app/auth/middleware.py   (192 lines)
+app/auth/middleware.py   (205 lines)
 ------------------------------------
 Authentication and authorization decorators. require_jwt / require_scope protect the JSON API
 (Bearer JWT verified with Keycloak's public keys). login_required / require_ui_scope protect the web
@@ -448,28 +451,28 @@ pages using the Flask session. All four are bypassed when app.config["TESTING"] 
     A dónde va: devuelve un diccionario indexado por `kid` para que `require_jwt` pueda validar tokens.
     Librerías externas: `urllib.request` obtiene el JWKS, `json` lo parsea y `PyJWT` reconstruye las claves.
 
-  [function] require_jwt   (lines 52-121)
+  [function] require_jwt   (lines 52-134)
     def require_jwt(f)
     Qué hace: protege una vista exigiendo un JWT Bearer válido.
-    Por qué lo hace: para asegurar que las rutas de API solo respondan a solicitudes autenticadas.
+    Por qué lo hace: para asegurar que las rutas de API solo respondan a solicitudes autorizadas.
     Cómo lo hace: lee el header Authorization, obtiene la clave pública por `kid` y decodifica el token.
     De dónde viene: el token llega en el encabezado HTTP de la solicitud entrante.
     A dónde va: las claims decodificadas se guardan en `request.user_claims` para el resto del flujo.
     Librerías externas: Flask expone `request` y `current_app`, PyJWT verifica la firma y la expiración.
 
-      [function] require_jwt.decorated   (lines 62-120)
+      [function] require_jwt.decorated   (lines 62-133)
         @wraps(f)
         def decorated(*args, **kwargs)
         (documentation written above the function in the source:)
         Qué hace: protege una vista exigiendo un JWT Bearer válido.
-        Por qué lo hace: para asegurar que las rutas de API solo respondan a solicitudes autenticadas.
+        Por qué lo hace: para asegurar que las rutas de API solo respondan a solicitudes autorizadas.
         Cómo lo hace: lee el header Authorization, obtiene la clave pública por `kid` y decodifica el token.
         De dónde viene: el token llega en el encabezado HTTP de la solicitud entrante.
         A dónde va: las claims decodificadas se guardan en `request.user_claims` para el resto del flujo.
         Librerías externas: Flask expone `request` y `current_app`, PyJWT verifica la firma y la expiración.
         Summary: The wrapper that runs instead of the view: bypass in TESTING, read the Bearer header, find the key by kid, verify RS256 signature and expiry, store claims in request.user_claims, answer 401/500 on failure.
 
-  [function] require_scope   (lines 123-142)
+  [function] require_scope   (lines 136-155)
     def require_scope(required_scope)
     Qué hace: envuelve una vista para exigir un permiso específico en el JWT.
     Por qué lo hace: para separar la autenticación general de la autorización por capacidad.
@@ -478,7 +481,7 @@ pages using the Flask session. All four are bypassed when app.config["TESTING"] 
     A dónde va: si el permiso existe continúa la petición; si no, responde con 403.
     Librerías externas: depende de Flask para construir la respuesta JSON y de `require_jwt` para validar el token.
 
-      [function] require_scope.decorator   (lines 132-141)
+      [function] require_scope.decorator   (lines 145-154)
         def decorator(f)
         (documentation written above the function in the source:)
         Qué hace: envuelve una vista para exigir un permiso específico en el JWT.
@@ -489,13 +492,13 @@ pages using the Flask session. All four are bypassed when app.config["TESTING"] 
         Librerías externas: depende de Flask para construir la respuesta JSON y de `require_jwt` para validar el token.
         Summary: Receives the view function and returns the wrapped version (decorator factory step).
 
-          [function] require_scope.decorator.decorated_function   (lines 135-140)
+          [function] require_scope.decorator.decorated_function   (lines 148-153)
             @wraps(f)
             @require_jwt
             def decorated_function(*args, **kwargs)
             Summary: Runs after require_jwt: reads realm_access.roles from the claims and answers 403 if the required scope is missing.
 
-  [function] login_required   (lines 144-167)
+  [function] login_required   (lines 157-180)
     def login_required(f)
     Qué hace: protege vistas web que requieren una sesión Flask válida.
     Por qué lo hace: para evitar que usuarios anónimos entren a pantallas internas del sistema.
@@ -504,7 +507,7 @@ pages using the Flask session. All four are bypassed when app.config["TESTING"] 
     A dónde va: cuando la sesión es válida, expone el usuario en `g.user` y continúa con la vista.
     Librerías externas: Flask aporta `session`, `g`, `redirect` y `url_for`.
 
-      [function] login_required.decorated_function   (lines 154-166)
+      [function] login_required.decorated_function   (lines 167-179)
         @wraps(f)
         def decorated_function(*args, **kwargs)
         (documentation written above the function in the source:)
@@ -516,7 +519,7 @@ pages using the Flask session. All four are bypassed when app.config["TESTING"] 
         Librerías externas: Flask aporta `session`, `g`, `redirect` y `url_for`.
         Summary: Web-page guard: bypass in TESTING; redirect to /auth/login-page when the session has no user; otherwise set g.user and continue.
 
-  [function] require_ui_scope   (lines 170-192)
+  [function] require_ui_scope   (lines 183-205)
     def require_ui_scope(required_scope)
     Qué hace: protege rutas de la interfaz según permisos guardados en la sesión.
     Por qué lo hace: para controlar acciones sensibles desde la UI con una respuesta amigable.
@@ -525,7 +528,7 @@ pages using the Flask session. All four are bypassed when app.config["TESTING"] 
     A dónde va: si falta el permiso, muestra un flash y redirige al inicio; si no, deja seguir la vista.
     Librerías externas: Flask aporta `flash`, `redirect` y `url_for` para la navegación de UI.
 
-      [function] require_ui_scope.decorator   (lines 179-191)
+      [function] require_ui_scope.decorator   (lines 192-204)
         def decorator(f)
         (documentation written above the function in the source:)
         Qué hace: protege rutas de la interfaz según permisos guardados en la sesión.
@@ -536,7 +539,7 @@ pages using the Flask session. All four are bypassed when app.config["TESTING"] 
         Librerías externas: Flask aporta `flash`, `redirect` y `url_for` para la navegación de UI.
         Summary: Receives the view function and returns the wrapped version (decorator factory step).
 
-          [function] require_ui_scope.decorator.decorated_function   (lines 181-190)
+          [function] require_ui_scope.decorator.decorated_function   (lines 194-203)
             @wraps(f)
             def decorated_function(*args, **kwargs)
             Summary: Checks session user_scopes; on a missing permission flashes an access-denied message and redirects home with status 303.
@@ -1031,12 +1034,12 @@ add to the session but never commit.
         StockMovement a la sesión de SQLAlchemy y devuelve dicho objeto.
         Al igual que la función anterior, no ejecuta commit() por sí misma.
 
-app/stock/views.py   (262 lines)
+app/stock/views.py   (269 lines)
 --------------------------------
 JSON API under /api/stock: record a movement, query history with filters, and list low-stock alerts.
   Functions and classes: 4
 
-  [class] StockMovementSchema   (lines 40-45)
+  [class] StockMovementSchema   (lines 41-52)
     class StockMovementSchema(Schema)
     (documentation written above the function in the source:)
     QUÉ:
@@ -1066,20 +1069,20 @@ JSON API under /api/stock: record a movement, query history with filters, and li
         los entrega a add_movement() mediante el parámetro data. Si no
         cumplen, la petición es rechazada antes de ejecutar la función.
 
-  [function] add_movement   (lines 97-140)
+  [function] add_movement   (lines 104-147)
     @stock_bp.route('/movement', methods=['POST'])
     @require_scope('stock:manage')
     @stock_bp.arguments(StockMovementSchema)
     def add_movement(data)
     Summary: POST /api/stock/movement (needs stock:manage). The StockMovementSchema validates product_id, type (entry/exit) and qty_change (1 to 2,147,483,647). Unknown product -> 404; exit larger than stock or invalid type -> 400. Otherwise updates the product quantity, adds a StockMovement row, commits, updates the stock metric and returns the movement with 201.
 
-  [function] get_history   (lines 185-213)
+  [function] get_history   (lines 192-220)
     @stock_bp.route('/history', methods=['GET'])
     @require_scope('stock:view')
     def get_history()
     Summary: GET /api/stock/history. Optional filters product_id, type, user, date_from, date_to (YYYY-MM-DD; unparseable dates are ignored). Returns movements newest first. Needs stock:view.
 
-  [function] get_alerts   (lines 252-262)
+  [function] get_alerts   (lines 259-269)
     @stock_bp.route('/alerts', methods=['GET'])
     @require_scope('stock:view')
     def get_alerts()
@@ -2655,8 +2658,8 @@ Files included (in this order):
   - app/audit/listeners.py  (238 lines)
   - app/audit/models.py  (26 lines)
   - app/audit/views.py  (191 lines)
-  - app/auth/keycloak_admin.py  (476 lines)
-  - app/auth/middleware.py  (192 lines)
+  - app/auth/keycloak_admin.py  (485 lines)
+  - app/auth/middleware.py  (205 lines)
   - app/auth/views.py  (133 lines)
   - app/database.py  (3 lines)
   - app/main.py  (797 lines)
@@ -2666,7 +2669,7 @@ Files included (in this order):
   - app/reports/views.py  (169 lines)
   - app/stock/models.py  (28 lines)
   - app/stock/services.py  (100 lines)
-  - app/stock/views.py  (262 lines)
+  - app/stock/views.py  (269 lines)
   - app/telemetry.py  (420 lines)
   - app/templates/audit/index.html  (73 lines)
   - app/templates/audit/partials/audit_table.html  (121 lines)
@@ -2701,13 +2704,13 @@ Files included (in this order):
   - migrations/versions/a3f9c2d1e4b5_add_cascade_delete_on_stock_movements_fk.py  (33 lines)
   - migrations/versions/b76fc13a9c4a_create_audit_logs_table.py  (38 lines)
   - migrations/versions/c1fba7c68b3b_create_products_table.py  (35 lines)
-  - observability/alertmanager/alertmanager.yml  (68 lines)
+  - observability/alertmanager/alertmanager.yml  (71 lines)
   - observability/alloy/config.alloy  (105 lines)
   - observability/grafana/provisioning/dashboards/dashboards.yml  (11 lines)
   - observability/grafana/provisioning/dashboards/json/application.json  (274 lines)
   - observability/grafana/provisioning/dashboards/json/business.json  (176 lines)
   - observability/grafana/provisioning/dashboards/json/infrastructure.json  (171 lines)
-  - observability/grafana/provisioning/dashboards/json/security.json  (288 lines)
+  - observability/grafana/provisioning/dashboards/json/security.json  (180 lines)
   - observability/grafana/provisioning/datasources/datasources.yml  (39 lines)
   - observability/loki/loki.yaml  (52 lines)
   - observability/prometheus/prometheus.yml  (41 lines)
@@ -4358,7 +4361,7 @@ Files included (in this order):
 191 |     }), 200
 
 ####################################################################################################
-# FILE: app/auth/keycloak_admin.py   (476 lines)
+# FILE: app/auth/keycloak_admin.py   (485 lines)
 ####################################################################################################
   1 | """Keycloak Admin API helpers for user management."""
   2 | from __future__ import annotations
@@ -4382,463 +4385,472 @@ Files included (in this order):
  20 |     'user:manage',
  21 | ]
  22 | 
- 23 | 
- 24 | class KeycloakAdminError(Exception):
- 25 |     """Error controlado para operaciones fallidas contra la API de Keycloak."""
- 26 | 
- 27 |     def __init__(self, message: str, status_code: int = 500):
- 28 |         super().__init__(message)
- 29 |         self.status_code = status_code
- 30 |         self.message = message
- 31 | 
- 32 | 
- 33 | def _admin_base_url() -> str:
- 34 |     """
- 35 |     Qué hace: resuelve la URL base del API de administración de Keycloak.
- 36 |     Por qué lo hace: para centralizar la dirección del servidor y evitar repetirla.
- 37 |     Cómo lo hace: lee variables de entorno y aplica un valor por defecto seguro para el entorno local.
- 38 |     De dónde viene: el valor proviene de `KEYCLOAK_ADMIN_API_URL` o, si no existe, de `KEYCLOAK_INTERNAL_URL`.
- 39 |     A dónde va: se usa como base para construir las rutas de administración.
- 40 |     Librerías externas: aquí no interviene una librería externa; solo `os.getenv`.
- 41 |     """
- 42 |     return os.getenv(
- 43 |         'KEYCLOAK_ADMIN_API_URL',
- 44 |         os.getenv('KEYCLOAK_INTERNAL_URL', 'http://keycloak_auth:8080') + '/admin',
- 45 |     ).rstrip('/')
- 46 | 
- 47 | 
- 48 | def _realm() -> str:
- 49 |     """
- 50 |     Qué hace: obtiene el nombre del realm configurado.
- 51 |     Por qué lo hace: para dirigir las operaciones al realm correcto de Keycloak.
- 52 |     Cómo lo hace: lee una variable de entorno con valor por defecto.
- 53 |     De dónde viene: el realm viene de `KEYCLOAK_REALM` o del valor `inventory-realm`.
- 54 |     A dónde va: se inserta en todas las URLs de administración del realm.
- 55 |     Librerías externas: no usa librerías externas; solo configuración del entorno.
- 56 |     """
- 57 |     return os.getenv('KEYCLOAK_REALM', 'inventory-realm')
- 58 | 
- 59 | 
- 60 | def _token_url() -> str:
- 61 |     """
- 62 |     Qué hace: construye la URL para pedir el token de administrador de Keycloak.
- 63 |     Por qué lo hace: para autenticar llamadas al API de administración.
- 64 |     Cómo lo hace: prioriza una URL explícita y, si no existe, transforma la URL del realm hacia el realm `master`.
- 65 |     De dónde viene: la dirección sale de `KEYCLOAK_ADMIN_TOKEN_URL` o de `KEYCLOAK_TOKEN_URL`.
- 66 |     A dónde va: se usa en `get_admin_access_token()` para solicitar el token.
- 67 |     Librerías externas: no hay librerías externas aquí; solo string handling y `os.getenv`.
- 68 |     """
- 69 |     explicit = os.getenv('KEYCLOAK_ADMIN_TOKEN_URL')
- 70 |     if explicit:
- 71 |         return explicit
- 72 |     realm_token = os.getenv(
- 73 |         'KEYCLOAK_TOKEN_URL',
- 74 |         'http://keycloak_auth:8080/realms/inventory-realm/protocol/openid-connect/token',
- 75 |     )
- 76 |     # .../realms/<realm>/protocol/... → .../realms/master/protocol/...
- 77 |     if '/realms/' in realm_token:
- 78 |         prefix, rest = realm_token.split('/realms/', 1)
- 79 |         return f"{prefix}/realms/master/protocol/openid-connect/token"
- 80 |     return 'http://keycloak_auth:8080/realms/master/protocol/openid-connect/token'
- 81 | 
- 82 | 
- 83 | def _app_token_url() -> str:
- 84 |     """
- 85 |     Qué hace: obtiene la URL del endpoint de token usado por la aplicación.
- 86 |     Por qué lo hace: para pedir JWTs del cliente de frontend/backend sin mezclarlo con el token de admin.
- 87 |     Cómo lo hace: lee una variable de entorno o aplica un valor por defecto.
- 88 |     De dónde viene: el valor viene de `KEYCLOAK_TOKEN_URL`.
- 89 |     A dónde va: se consume en `fetch_user_access_token()`.
- 90 |     Librerías externas: no usa librerías externas; solo configuración.
- 91 |     """
- 92 |     return os.getenv(
- 93 |         'KEYCLOAK_TOKEN_URL',
- 94 |         'http://keycloak_auth:8080/realms/inventory-realm/protocol/openid-connect/token',
- 95 |     )
- 96 | 
- 97 | 
- 98 | def get_admin_access_token() -> str:
- 99 |     """
-100 |     Qué hace: solicita un access token de administración para Keycloak.
-101 |     Por qué lo hace: porque la API admin requiere autenticación Bearer.
-102 |     Cómo lo hace: hace un `POST` con `requests` al endpoint de token usando credenciales del entorno.
-103 |     De dónde viene: las credenciales provienen de variables como `KEYCLOAK_USER` y `KEYCLOAK_PASSWORD`.
-104 |     A dónde va: el token resultante se reutiliza en `_headers()` para llamadas posteriores.
-105 |     Librerías externas: sí, usa `requests` para la petición HTTP.
-106 |     """
-107 |     username = os.getenv('KEYCLOAK_USER') or os.getenv('KEYCLOAK_ADMIN', 'admin')
-108 |     password = os.getenv('KEYCLOAK_PASSWORD') or os.getenv('KEYCLOAK_ADMIN_PASSWORD', 'admin')
-109 |     client_id = os.getenv('KEYCLOAK_ADMIN_CLIENT_ID', 'admin-cli')
-110 | 
-111 |     try:
-112 |         res = requests.post(
-113 |             _token_url(),
-114 |             data={
-115 |                 'grant_type': 'password',
-116 |                 'client_id': client_id,
-117 |                 'username': username,
-118 |                 'password': password,
-119 |             },
-120 |             timeout=20,
-121 |         )
-122 |     except requests.RequestException as e:
-123 |         raise KeycloakAdminError(f'Failed to reach Keycloak admin token endpoint: {e}') from e
-124 | 
-125 |     if res.status_code != 200:
-126 |         raise KeycloakAdminError(
-127 |             f'Keycloak admin login failed ({res.status_code}): {res.text}',
-128 |             status_code=502,
-129 |         )
-130 |     token = res.json().get('access_token')
-131 |     if not token:
-132 |         raise KeycloakAdminError('Keycloak admin token response missing access_token', status_code=502)
-133 |     return token
-134 | 
-135 | 
-136 | def _headers() -> dict[str, str]:
-137 |     """
-138 |     Qué hace: arma los encabezados HTTP estándar para el API de Keycloak.
-139 |     Por qué lo hace: para reutilizar autenticación y tipo de contenido en todas las llamadas.
-140 |     Cómo lo hace: inserta el Bearer token de administración y `Content-Type: application/json`.
-141 |     De dónde viene: el token viene de `get_admin_access_token()`.
-142 |     A dónde va: se pasa a `requests.get/post/delete` en el resto de funciones.
-143 |     Librerías externas: el header se usa para peticiones con `requests`, pero aquí no se llama directamente a una librería externa.
-144 |     """
-145 |     return {
-146 |         'Authorization': f'Bearer {get_admin_access_token()}',
-147 |         'Content-Type': 'application/json',
-148 |     }
-149 | 
-150 | 
-151 | def _realm_url(path: str = '') -> str:
-152 |     """
-153 |     Qué hace: construye una URL completa del realm de administración.
-154 |     Por qué lo hace: para evitar repetir concatenación de rutas en cada función.
-155 |     Cómo lo hace: combina la base admin, el realm configurado y el sufijo recibido.
-156 |     De dónde viene: el sufijo viene del llamado concreto y la base del entorno.
-157 |     A dónde va: se usa en casi todas las operaciones contra Keycloak.
-158 |     Librerías externas: no usa librerías externas; solo composición de strings.
-159 |     """
-160 |     return f"{_admin_base_url()}/realms/{_realm()}{path}"
-161 | 
-162 | 
-163 | def list_users(search: str | None = None, max_results: int = 50) -> list[dict[str, Any]]:
-164 |     """
-165 |     Qué hace: lista usuarios del realm con soporte opcional de búsqueda.
-166 |     Por qué lo hace: para alimentar pantallas de administración de usuarios.
-167 |     Cómo lo hace: ejecuta un `GET` al endpoint `/users` de Keycloak con parámetros de consulta.
-168 |     De dónde viene: los criterios de búsqueda vienen de la UI o del código que llama a este helper.
-169 |     A dónde va: devuelve una lista de diccionarios listos para ser renderizados o procesados.
-170 |     Librerías externas: sí, usa `requests` para hablar con Keycloak.
-171 |     """
-172 |     params: dict[str, Any] = {'max': max_results}
-173 |     if search:
-174 |         params['search'] = search
-175 |     res = requests.get(_realm_url('/users'), headers=_headers(), params=params, timeout=20)
-176 |     if res.status_code != 200:
-177 |         raise KeycloakAdminError(f'List users failed ({res.status_code}): {res.text}', status_code=502)
-178 |     return res.json()
-179 | 
-180 | 
-181 | def get_user(user_id: str) -> dict[str, Any]:
-182 |     """
-183 |     Qué hace: obtiene los detalles de un usuario por su ID.
-184 |     Por qué lo hace: para mostrar o actualizar información concreta de la cuenta.
-185 |     Cómo lo hace: llama al endpoint individual `/users/{id}` de Keycloak.
-186 |     De dónde viene: el ID viene de la ruta o de otra operación que ya identificó al usuario.
-187 |     A dónde va: retorna el JSON del usuario o un error controlado si no existe.
-188 |     Librerías externas: sí, usa `requests`.
-189 |     """
-190 |     res = requests.get(_realm_url(f'/users/{user_id}'), headers=_headers(), timeout=20)
-191 |     if res.status_code == 404:
-192 |         raise KeycloakAdminError('User not found', status_code=404)
-193 |     if res.status_code != 200:
-194 |         raise KeycloakAdminError(f'Get user failed ({res.status_code}): {res.text}', status_code=502)
-195 |     return res.json()
-196 | 
-197 | 
-198 | def find_user_id_by_username(username: str) -> str | None:
-199 |     """
-200 |     Qué hace: busca el ID de un usuario por nombre de usuario exacto.
-201 |     Por qué lo hace: porque varias operaciones de Keycloak necesitan el ID interno y no el username.
-202 |     Cómo lo hace: consulta `/users` con `username` y `exact=true`, luego toma el primer resultado.
-203 |     De dónde viene: el username viene del formulario o del flujo que creó/consultó al usuario.
-204 |     A dónde va: devuelve el ID o `None` si no se encuentra.
-205 |     Librerías externas: sí, usa `requests` para consultar Keycloak.
-206 |     """
-207 |     res = requests.get(
-208 |         _realm_url('/users'),
-209 |         headers=_headers(),
-210 |         params={'username': username, 'exact': 'true'},
-211 |         timeout=20,
-212 |     )
-213 |     if res.status_code != 200:
-214 |         raise KeycloakAdminError(f'Lookup user failed ({res.status_code}): {res.text}', status_code=502)
-215 |     users = res.json()
-216 |     return users[0]['id'] if users else None
-217 | 
-218 | 
-219 | def create_user(
-220 |     *,
-221 |     username: str,
-222 |     email: str,
-223 |     first_name: str,
-224 |     last_name: str,
-225 |     password: str,
-226 |     enabled: bool = True,
-227 |     roles: list[str] | None = None,
-228 | ) -> dict[str, Any]:
-229 |     """
-230 |     Qué hace: crea un usuario nuevo en Keycloak y opcionalmente le asigna roles.
-231 |     Por qué lo hace: para registrar cuentas administrables desde la aplicación.
-232 |     Cómo lo hace: envía un `POST` con el payload del usuario, busca el ID resultante y llama a `set_user_roles()` si aplica.
-233 |     De dónde viene: los datos vienen del formulario y del flujo UI que llama a este helper.
-234 |     A dónde va: devuelve el usuario recién creado como diccionario de Keycloak.
-235 |     Librerías externas: sí, usa `requests` para crear y `Keycloak` para persistir el usuario.
-236 |     """
-237 |     payload = {
-238 |         'username': username,
-239 |         'email': email,
-240 |         'firstName': first_name,
-241 |         'lastName': last_name,
-242 |         'enabled': enabled,
-243 |         'emailVerified': True,
-244 |         'credentials': [
-245 |             {
-246 |                 'type': 'password',
-247 |                 'value': password,
-248 |                 'temporary': False,
-249 |             }
-250 |         ],
-251 |     }
-252 |     res = requests.post(_realm_url('/users'), headers=_headers(), json=payload, timeout=20)
-253 |     if res.status_code == 409:
-254 |         raise KeycloakAdminError('User already exists', status_code=409)
-255 |     if res.status_code not in (201, 204):
-256 |         raise KeycloakAdminError(f'Create user failed ({res.status_code}): {res.text}', status_code=502)
-257 | 
-258 |     user_id = find_user_id_by_username(username)
-259 |     if not user_id:
-260 |         raise KeycloakAdminError('User created but could not be looked up', status_code=502)
-261 | 
-262 |     if roles:
-263 |         set_user_roles(user_id, roles)
-264 | 
-265 |     return get_user(user_id)
+ 23 | # clase para dar un error personalizado cuando hay un fallo en la comunicación 
+ 24 | # con Keycloak o en la lógica de administración
+ 25 | class KeycloakAdminError(Exception):
+ 26 |     # se inicializa con un mensaje y un codigo de estado HTTP opcional 
+ 27 |     # por defecto 500)
+ 28 |     def __init__(self, message: str, status_code: int = 500):
+ 29 |         # se llama al constructor de la clase base Exception con el mensaje
+ 30 |         super().__init__(message)
+ 31 |         # se guardan el codigo de estado y el mensaje en atributos de la instancia
+ 32 |         self.status_code = status_code
+ 33 |         self.message = message
+ 34 | 
+ 35 | # definimos la funcion _admin_base_url() para obtener la URL base del API de administración de Keycloak
+ 36 | def _admin_base_url() -> str:
+ 37 |     """
+ 38 |     Qué hace: resuelve la URL base del API de administración de Keycloak.
+ 39 |     Por qué lo hace: para centralizar la dirección del servidor y evitar repetirla.
+ 40 |     Cómo lo hace: lee variables de entorno y aplica un valor por defecto seguro para el entorno local.
+ 41 |     De dónde viene: el valor proviene de `KEYCLOAK_ADMIN_API_URL` o, si no existe, de `KEYCLOAK_INTERNAL_URL`.
+ 42 |     A dónde va: se usa como base para construir las rutas de administración.
+ 43 |     Librerías externas: aquí no interviene una librería externa; solo `os.getenv`.
+ 44 |     """
+ 45 |     # retornamos la URL base del API de administración de Keycloak, 
+ 46 |     # priorizando la variable de entorno KEYCLOAK_ADMIN_API_URL
+ 47 |     return os.getenv(
+ 48 |         # si existe la variable de entorno KEYCLOAK_ADMIN_API_URL
+ 49 |         'KEYCLOAK_ADMIN_API_URL',
+ 50 |         # si no existe, usamos KEYCLOAK_INTERNAL_URL con un valor por defecto y si 
+ 51 |         # no existe, usamos http://keycloak_auth:8080/admin
+ 52 |         os.getenv('KEYCLOAK_INTERNAL_URL', 'http://keycloak_auth:8080') + '/admin',
+ 53 |     ).rstrip('/')# eliminamos cualquier barra final para evitar errores de concatenación de rutas
+ 54 | 
+ 55 | # devuelve el nombre del realm configurado en el entorno o un valor por defecto
+ 56 | def _realm() -> str:
+ 57 |     """
+ 58 |     Qué hace: obtiene el nombre del realm configurado.
+ 59 |     Por qué lo hace: para dirigir las operaciones al realm correcto de Keycloak.
+ 60 |     Cómo lo hace: lee una variable de entorno con valor por defecto.
+ 61 |     De dónde viene: el realm viene de `KEYCLOAK_REALM` o del valor `inventory-realm`.
+ 62 |     A dónde va: se inserta en todas las URLs de administración del realm.
+ 63 |     Librerías externas: no usa librerías externas; solo configuración del entorno.
+ 64 |     """
+ 65 |     # busca la variable de entorno KEYCLOAK_REALM y si no existe, devuelve 'inventory-realm' como valor por defecto
+ 66 |     return os.getenv('KEYCLOAK_REALM', 'inventory-realm')
+ 67 | 
+ 68 | 
+ 69 | def _token_url() -> str:
+ 70 |     """
+ 71 |     Qué hace: construye la URL para pedir el token de administrador de Keycloak.
+ 72 |     Por qué lo hace: para autenticar llamadas al API de administración.
+ 73 |     Cómo lo hace: prioriza una URL explícita y, si no existe, transforma la URL del realm hacia el realm `master`.
+ 74 |     De dónde viene: la dirección sale de `KEYCLOAK_ADMIN_TOKEN_URL` o de `KEYCLOAK_TOKEN_URL`.
+ 75 |     A dónde va: se usa en `get_admin_access_token()` para solicitar el token.
+ 76 |     Librerías externas: no hay librerías externas aquí; solo string handling y `os.getenv`.
+ 77 |     """
+ 78 |     explicit = os.getenv('KEYCLOAK_ADMIN_TOKEN_URL')
+ 79 |     if explicit:
+ 80 |         return explicit
+ 81 |     realm_token = os.getenv(
+ 82 |         'KEYCLOAK_TOKEN_URL',
+ 83 |         'http://keycloak_auth:8080/realms/inventory-realm/protocol/openid-connect/token',
+ 84 |     )
+ 85 |     # .../realms/<realm>/protocol/... → .../realms/master/protocol/...
+ 86 |     if '/realms/' in realm_token:
+ 87 |         prefix, rest = realm_token.split('/realms/', 1)
+ 88 |         return f"{prefix}/realms/master/protocol/openid-connect/token"
+ 89 |     return 'http://keycloak_auth:8080/realms/master/protocol/openid-connect/token'
+ 90 | 
+ 91 | 
+ 92 | def _app_token_url() -> str:
+ 93 |     """
+ 94 |     Qué hace: obtiene la URL del endpoint de token usado por la aplicación.
+ 95 |     Por qué lo hace: para pedir JWTs del cliente de frontend/backend sin mezclarlo con el token de admin.
+ 96 |     Cómo lo hace: lee una variable de entorno o aplica un valor por defecto.
+ 97 |     De dónde viene: el valor viene de `KEYCLOAK_TOKEN_URL`.
+ 98 |     A dónde va: se consume en `fetch_user_access_token()`.
+ 99 |     Librerías externas: no usa librerías externas; solo configuración.
+100 |     """
+101 |     return os.getenv(
+102 |         'KEYCLOAK_TOKEN_URL',
+103 |         'http://keycloak_auth:8080/realms/inventory-realm/protocol/openid-connect/token',
+104 |     )
+105 | 
+106 | 
+107 | def get_admin_access_token() -> str:
+108 |     """
+109 |     Qué hace: solicita un access token de administración para Keycloak.
+110 |     Por qué lo hace: porque la API admin requiere autenticación Bearer.
+111 |     Cómo lo hace: hace un `POST` con `requests` al endpoint de token usando credenciales del entorno.
+112 |     De dónde viene: las credenciales provienen de variables como `KEYCLOAK_USER` y `KEYCLOAK_PASSWORD`.
+113 |     A dónde va: el token resultante se reutiliza en `_headers()` para llamadas posteriores.
+114 |     Librerías externas: sí, usa `requests` para la petición HTTP.
+115 |     """
+116 |     username = os.getenv('KEYCLOAK_USER') or os.getenv('KEYCLOAK_ADMIN', 'admin')
+117 |     password = os.getenv('KEYCLOAK_PASSWORD') or os.getenv('KEYCLOAK_ADMIN_PASSWORD', 'admin')
+118 |     client_id = os.getenv('KEYCLOAK_ADMIN_CLIENT_ID', 'admin-cli')
+119 | 
+120 |     try:
+121 |         res = requests.post(
+122 |             _token_url(),
+123 |             data={
+124 |                 'grant_type': 'password',
+125 |                 'client_id': client_id,
+126 |                 'username': username,
+127 |                 'password': password,
+128 |             },
+129 |             timeout=20,
+130 |         )
+131 |     except requests.RequestException as e:
+132 |         raise KeycloakAdminError(f'Failed to reach Keycloak admin token endpoint: {e}') from e
+133 | 
+134 |     if res.status_code != 200:
+135 |         raise KeycloakAdminError(
+136 |             f'Keycloak admin login failed ({res.status_code}): {res.text}',
+137 |             status_code=502,
+138 |         )
+139 |     token = res.json().get('access_token')
+140 |     if not token:
+141 |         raise KeycloakAdminError('Keycloak admin token response missing access_token', status_code=502)
+142 |     return token
+143 | 
+144 | 
+145 | def _headers() -> dict[str, str]:
+146 |     """
+147 |     Qué hace: arma los encabezados HTTP estándar para el API de Keycloak.
+148 |     Por qué lo hace: para reutilizar autenticación y tipo de contenido en todas las llamadas.
+149 |     Cómo lo hace: inserta el Bearer token de administración y `Content-Type: application/json`.
+150 |     De dónde viene: el token viene de `get_admin_access_token()`.
+151 |     A dónde va: se pasa a `requests.get/post/delete` en el resto de funciones.
+152 |     Librerías externas: el header se usa para peticiones con `requests`, pero aquí no se llama directamente a una librería externa.
+153 |     """
+154 |     return {
+155 |         'Authorization': f'Bearer {get_admin_access_token()}',
+156 |         'Content-Type': 'application/json',
+157 |     }
+158 | 
+159 | 
+160 | def _realm_url(path: str = '') -> str:
+161 |     """
+162 |     Qué hace: construye una URL completa del realm de administración.
+163 |     Por qué lo hace: para evitar repetir concatenación de rutas en cada función.
+164 |     Cómo lo hace: combina la base admin, el realm configurado y el sufijo recibido.
+165 |     De dónde viene: el sufijo viene del llamado concreto y la base del entorno.
+166 |     A dónde va: se usa en casi todas las operaciones contra Keycloak.
+167 |     Librerías externas: no usa librerías externas; solo composición de strings.
+168 |     """
+169 |     return f"{_admin_base_url()}/realms/{_realm()}{path}"
+170 | 
+171 | 
+172 | def list_users(search: str | None = None, max_results: int = 50) -> list[dict[str, Any]]:
+173 |     """
+174 |     Qué hace: lista usuarios del realm con soporte opcional de búsqueda.
+175 |     Por qué lo hace: para alimentar pantallas de administración de usuarios.
+176 |     Cómo lo hace: ejecuta un `GET` al endpoint `/users` de Keycloak con parámetros de consulta.
+177 |     De dónde viene: los criterios de búsqueda vienen de la UI o del código que llama a este helper.
+178 |     A dónde va: devuelve una lista de diccionarios listos para ser renderizados o procesados.
+179 |     Librerías externas: sí, usa `requests` para hablar con Keycloak.
+180 |     """
+181 |     params: dict[str, Any] = {'max': max_results}
+182 |     if search:
+183 |         params['search'] = search
+184 |     res = requests.get(_realm_url('/users'), headers=_headers(), params=params, timeout=20)
+185 |     if res.status_code != 200:
+186 |         raise KeycloakAdminError(f'List users failed ({res.status_code}): {res.text}', status_code=502)
+187 |     return res.json()
+188 | 
+189 | 
+190 | def get_user(user_id: str) -> dict[str, Any]:
+191 |     """
+192 |     Qué hace: obtiene los detalles de un usuario por su ID.
+193 |     Por qué lo hace: para mostrar o actualizar información concreta de la cuenta.
+194 |     Cómo lo hace: llama al endpoint individual `/users/{id}` de Keycloak.
+195 |     De dónde viene: el ID viene de la ruta o de otra operación que ya identificó al usuario.
+196 |     A dónde va: retorna el JSON del usuario o un error controlado si no existe.
+197 |     Librerías externas: sí, usa `requests`.
+198 |     """
+199 |     res = requests.get(_realm_url(f'/users/{user_id}'), headers=_headers(), timeout=20)
+200 |     if res.status_code == 404:
+201 |         raise KeycloakAdminError('User not found', status_code=404)
+202 |     if res.status_code != 200:
+203 |         raise KeycloakAdminError(f'Get user failed ({res.status_code}): {res.text}', status_code=502)
+204 |     return res.json()
+205 | 
+206 | 
+207 | def find_user_id_by_username(username: str) -> str | None:
+208 |     """
+209 |     Qué hace: busca el ID de un usuario por nombre de usuario exacto.
+210 |     Por qué lo hace: porque varias operaciones de Keycloak necesitan el ID interno y no el username.
+211 |     Cómo lo hace: consulta `/users` con `username` y `exact=true`, luego toma el primer resultado.
+212 |     De dónde viene: el username viene del formulario o del flujo que creó/consultó al usuario.
+213 |     A dónde va: devuelve el ID o `None` si no se encuentra.
+214 |     Librerías externas: sí, usa `requests` para consultar Keycloak.
+215 |     """
+216 |     res = requests.get(
+217 |         _realm_url('/users'),
+218 |         headers=_headers(),
+219 |         params={'username': username, 'exact': 'true'},
+220 |         timeout=20,
+221 |     )
+222 |     if res.status_code != 200:
+223 |         raise KeycloakAdminError(f'Lookup user failed ({res.status_code}): {res.text}', status_code=502)
+224 |     users = res.json()
+225 |     return users[0]['id'] if users else None
+226 | 
+227 | 
+228 | def create_user(
+229 |     *,
+230 |     username: str,
+231 |     email: str,
+232 |     first_name: str,
+233 |     last_name: str,
+234 |     password: str,
+235 |     enabled: bool = True,
+236 |     roles: list[str] | None = None,
+237 | ) -> dict[str, Any]:
+238 |     """
+239 |     Qué hace: crea un usuario nuevo en Keycloak y opcionalmente le asigna roles.
+240 |     Por qué lo hace: para registrar cuentas administrables desde la aplicación.
+241 |     Cómo lo hace: envía un `POST` con el payload del usuario, busca el ID resultante y llama a `set_user_roles()` si aplica.
+242 |     De dónde viene: los datos vienen del formulario y del flujo UI que llama a este helper.
+243 |     A dónde va: devuelve el usuario recién creado como diccionario de Keycloak.
+244 |     Librerías externas: sí, usa `requests` para crear y `Keycloak` para persistir el usuario.
+245 |     """
+246 |     payload = {
+247 |         'username': username,
+248 |         'email': email,
+249 |         'firstName': first_name,
+250 |         'lastName': last_name,
+251 |         'enabled': enabled,
+252 |         'emailVerified': True,
+253 |         'credentials': [
+254 |             {
+255 |                 'type': 'password',
+256 |                 'value': password,
+257 |                 'temporary': False,
+258 |             }
+259 |         ],
+260 |     }
+261 |     res = requests.post(_realm_url('/users'), headers=_headers(), json=payload, timeout=20)
+262 |     if res.status_code == 409:
+263 |         raise KeycloakAdminError('User already exists', status_code=409)
+264 |     if res.status_code not in (201, 204):
+265 |         raise KeycloakAdminError(f'Create user failed ({res.status_code}): {res.text}', status_code=502)
 266 | 
-267 | 
-268 | def get_realm_roles() -> list[dict[str, Any]]:
-269 |     """
-270 |     Qué hace: lista todos los roles del realm.
-271 |     Por qué lo hace: para validar y traducir nombres de roles antes de asignarlos.
-272 |     Cómo lo hace: realiza un `GET` al endpoint `/roles` de Keycloak.
-273 |     De dónde viene: la consulta viene de flujos que necesitan validar permisos o mapear roles.
-274 |     A dónde va: devuelve la lista completa de roles disponibles.
-275 |     Librerías externas: sí, usa `requests`.
-276 |     """
-277 |     res = requests.get(_realm_url('/roles'), headers=_headers(), timeout=20)
-278 |     if res.status_code != 200:
-279 |         raise KeycloakAdminError(f'List roles failed ({res.status_code}): {res.text}', status_code=502)
-280 |     return res.json()
-281 | 
-282 | 
-283 | def get_user_realm_roles(user_id: str) -> list[dict[str, Any]]:
-284 |     """
-285 |     Qué hace: obtiene los roles de realm asignados a un usuario.
-286 |     Por qué lo hace: para mostrar permisos actuales o calcular cambios.
-287 |     Cómo lo hace: consulta el endpoint de role mappings del usuario por su ID.
-288 |     De dónde viene: el `user_id` viene del detalle de usuario o de operaciones de roles.
-289 |     A dónde va: retorna los roles asignados al usuario.
-290 |     Librerías externas: sí, usa `requests`.
-291 |     """
-292 |     res = requests.get(
-293 |         _realm_url(f'/users/{user_id}/role-mappings/realm'),
-294 |         headers=_headers(),
-295 |         timeout=20,
-296 |     )
-297 |     if res.status_code == 404:
-298 |         raise KeycloakAdminError('User not found', status_code=404)
-299 |     if res.status_code != 200:
-300 |         raise KeycloakAdminError(f'Get user roles failed ({res.status_code}): {res.text}', status_code=502)
-301 |     return res.json()
-302 | 
-303 | 
-304 | def _role_reps(role_names: list[str]) -> list[dict[str, Any]]:
-305 |     """
-306 |     Qué hace: convierte nombres de roles en representaciones completas de Keycloak.
-307 |     Por qué lo hace: porque la API de asignación espera objetos con `id` y `name`.
-308 |     Cómo lo hace: cruza los nombres solicitados contra todos los roles del realm y valida que existan.
-309 |     De dónde viene: la lista de nombres viene del formulario o del código que administra permisos.
-310 |     A dónde va: devuelve una lista lista para enviarse al endpoint de asignación.
-311 |     Librerías externas: la consulta de roles usa `requests` indirectamente a través de `get_realm_roles()`.
-312 |     """
-313 |     wanted = set(role_names)
-314 |     all_roles = get_realm_roles()
-315 |     found = [r for r in all_roles if r.get('name') in wanted]
-316 |     missing = wanted - {r['name'] for r in found}
-317 |     if missing:
-318 |         raise KeycloakAdminError(f'Unknown roles: {", ".join(sorted(missing))}', status_code=400)
-319 |     return [{'id': r['id'], 'name': r['name']} for r in found]
-320 | 
-321 | 
-322 | def set_user_roles(user_id: str, role_names: list[str]) -> list[str]:
-323 |     """
-324 |     Qué hace: reemplaza los roles administrables de un usuario por un nuevo conjunto.
-325 |     Por qué lo hace: para mantener permisos consistentes sin tocar roles externos a la app.
-326 |     Cómo lo hace: calcula roles a quitar y añadir, llama a los endpoints de mapeo y fuerza logout de sesiones.
-327 |     De dónde viene: la solicitud viene del formulario de edición de roles en la UI.
-328 |     A dónde va: devuelve la lista final de roles administrables activos para ese usuario.
-329 |     Librerías externas: sí, usa `requests` para modificar roles y `current_app` para registrar fallos de logout.
-330 |     """
-331 |     current = get_user_realm_roles(user_id)
-332 |     manageable_current = [r for r in current if r.get('name') in MANAGEABLE_ROLES]
-333 |     desired_names = [n for n in role_names if n in MANAGEABLE_ROLES]
-334 | 
-335 |     to_remove = [r for r in manageable_current if r['name'] not in desired_names]
-336 |     to_add_names = [
-337 |         n for n in desired_names
-338 |         if n not in {r['name'] for r in manageable_current}
-339 |     ]
-340 | 
-341 |     if to_remove:
-342 |         res = requests.delete(
-343 |             _realm_url(f'/users/{user_id}/role-mappings/realm'),
-344 |             headers=_headers(),
-345 |             json=[{'id': r['id'], 'name': r['name']} for r in to_remove],
-346 |             timeout=20,
-347 |         )
-348 |         if res.status_code not in (204, 200):
-349 |             raise KeycloakAdminError(
-350 |                 f'Remove roles failed ({res.status_code}): {res.text}',
-351 |                 status_code=502,
-352 |             )
-353 | 
-354 |     if to_add_names:
-355 |         reps = _role_reps(to_add_names)
-356 |         res = requests.post(
-357 |             _realm_url(f'/users/{user_id}/role-mappings/realm'),
-358 |             headers=_headers(),
-359 |             json=reps,
-360 |             timeout=20,
-361 |         )
-362 |         if res.status_code not in (204, 200):
-363 |             raise KeycloakAdminError(
-364 |                 f'Assign roles failed ({res.status_code}): {res.text}',
-365 |                 status_code=502,
-366 |             )
-367 | 
-368 |     # Best-effort: logout sessions so permission changes apply on next login.
-369 |     try:
-370 |         requests.post(
-371 |             _realm_url(f'/users/{user_id}/logout'),
-372 |             headers=_headers(),
-373 |             timeout=20,
-374 |         )
-375 |     except requests.RequestException as e:
-376 |         current_app.logger.warning('Failed to logout user sessions after role change: %s', e)
-377 | 
-378 |     updated = get_user_realm_roles(user_id)
-379 |     return [r['name'] for r in updated if r.get('name') in MANAGEABLE_ROLES]
-380 | 
-381 | 
-382 | def fetch_user_access_token(username: str, password: str) -> dict[str, Any]:
-383 |     """
-384 |     Qué hace: solicita un JWT de usuario mediante password grant y devuelve metadatos del token.
-385 |     Por qué lo hace: para mostrar o verificar la autenticación del usuario en la interfaz.
-386 |     Cómo lo hace: hace un `POST` al endpoint de token, decodifica el JWT sin verificar firma y extrae claims relevantes.
-387 |     De dónde viene: las credenciales vienen del formulario o del flujo de emisión de token desde la UI.
-388 |     A dónde va: retorna un diccionario con el token, tiempos y claims resumidos.
-389 |     Librerías externas: sí, usa `requests` para pedir el token y `PyJWT` para decodificarlo.
-390 |     """
-391 |     client_id = os.getenv('KEYCLOAK_TOKEN_CLIENT_ID') or os.getenv('KEYCLOAK_CLIENT_ID', 'flask-backend')
-392 |     # Public clients (flask-backend) must not send a secret. Only use an explicit token-client secret.
-393 |     client_secret = os.getenv('KEYCLOAK_TOKEN_CLIENT_SECRET', '')
-394 | 
-395 |     data = {
-396 |         'grant_type': 'password',
-397 |         'client_id': client_id,
-398 |         'username': username,
-399 |         'password': password,
-400 |         'scope': 'openid profile email',
-401 |     }
-402 |     if client_secret:
-403 |         data['client_secret'] = client_secret
-404 | 
-405 |     try:
-406 |         res = requests.post(_app_token_url(), data=data, timeout=20)
-407 |     except requests.RequestException as e:
-408 |         raise KeycloakAdminError(f'Token request failed: {e}', status_code=502) from e
-409 | 
-410 |     if res.status_code != 200:
-411 |         raise KeycloakAdminError(
-412 |             f'Token request failed ({res.status_code}): {res.text}',
-413 |             status_code=400,
-414 |         )
-415 | 
-416 |     body = res.json()
-417 |     access_token = body.get('access_token')
-418 |     if not access_token:
-419 |         raise KeycloakAdminError('Token response missing access_token', status_code=502)
-420 | 
-421 |     claims = pyjwt.decode(access_token, options={'verify_signature': False})
-422 |     exp = claims.get('exp')
-423 |     iat = claims.get('iat')
-424 |     exp_iso = (
-425 |         datetime.fromtimestamp(exp, tz=timezone.utc).isoformat()
-426 |         if isinstance(exp, int)
-427 |         else None
-428 |     )
-429 |     iat_iso = (
-430 |         datetime.fromtimestamp(iat, tz=timezone.utc).isoformat()
-431 |         if isinstance(iat, int)
-432 |         else None
-433 |     )
-434 |     roles = [
-435 |         r for r in claims.get('realm_access', {}).get('roles', [])
-436 |         if r in MANAGEABLE_ROLES or ':' in r
-437 |     ]
-438 | 
-439 |     return {
-440 |         'access_token': access_token,
-441 |         'token_type': body.get('token_type', 'Bearer'),
-442 |         'expires_in': body.get('expires_in'),
-443 |         'refresh_expires_in': body.get('refresh_expires_in'),
-444 |         # Omit refresh_token from UI payloads (large; not needed for the demo panel).
-445 |         'scope': body.get('scope'),
-446 |         'claims': {
-447 |             'sub': claims.get('sub'),
-448 |             'preferred_username': claims.get('preferred_username'),
-449 |             'email': claims.get('email'),
-450 |             'roles': roles,
-451 |             'iat': iat,
-452 |             'iat_iso': iat_iso,
-453 |             'exp': exp,
-454 |             'exp_iso': exp_iso,
-455 |         },
-456 |     }
-457 | 
-458 | 
-459 | def user_summary(user: dict[str, Any], roles: list[str] | None = None) -> dict[str, Any]:
-460 |     """
-461 |     Qué hace: normaliza la estructura de un usuario para la interfaz.
-462 |     Por qué lo hace: para unificar el formato que consumen las plantillas.
-463 |     Cómo lo hace: extrae campos clave del diccionario original y asegura una lista de roles.
-464 |     De dónde viene: el dato viene de respuestas de Keycloak o de helpers que ya consultaron el usuario.
-465 |     A dónde va: devuelve un diccionario compacto listo para renderizar.
-466 |     Librerías externas: no usa librerías externas; solo transforma datos ya obtenidos.
-467 |     """
-468 |     return {
-469 |         'id': user.get('id'),
-470 |         'username': user.get('username'),
-471 |         'email': user.get('email'),
-472 |         'firstName': user.get('firstName'),
-473 |         'lastName': user.get('lastName'),
-474 |         'enabled': user.get('enabled', True),
-475 |         'roles': roles if roles is not None else [],
-476 |     }
+267 |     user_id = find_user_id_by_username(username)
+268 |     if not user_id:
+269 |         raise KeycloakAdminError('User created but could not be looked up', status_code=502)
+270 | 
+271 |     if roles:
+272 |         set_user_roles(user_id, roles)
+273 | 
+274 |     return get_user(user_id)
+275 | 
+276 | 
+277 | def get_realm_roles() -> list[dict[str, Any]]:
+278 |     """
+279 |     Qué hace: lista todos los roles del realm.
+280 |     Por qué lo hace: para validar y traducir nombres de roles antes de asignarlos.
+281 |     Cómo lo hace: realiza un `GET` al endpoint `/roles` de Keycloak.
+282 |     De dónde viene: la consulta viene de flujos que necesitan validar permisos o mapear roles.
+283 |     A dónde va: devuelve la lista completa de roles disponibles.
+284 |     Librerías externas: sí, usa `requests`.
+285 |     """
+286 |     res = requests.get(_realm_url('/roles'), headers=_headers(), timeout=20)
+287 |     if res.status_code != 200:
+288 |         raise KeycloakAdminError(f'List roles failed ({res.status_code}): {res.text}', status_code=502)
+289 |     return res.json()
+290 | 
+291 | 
+292 | def get_user_realm_roles(user_id: str) -> list[dict[str, Any]]:
+293 |     """
+294 |     Qué hace: obtiene los roles de realm asignados a un usuario.
+295 |     Por qué lo hace: para mostrar permisos actuales o calcular cambios.
+296 |     Cómo lo hace: consulta el endpoint de role mappings del usuario por su ID.
+297 |     De dónde viene: el `user_id` viene del detalle de usuario o de operaciones de roles.
+298 |     A dónde va: retorna los roles asignados al usuario.
+299 |     Librerías externas: sí, usa `requests`.
+300 |     """
+301 |     res = requests.get(
+302 |         _realm_url(f'/users/{user_id}/role-mappings/realm'),
+303 |         headers=_headers(),
+304 |         timeout=20,
+305 |     )
+306 |     if res.status_code == 404:
+307 |         raise KeycloakAdminError('User not found', status_code=404)
+308 |     if res.status_code != 200:
+309 |         raise KeycloakAdminError(f'Get user roles failed ({res.status_code}): {res.text}', status_code=502)
+310 |     return res.json()
+311 | 
+312 | 
+313 | def _role_reps(role_names: list[str]) -> list[dict[str, Any]]:
+314 |     """
+315 |     Qué hace: convierte nombres de roles en representaciones completas de Keycloak.
+316 |     Por qué lo hace: porque la API de asignación espera objetos con `id` y `name`.
+317 |     Cómo lo hace: cruza los nombres solicitados contra todos los roles del realm y valida que existan.
+318 |     De dónde viene: la lista de nombres viene del formulario o del código que administra permisos.
+319 |     A dónde va: devuelve una lista lista para enviarse al endpoint de asignación.
+320 |     Librerías externas: la consulta de roles usa `requests` indirectamente a través de `get_realm_roles()`.
+321 |     """
+322 |     wanted = set(role_names)
+323 |     all_roles = get_realm_roles()
+324 |     found = [r for r in all_roles if r.get('name') in wanted]
+325 |     missing = wanted - {r['name'] for r in found}
+326 |     if missing:
+327 |         raise KeycloakAdminError(f'Unknown roles: {", ".join(sorted(missing))}', status_code=400)
+328 |     return [{'id': r['id'], 'name': r['name']} for r in found]
+329 | 
+330 | 
+331 | def set_user_roles(user_id: str, role_names: list[str]) -> list[str]:
+332 |     """
+333 |     Qué hace: reemplaza los roles administrables de un usuario por un nuevo conjunto.
+334 |     Por qué lo hace: para mantener permisos consistentes sin tocar roles externos a la app.
+335 |     Cómo lo hace: calcula roles a quitar y añadir, llama a los endpoints de mapeo y fuerza logout de sesiones.
+336 |     De dónde viene: la solicitud viene del formulario de edición de roles en la UI.
+337 |     A dónde va: devuelve la lista final de roles administrables activos para ese usuario.
+338 |     Librerías externas: sí, usa `requests` para modificar roles y `current_app` para registrar fallos de logout.
+339 |     """
+340 |     current = get_user_realm_roles(user_id)
+341 |     manageable_current = [r for r in current if r.get('name') in MANAGEABLE_ROLES]
+342 |     desired_names = [n for n in role_names if n in MANAGEABLE_ROLES]
+343 | 
+344 |     to_remove = [r for r in manageable_current if r['name'] not in desired_names]
+345 |     to_add_names = [
+346 |         n for n in desired_names
+347 |         if n not in {r['name'] for r in manageable_current}
+348 |     ]
+349 | 
+350 |     if to_remove:
+351 |         res = requests.delete(
+352 |             _realm_url(f'/users/{user_id}/role-mappings/realm'),
+353 |             headers=_headers(),
+354 |             json=[{'id': r['id'], 'name': r['name']} for r in to_remove],
+355 |             timeout=20,
+356 |         )
+357 |         if res.status_code not in (204, 200):
+358 |             raise KeycloakAdminError(
+359 |                 f'Remove roles failed ({res.status_code}): {res.text}',
+360 |                 status_code=502,
+361 |             )
+362 | 
+363 |     if to_add_names:
+364 |         reps = _role_reps(to_add_names)
+365 |         res = requests.post(
+366 |             _realm_url(f'/users/{user_id}/role-mappings/realm'),
+367 |             headers=_headers(),
+368 |             json=reps,
+369 |             timeout=20,
+370 |         )
+371 |         if res.status_code not in (204, 200):
+372 |             raise KeycloakAdminError(
+373 |                 f'Assign roles failed ({res.status_code}): {res.text}',
+374 |                 status_code=502,
+375 |             )
+376 | 
+377 |     # Best-effort: logout sessions so permission changes apply on next login.
+378 |     try:
+379 |         requests.post(
+380 |             _realm_url(f'/users/{user_id}/logout'),
+381 |             headers=_headers(),
+382 |             timeout=20,
+383 |         )
+384 |     except requests.RequestException as e:
+385 |         current_app.logger.warning('Failed to logout user sessions after role change: %s', e)
+386 | 
+387 |     updated = get_user_realm_roles(user_id)
+388 |     return [r['name'] for r in updated if r.get('name') in MANAGEABLE_ROLES]
+389 | 
+390 | 
+391 | def fetch_user_access_token(username: str, password: str) -> dict[str, Any]:
+392 |     """
+393 |     Qué hace: solicita un JWT de usuario mediante password grant y devuelve metadatos del token.
+394 |     Por qué lo hace: para mostrar o verificar la autenticación del usuario en la interfaz.
+395 |     Cómo lo hace: hace un `POST` al endpoint de token, decodifica el JWT sin verificar firma y extrae claims relevantes.
+396 |     De dónde viene: las credenciales vienen del formulario o del flujo de emisión de token desde la UI.
+397 |     A dónde va: retorna un diccionario con el token, tiempos y claims resumidos.
+398 |     Librerías externas: sí, usa `requests` para pedir el token y `PyJWT` para decodificarlo.
+399 |     """
+400 |     client_id = os.getenv('KEYCLOAK_TOKEN_CLIENT_ID') or os.getenv('KEYCLOAK_CLIENT_ID', 'flask-backend')
+401 |     # Public clients (flask-backend) must not send a secret. Only use an explicit token-client secret.
+402 |     client_secret = os.getenv('KEYCLOAK_TOKEN_CLIENT_SECRET', '')
+403 | 
+404 |     data = {
+405 |         'grant_type': 'password',
+406 |         'client_id': client_id,
+407 |         'username': username,
+408 |         'password': password,
+409 |         'scope': 'openid profile email',
+410 |     }
+411 |     if client_secret:
+412 |         data['client_secret'] = client_secret
+413 | 
+414 |     try:
+415 |         res = requests.post(_app_token_url(), data=data, timeout=20)
+416 |     except requests.RequestException as e:
+417 |         raise KeycloakAdminError(f'Token request failed: {e}', status_code=502) from e
+418 | 
+419 |     if res.status_code != 200:
+420 |         raise KeycloakAdminError(
+421 |             f'Token request failed ({res.status_code}): {res.text}',
+422 |             status_code=400,
+423 |         )
+424 | 
+425 |     body = res.json()
+426 |     access_token = body.get('access_token')
+427 |     if not access_token:
+428 |         raise KeycloakAdminError('Token response missing access_token', status_code=502)
+429 | 
+430 |     claims = pyjwt.decode(access_token, options={'verify_signature': False})
+431 |     exp = claims.get('exp')
+432 |     iat = claims.get('iat')
+433 |     exp_iso = (
+434 |         datetime.fromtimestamp(exp, tz=timezone.utc).isoformat()
+435 |         if isinstance(exp, int)
+436 |         else None
+437 |     )
+438 |     iat_iso = (
+439 |         datetime.fromtimestamp(iat, tz=timezone.utc).isoformat()
+440 |         if isinstance(iat, int)
+441 |         else None
+442 |     )
+443 |     roles = [
+444 |         r for r in claims.get('realm_access', {}).get('roles', [])
+445 |         if r in MANAGEABLE_ROLES or ':' in r
+446 |     ]
+447 | 
+448 |     return {
+449 |         'access_token': access_token,
+450 |         'token_type': body.get('token_type', 'Bearer'),
+451 |         'expires_in': body.get('expires_in'),
+452 |         'refresh_expires_in': body.get('refresh_expires_in'),
+453 |         # Omit refresh_token from UI payloads (large; not needed for the demo panel).
+454 |         'scope': body.get('scope'),
+455 |         'claims': {
+456 |             'sub': claims.get('sub'),
+457 |             'preferred_username': claims.get('preferred_username'),
+458 |             'email': claims.get('email'),
+459 |             'roles': roles,
+460 |             'iat': iat,
+461 |             'iat_iso': iat_iso,
+462 |             'exp': exp,
+463 |             'exp_iso': exp_iso,
+464 |         },
+465 |     }
+466 | 
+467 | 
+468 | def user_summary(user: dict[str, Any], roles: list[str] | None = None) -> dict[str, Any]:
+469 |     """
+470 |     Qué hace: normaliza la estructura de un usuario para la interfaz.
+471 |     Por qué lo hace: para unificar el formato que consumen las plantillas.
+472 |     Cómo lo hace: extrae campos clave del diccionario original y asegura una lista de roles.
+473 |     De dónde viene: el dato viene de respuestas de Keycloak o de helpers que ya consultaron el usuario.
+474 |     A dónde va: devuelve un diccionario compacto listo para renderizar.
+475 |     Librerías externas: no usa librerías externas; solo transforma datos ya obtenidos.
+476 |     """
+477 |     return {
+478 |         'id': user.get('id'),
+479 |         'username': user.get('username'),
+480 |         'email': user.get('email'),
+481 |         'firstName': user.get('firstName'),
+482 |         'lastName': user.get('lastName'),
+483 |         'enabled': user.get('enabled', True),
+484 |         'roles': roles if roles is not None else [],
+485 |     }
 
 ####################################################################################################
-# FILE: app/auth/middleware.py   (192 lines)
+# FILE: app/auth/middleware.py   (205 lines)
 ####################################################################################################
   1 | import os
   2 | import json
@@ -4870,7 +4882,7 @@ Files included (in this order):
  28 |         # se optiene de KEYCLOAK_REALM_URL y se construye la URL de los certificados
  29 |         realm_url = os.environ.get('KEYCLOAK_REALM_URL')
  30 |         if not realm_url:
- 31 |             # si al ginal no se consiguio de ninguna de las dos da un error de que se debe configurar ambos. 
+ 31 |             # si al final no se consiguio de ninguna de las dos da un error de que se debe configurar ambos. 
  32 |             raise ValueError("KEYCLOAK_JWKS_URL or KEYCLOAK_REALM_URL must be set")
  33 |         certs_url = f"{realm_url}/protocol/openid-connect/certs"
  34 |     try:
@@ -4894,7 +4906,7 @@ Files included (in this order):
  52 | def require_jwt(f):
  53 |     """
  54 |     Qué hace: protege una vista exigiendo un JWT Bearer válido.
- 55 |     Por qué lo hace: para asegurar que las rutas de API solo respondan a solicitudes autenticadas.
+ 55 |     Por qué lo hace: para asegurar que las rutas de API solo respondan a solicitudes autorizadas.
  56 |     Cómo lo hace: lee el header Authorization, obtiene la clave pública por `kid` y decodifica el token.
  57 |     De dónde viene: el token llega en el encabezado HTTP de la solicitud entrante.
  58 |     A dónde va: las claims decodificadas se guardan en `request.user_claims` para el resto del flujo.
@@ -4902,136 +4914,149 @@ Files included (in this order):
  60 |     """
  61 |     @wraps(f)
  62 |     def decorated(*args, **kwargs):
- 63 |         global _public_keys
- 64 | 
- 65 |         # Bypass for unit tests
- 66 |         if current_app.config.get('TESTING'):
- 67 |             request.user_claims = {
- 68 |                 "realm_access": {
- 69 |                     "roles": ["product:view", "product:manage", "stock:view", "stock:manage", "report:view", "audit:view", "user:manage"]
- 70 |                 }
- 71 |             }
- 72 |             return f(*args, **kwargs)
- 73 |         
- 74 |         auth_header = request.headers.get("Authorization", None)
- 75 |         if not auth_header or not auth_header.startswith("Bearer "):
- 76 |             record_invalid_token()
- 77 |             record_auth_failure(request.remote_addr)
- 78 |             return jsonify({"message": "Missing or invalid authorization header"}), 401
- 79 | 
- 80 |         token = auth_header.split(" ")[1]
- 81 | 
- 82 |         try:
- 83 |             if _public_keys is None:
- 84 |                 _public_keys = get_keycloak_public_keys()
- 85 |             
- 86 |             # Extract the unverified header to get the kid
- 87 |             unverified_header = jwt.get_unverified_header(token)
- 88 |             kid = unverified_header.get('kid')
- 89 |             
- 90 |             if not kid or kid not in _public_keys:
- 91 |                 record_invalid_token()
- 92 |                 record_auth_failure(request.remote_addr)
- 93 |                 return jsonify({"message": "Invalid token header or key not found"}), 401
- 94 | 
- 95 |             public_key = _public_keys[kid]
- 96 | 
- 97 |             # Decode the payload securely
- 98 |             payload = jwt.decode(
- 99 |                 token,
-100 |                 public_key,
-101 |                 algorithms=["RS256"],
-102 |                 options={"verify_aud": False}
-103 |             )
-104 |             
-105 |             # Attach the decoded payload to the request context
-106 |             request.user_claims = payload
-107 |             
-108 |         except jwt.ExpiredSignatureError:
-109 |             record_invalid_token()
-110 |             record_auth_failure(request.remote_addr)
-111 |             return jsonify({"message": "Token has expired"}), 401
-112 |         except jwt.InvalidTokenError as e:
-113 |             record_invalid_token()
-114 |             record_auth_failure(request.remote_addr)
-115 |             return jsonify({"message": f"Invalid token: {str(e)}"}), 401
-116 |         except Exception as e:
-117 |             current_app.logger.error(f"JWT Verification failed: {e}")
-118 |             return jsonify({"message": "Authorization failed"}), 500
-119 | 
-120 |         return f(*args, **kwargs)
-121 |     return decorated
-122 | 
-123 | def require_scope(required_scope):
-124 |     """
-125 |     Qué hace: envuelve una vista para exigir un permiso específico en el JWT.
-126 |     Por qué lo hace: para separar la autenticación general de la autorización por capacidad.
-127 |     Cómo lo hace: reutiliza `require_jwt`, lee las roles del realm y compara contra `required_scope`.
-128 |     De dónde viene: `required_scope` se pasa al decorar rutas que necesitan un permiso concreto.
-129 |     A dónde va: si el permiso existe continúa la petición; si no, responde con 403.
-130 |     Librerías externas: depende de Flask para construir la respuesta JSON y de `require_jwt` para validar el token.
-131 |     """
-132 |     def decorator(f):
-133 |         @wraps(f)
-134 |         @require_jwt
-135 |         def decorated_function(*args, **kwargs):
-136 |             claims = getattr(request, 'user_claims', {})
-137 |             roles = claims.get('realm_access', {}).get('roles', [])
-138 |             if required_scope not in roles:
-139 |                 return jsonify({"message": f"Missing required scope: {required_scope}"}), 403
-140 |             return f(*args, **kwargs)
-141 |         return decorated_function
-142 |     return decorator
-143 | 
-144 | def login_required(f):
-145 |     """
-146 |     Qué hace: protege vistas web que requieren una sesión Flask válida.
-147 |     Por qué lo hace: para evitar que usuarios anónimos entren a pantallas internas del sistema.
-148 |     Cómo lo hace: verifica si existe `user` en la sesión y, si no, redirige a la página de login.
-149 |     De dónde viene: el estado de autenticación vive en la sesión creada durante el callback OAuth.
-150 |     A dónde va: cuando la sesión es válida, expone el usuario en `g.user` y continúa con la vista.
-151 |     Librerías externas: Flask aporta `session`, `g`, `redirect` y `url_for`.
-152 |     """
-153 |     @wraps(f)
-154 |     def decorated_function(*args, **kwargs):
-155 |         # Bypass for unit tests
-156 |         if current_app.config.get('TESTING'):
-157 |             return f(*args, **kwargs)
-158 |         print(session.get('user'))
-159 |         # Check if user is in session
-160 |         if 'user' not in session:
-161 |             return redirect(url_for('auth.login_page'))
-162 |         
-163 |         user_data = session.get('user', {})
-164 |         g.user = user_data.get('preferred_username') or user_data.get('email') or 'unknown'
-165 |         
-166 |         return f(*args, **kwargs)
-167 |     return decorated_function
-168 | 
-169 | 
-170 | def require_ui_scope(required_scope):
-171 |     """
-172 |     Qué hace: protege rutas de la interfaz según permisos guardados en la sesión.
-173 |     Por qué lo hace: para controlar acciones sensibles desde la UI con una respuesta amigable.
-174 |     Cómo lo hace: lee `user_scopes` desde la sesión y compara el permiso requerido antes de continuar.
-175 |     De dónde viene: los scopes se almacenan en sesión durante el callback de autenticación.
-176 |     A dónde va: si falta el permiso, muestra un flash y redirige al inicio; si no, deja seguir la vista.
-177 |     Librerías externas: Flask aporta `flash`, `redirect` y `url_for` para la navegación de UI.
-178 |     """
-179 |     def decorator(f):
-180 |         @wraps(f)
-181 |         def decorated_function(*args, **kwargs):
-182 |             if current_app.config.get('TESTING'):
-183 |                 return f(*args, **kwargs)
-184 | 
-185 |             user_scopes = session.get('user_scopes', [])
-186 |             if required_scope not in user_scopes:
-187 |                 from flask import flash, abort
-188 |                 flash(f'Acceso denegado: se requiere el permiso "{required_scope}".', 'error')
-189 |                 return redirect(url_for('index')), 303
-190 |             return f(*args, **kwargs)
-191 |         return decorated_function
-192 |     return decorator
+ 63 |         # variable global para almacenar las claves publicas de keycloak y 
+ 64 |         # no tener que descargarlas cada vez que se hace una peticion.
+ 65 |         global _public_keys
+ 66 | 
+ 67 |         # pase completo en caso de pruebas unitarias para evitar la verificación de JWT
+ 68 |         if current_app.config.get('TESTING'):
+ 69 |             request.user_claims = {
+ 70 |                 "realm_access": {
+ 71 |                     "roles": ["product:view", "product:manage", "stock:view", "stock:manage", "report:view", "audit:view", "user:manage"]
+ 72 |                 }
+ 73 |             }
+ 74 |             return f(*args, **kwargs)
+ 75 |         #obtenemos el header de autorizacion de la peticion y verificamos que sea un Bearer token
+ 76 |         auth_header = request.headers.get("Authorization", None)
+ 77 |         #verificamos que el header no este vacio y que empiece con bearer
+ 78 |         # si no cumple se da como fallido y se registra el intento fallido de auteticacion.
+ 79 |         if not auth_header or not auth_header.startswith("Bearer "):
+ 80 |             record_invalid_token()
+ 81 |             record_auth_failure(request.remote_addr)
+ 82 |             return jsonify({"message": "Missing or invalid authorization header"}), 401
+ 83 | 
+ 84 |         # una vez verificado que el header es valido se obtiene el token del header.
+ 85 |         token = auth_header.split(" ")[1]
+ 86 | 
+ 87 |         try:
+ 88 |             # verificamos que la variable global creada esta vacia
+ 89 |             if _public_keys is None:
+ 90 |                 # si esta vacia se llama la funcion de get_keycloak_public_keys() 
+ 91 |                 # para obtener las claves publicas de keycloak y guardarlas en la variable global.
+ 92 |                 _public_keys = get_keycloak_public_keys()
+ 93 |             
+ 94 |             # Extract the unverified header to get the kid
+ 95 |             unverified_header = jwt.get_unverified_header(token)
+ 96 |             kid = unverified_header.get('kid')
+ 97 | 
+ 98 |             # verificamos que el kid exista y que este en las claves publicas obtenidas de keycloak
+ 99 |             if not kid or kid not in _public_keys:
+100 |                 # si no existe el kid o no esta en las claves publicas se registra el intento 
+101 |                 # fallido de autenticacion y se retorna un error 401.
+102 |                 record_invalid_token()
+103 |                 record_auth_failure(request.remote_addr)
+104 |                 return jsonify({"message": "Invalid token header or key not found"}), 401
+105 | 
+106 |             # obtenemos la clave publica correspondiente al kid del token
+107 |             public_key = _public_keys[kid]
+108 | 
+109 |             # Decode the payload securely
+110 |             payload = jwt.decode(
+111 |                 token,
+112 |                 public_key,
+113 |                 algorithms=["RS256"],
+114 |                 options={"verify_aud": False}
+115 |             )
+116 |             
+117 |             # se guardan las claims decodificadas en request.user_claims para que
+118 |             #  puedan ser usadas en la vista protegida.
+119 |             request.user_claims = payload
+120 |             
+121 |         except jwt.ExpiredSignatureError:
+122 |             record_invalid_token()
+123 |             record_auth_failure(request.remote_addr)
+124 |             return jsonify({"message": "Token has expired"}), 401
+125 |         except jwt.InvalidTokenError as e:
+126 |             record_invalid_token()
+127 |             record_auth_failure(request.remote_addr)
+128 |             return jsonify({"message": f"Invalid token: {str(e)}"}), 401
+129 |         except Exception as e:
+130 |             current_app.logger.error(f"JWT Verification failed: {e}")
+131 |             return jsonify({"message": "Authorization failed"}), 500
+132 | 
+133 |         return f(*args, **kwargs)
+134 |     return decorated
+135 | 
+136 | def require_scope(required_scope):
+137 |     """
+138 |     Qué hace: envuelve una vista para exigir un permiso específico en el JWT.
+139 |     Por qué lo hace: para separar la autenticación general de la autorización por capacidad.
+140 |     Cómo lo hace: reutiliza `require_jwt`, lee las roles del realm y compara contra `required_scope`.
+141 |     De dónde viene: `required_scope` se pasa al decorar rutas que necesitan un permiso concreto.
+142 |     A dónde va: si el permiso existe continúa la petición; si no, responde con 403.
+143 |     Librerías externas: depende de Flask para construir la respuesta JSON y de `require_jwt` para validar el token.
+144 |     """
+145 |     def decorator(f):
+146 |         @wraps(f)
+147 |         @require_jwt
+148 |         def decorated_function(*args, **kwargs):
+149 |             claims = getattr(request, 'user_claims', {})
+150 |             roles = claims.get('realm_access', {}).get('roles', [])
+151 |             if required_scope not in roles:
+152 |                 return jsonify({"message": f"Missing required scope: {required_scope}"}), 403
+153 |             return f(*args, **kwargs)
+154 |         return decorated_function
+155 |     return decorator
+156 | 
+157 | def login_required(f):
+158 |     """
+159 |     Qué hace: protege vistas web que requieren una sesión Flask válida.
+160 |     Por qué lo hace: para evitar que usuarios anónimos entren a pantallas internas del sistema.
+161 |     Cómo lo hace: verifica si existe `user` en la sesión y, si no, redirige a la página de login.
+162 |     De dónde viene: el estado de autenticación vive en la sesión creada durante el callback OAuth.
+163 |     A dónde va: cuando la sesión es válida, expone el usuario en `g.user` y continúa con la vista.
+164 |     Librerías externas: Flask aporta `session`, `g`, `redirect` y `url_for`.
+165 |     """
+166 |     @wraps(f)
+167 |     def decorated_function(*args, **kwargs):
+168 |         # Bypass for unit tests
+169 |         if current_app.config.get('TESTING'):
+170 |             return f(*args, **kwargs)
+171 |         print(session.get('user'))
+172 |         # Check if user is in session
+173 |         if 'user' not in session:
+174 |             return redirect(url_for('auth.login_page'))
+175 |         
+176 |         user_data = session.get('user', {})
+177 |         g.user = user_data.get('preferred_username') or user_data.get('email') or 'unknown'
+178 |         
+179 |         return f(*args, **kwargs)
+180 |     return decorated_function
+181 | 
+182 | 
+183 | def require_ui_scope(required_scope):
+184 |     """
+185 |     Qué hace: protege rutas de la interfaz según permisos guardados en la sesión.
+186 |     Por qué lo hace: para controlar acciones sensibles desde la UI con una respuesta amigable.
+187 |     Cómo lo hace: lee `user_scopes` desde la sesión y compara el permiso requerido antes de continuar.
+188 |     De dónde viene: los scopes se almacenan en sesión durante el callback de autenticación.
+189 |     A dónde va: si falta el permiso, muestra un flash y redirige al inicio; si no, deja seguir la vista.
+190 |     Librerías externas: Flask aporta `flash`, `redirect` y `url_for` para la navegación de UI.
+191 |     """
+192 |     def decorator(f):
+193 |         @wraps(f)
+194 |         def decorated_function(*args, **kwargs):
+195 |             if current_app.config.get('TESTING'):
+196 |                 return f(*args, **kwargs)
+197 | 
+198 |             user_scopes = session.get('user_scopes', [])
+199 |             if required_scope not in user_scopes:
+200 |                 from flask import flash, abort
+201 |                 flash(f'Acceso denegado: se requiere el permiso "{required_scope}".', 'error')
+202 |                 return redirect(url_for('index')), 303
+203 |             return f(*args, **kwargs)
+204 |         return decorated_function
+205 |     return decorator
 
 ####################################################################################################
 # FILE: app/auth/views.py   (133 lines)
@@ -6536,7 +6561,7 @@ Files included (in this order):
 100 |     )
 
 ####################################################################################################
-# FILE: app/stock/views.py   (262 lines)
+# FILE: app/stock/views.py   (269 lines)
 ####################################################################################################
   1 | from flask import request, jsonify
   2 | from flask_smorest import Blueprint
@@ -6577,229 +6602,236 @@ Files included (in this order):
  37 |     los entrega a add_movement() mediante el parámetro data. Si no
  38 |     cumplen, la petición es rechazada antes de ejecutar la función.
  39 | """
- 40 | class StockMovementSchema(Schema):
- 41 |     product_id = fields.Integer(required=True, validate=validate.Range(min=1, max=2_147_483_647))
- 42 |     type = fields.String(required=True, validate=validate.OneOf(['entry', 'exit']))
- 43 |     qty_change = fields.Integer(required=True, validate=validate.Range(min=1, max=2_147_483_647))
- 44 |     notes = fields.String(load_default='')
- 45 |     user = fields.String(load_default='system')
- 46 | 
- 47 | stock_bp = Blueprint('stock', 'stock', url_prefix='/api/stock', description="Endpoints for stock operations")
- 48 | 
- 49 | 
- 50 | """
- 51 | QUÉ:
- 52 |     Registra una entrada o salida de stock para un producto y crea el
- 53 |     registro correspondiente en el historial de movimientos.
- 54 | 
- 55 | CÓMO:
- 56 |     Primero valida que los datos necesarios estén presentes y obtiene el
- 57 |     producto mediante su product_id. Después determina la nueva cantidad
- 58 |     de stock según el tipo de movimiento.
- 59 | 
- 60 |     Para una salida ('exit'), comprueba que exista suficiente stock antes
- 61 |     de descontar la cantidad solicitada. Para una entrada ('entry'),
- 62 |     incrementa directamente la cantidad disponible.
- 63 | 
- 64 |     Una vez calculada la nueva cantidad, actualiza product.qty y utiliza
- 65 |     register_stock_movement() para crear el registro histórico. Luego
- 66 |     confirma ambas modificaciones mediante db.session.commit() y registra
- 67 |     el movimiento en el sistema de telemetría mediante
- 68 |     record_stock_movement().
- 69 | 
- 70 | POR QUÉ:
- 71 |     Es el punto de entrada de la API para modificar el inventario de un
- 72 |     producto. Centraliza las reglas necesarias para evitar salidas de
- 73 |     stock superiores a la cantidad disponible y garantiza que cada
- 74 |     modificación quede registrada en el historial.
- 75 | 
- 76 |     Además, el uso de @require_scope('stock:manage') limita esta operación
- 77 |     a usuarios que poseen el permiso necesario para administrar el stock.
- 78 | 
- 79 | DE DÓNDE VIENE:
- 80 |     Recibe una petición HTTP POST dirigida a /api/stock/movement.
- 81 |     Los datos llegan en formato JSON y son validados previamente por
- 82 |     StockMovementSchema. El acceso también pasa por el middleware
- 83 |     require_scope(), que verifica el permiso 'stock:manage'.
- 84 | 
- 85 | A DÓNDE VA:
- 86 |     Si la operación es válida, modifica el stock del producto y crea un
- 87 |     StockMovement asociado. Ambos cambios se confirman en la base de datos.
- 88 |     Después se registra el evento en telemetría y se devuelve el movimiento
- 89 |     creado en formato JSON con código HTTP 201.
- 90 | 
- 91 |     Si ocurre un error de validación o no existe el producto, se devuelve
- 92 |     una respuesta HTTP 400 o 404 según corresponda.
- 93 | """
- 94 | @stock_bp.route('/movement', methods=['POST'])
- 95 | @require_scope('stock:manage')
- 96 | @stock_bp.arguments(StockMovementSchema)
- 97 | def add_movement(data):
- 98 |     if not data or not data.get('product_id') or not data.get('type') or 'qty_change' not in data:
- 99 |         return jsonify({"error": "product_id, type, and qty_change are required"}), 400
-100 | 
-101 |     try:
-102 |         product = Product.query.get(data['product_id'])
-103 |     except OverflowError:
-104 |         return jsonify({"error": "Product not found"}), 404
-105 | 
-106 |     if not product:
-107 |         return jsonify({"error": "Product not found"}), 404
-108 | 
-109 |     try:
-110 |         qty_change = int(data['qty_change'])
-111 |     except ValueError:
-112 |         return jsonify({"error": "qty_change must be an integer"}), 400
-113 | 
-114 |     movement_type = data['type']
+ 40 | # valida los datos de entrada para registrar un movimiento de stock
+ 41 | class StockMovementSchema(Schema):
+ 42 |     # define lo que se espera de cada campo y las restricciones que deben cumplir
+ 43 |     # product_id es un entero obligatorio entre 1 y 2_147_483_647
+ 44 |     product_id = fields.Integer(required=True, validate=validate.Range(min=1, max=2_147_483_647))
+ 45 |     # type es una cadena obligatoria que solo puede ser 'entry' o 'exit'
+ 46 |     type = fields.String(required=True, validate=validate.OneOf(['entry', 'exit']))
+ 47 |     # qty_change es un entero obligatorio entre 1 y 2_147_483_647
+ 48 |     qty_change = fields.Integer(required=True, validate=validate.Range(min=1, max=2_147_483_647))
+ 49 |     # notes es una cadena opcional con un valor predeterminado
+ 50 |     notes = fields.String(load_default='')
+ 51 |     # user es una cadena opcional con un valor predeterminado
+ 52 |     user = fields.String(load_default='system')
+ 53 | 
+ 54 | stock_bp = Blueprint('stock', 'stock', url_prefix='/api/stock', description="Endpoints for stock operations")
+ 55 | 
+ 56 | 
+ 57 | """
+ 58 | QUÉ:
+ 59 |     Registra una entrada o salida de stock para un producto y crea el
+ 60 |     registro correspondiente en el historial de movimientos.
+ 61 | 
+ 62 | CÓMO:
+ 63 |     Primero valida que los datos necesarios estén presentes y obtiene el
+ 64 |     producto mediante su product_id. Después determina la nueva cantidad
+ 65 |     de stock según el tipo de movimiento.
+ 66 | 
+ 67 |     Para una salida ('exit'), comprueba que exista suficiente stock antes
+ 68 |     de descontar la cantidad solicitada. Para una entrada ('entry'),
+ 69 |     incrementa directamente la cantidad disponible.
+ 70 | 
+ 71 |     Una vez calculada la nueva cantidad, actualiza product.qty y utiliza
+ 72 |     register_stock_movement() para crear el registro histórico. Luego
+ 73 |     confirma ambas modificaciones mediante db.session.commit() y registra
+ 74 |     el movimiento en el sistema de telemetría mediante
+ 75 |     record_stock_movement().
+ 76 | 
+ 77 | POR QUÉ:
+ 78 |     Es el punto de entrada de la API para modificar el inventario de un
+ 79 |     producto. Centraliza las reglas necesarias para evitar salidas de
+ 80 |     stock superiores a la cantidad disponible y garantiza que cada
+ 81 |     modificación quede registrada en el historial.
+ 82 | 
+ 83 |     Además, el uso de @require_scope('stock:manage') limita esta operación
+ 84 |     a usuarios que poseen el permiso necesario para administrar el stock.
+ 85 | 
+ 86 | DE DÓNDE VIENE:
+ 87 |     Recibe una petición HTTP POST dirigida a /api/stock/movement.
+ 88 |     Los datos llegan en formato JSON y son validados previamente por
+ 89 |     StockMovementSchema. El acceso también pasa por el middleware
+ 90 |     require_scope(), que verifica el permiso 'stock:manage'.
+ 91 | 
+ 92 | A DÓNDE VA:
+ 93 |     Si la operación es válida, modifica el stock del producto y crea un
+ 94 |     StockMovement asociado. Ambos cambios se confirman en la base de datos.
+ 95 |     Después se registra el evento en telemetría y se devuelve el movimiento
+ 96 |     creado en formato JSON con código HTTP 201.
+ 97 | 
+ 98 |     Si ocurre un error de validación o no existe el producto, se devuelve
+ 99 |     una respuesta HTTP 400 o 404 según corresponda.
+100 | """
+101 | @stock_bp.route('/movement', methods=['POST'])
+102 | @require_scope('stock:manage')
+103 | @stock_bp.arguments(StockMovementSchema)
+104 | def add_movement(data):
+105 |     if not data or not data.get('product_id') or not data.get('type') or 'qty_change' not in data:
+106 |         return jsonify({"error": "product_id, type, and qty_change are required"}), 400
+107 | 
+108 |     try:
+109 |         product = Product.query.get(data['product_id'])
+110 |     except OverflowError:
+111 |         return jsonify({"error": "Product not found"}), 404
+112 | 
+113 |     if not product:
+114 |         return jsonify({"error": "Product not found"}), 404
 115 | 
-116 |     if movement_type == 'exit':
-117 |         if product.qty < qty_change:
-118 |             return jsonify({"error": "Not enough stock for this exit movement. Current stock: " + str(product.qty)}), 400
-119 |         new_qty = product.qty - qty_change
-120 |     elif movement_type == 'entry':
-121 |         new_qty = product.qty + qty_change
-122 |     else:
-123 |         return jsonify({"error": "Invalid movement type. Must be 'entry' or 'exit'."}), 400
-124 | 
-125 |     previous_qty = product.qty
-126 |     product.qty = new_qty
-127 | 
-128 |     movement = register_stock_movement(
-129 |         product,
-130 |         movement_type,
-131 |         previous_qty=previous_qty,
-132 |         new_qty=new_qty,
-133 |         user=data.get('user', 'system'),
-134 |         notes=data.get('notes', ''),
-135 |     )
-136 | 
-137 |     db.session.commit()
-138 |     record_stock_movement(movement_type, product.sku)
-139 | 
-140 |     return jsonify(movement.to_dict()), 201
-141 | 
-142 | """
-143 | QUÉ:
-144 |     Obtiene el historial de movimientos de stock registrados en el sistema,
-145 |     permitiendo consultar todos los movimientos o filtrarlos según
-146 |     diferentes criterios.
-147 | 
-148 | CÓMO:
-149 |     Obtiene los parámetros opcionales de la URL mediante request.args:
-150 |     product_id, type, user, date_from y date_to.
-151 | 
-152 |     A partir de StockMovement.query construye dinámicamente una consulta.
-153 |     Cada filtro se agrega únicamente cuando el usuario lo proporciona.
+116 |     try:
+117 |         qty_change = int(data['qty_change'])
+118 |     except ValueError:
+119 |         return jsonify({"error": "qty_change must be an integer"}), 400
+120 | 
+121 |     movement_type = data['type']
+122 | 
+123 |     if movement_type == 'exit':
+124 |         if product.qty < qty_change:
+125 |             return jsonify({"error": "Not enough stock for this exit movement. Current stock: " + str(product.qty)}), 400
+126 |         new_qty = product.qty - qty_change
+127 |     elif movement_type == 'entry':
+128 |         new_qty = product.qty + qty_change
+129 |     else:
+130 |         return jsonify({"error": "Invalid movement type. Must be 'entry' or 'exit'."}), 400
+131 | 
+132 |     previous_qty = product.qty
+133 |     product.qty = new_qty
+134 | 
+135 |     movement = register_stock_movement(
+136 |         product,
+137 |         movement_type,
+138 |         previous_qty=previous_qty,
+139 |         new_qty=new_qty,
+140 |         user=data.get('user', 'system'),
+141 |         notes=data.get('notes', ''),
+142 |     )
+143 | 
+144 |     db.session.commit()
+145 |     record_stock_movement(movement_type, product.sku)
+146 | 
+147 |     return jsonify(movement.to_dict()), 201
+148 | 
+149 | """
+150 | QUÉ:
+151 |     Obtiene el historial de movimientos de stock registrados en el sistema,
+152 |     permitiendo consultar todos los movimientos o filtrarlos según
+153 |     diferentes criterios.
 154 | 
-155 |     Las fechas se convierten desde texto con formato YYYY-MM-DD a objetos
-156 |     datetime. Si una fecha no tiene el formato esperado, el filtro se
-157 |     ignora.
+155 | CÓMO:
+156 |     Obtiene los parámetros opcionales de la URL mediante request.args:
+157 |     product_id, type, user, date_from y date_to.
 158 | 
-159 |     Finalmente, los movimientos se ordenan de forma descendente por fecha,
-160 |     de manera que los registros más recientes aparezcan primero. Cada
-161 |     movimiento se transforma a un diccionario mediante to_dict() antes
-162 |     de enviarse como JSON.
-163 | 
-164 | POR QUÉ:
-165 |     Permite consultar y auditar los cambios realizados sobre el inventario
-166 |     sin necesidad de acceder directamente a la base de datos. Los filtros
-167 |     permiten localizar movimientos específicos por producto, tipo de
-168 |     operación, usuario o período de tiempo.
-169 | 
-170 |     El permiso 'stock:view' evita que cualquier usuario pueda consultar
-171 |     información del historial sin la autorización correspondiente.
-172 | 
-173 | DE DÓNDE VIENE:
-174 |     Recibe una petición HTTP GET dirigida a /api/stock/history.
-175 |     Los criterios de búsqueda, si existen, llegan como parámetros de
-176 |     consulta en la URL.
-177 | 
-178 | A DÓNDE VA:
-179 |     Consulta los registros StockMovement almacenados en la base de datos,
-180 |     los convierte a diccionarios mediante to_dict() y devuelve una lista
-181 |     JSON con código HTTP 200.
-182 | """
-183 | @stock_bp.route('/history', methods=['GET'])
-184 | @require_scope('stock:view')
-185 | def get_history():
-186 |     product_id = request.args.get('product_id', type=int)
-187 |     movement_type = request.args.get('type')
-188 |     user = request.args.get('user')
-189 | 
-190 |     date_from = request.args.get('date_from')
-191 |     date_to = request.args.get('date_to')
-192 | 
-193 |     query = StockMovement.query
-194 | 
-195 |     if product_id:
-196 |         query = query.filter_by(product_id=product_id)
-197 |     if movement_type:
-198 |         query = query.filter_by(type=movement_type)
-199 |     if user:
-200 |         query = query.filter_by(user=user)
-201 |     if date_from:
-202 |         try:
-203 |             query = query.filter(StockMovement.date >= datetime.strptime(date_from, '%Y-%m-%d'))
-204 |         except ValueError:
-205 |             pass
-206 |     if date_to:
-207 |         try:
-208 |             query = query.filter(StockMovement.date <= datetime.strptime(date_to + ' 23:59:59', '%Y-%m-%d %H:%M:%S'))
-209 |         except ValueError:
-210 |             pass
-211 | 
-212 |     movements = query.order_by(StockMovement.date.desc()).all()
-213 |     return jsonify([m.to_dict() for m in movements]), 200
-214 | 
-215 | """
-216 | QUÉ:
-217 |     Obtiene los productos activos cuyo stock actual se encuentra en el
-218 |     nivel mínimo establecido o por debajo de este, generando así una
-219 |     consulta de productos que requieren atención.
-220 | 
-221 | CÓMO:
-222 |     Consulta la tabla de productos utilizando dos condiciones:
-223 |     la cantidad actual debe ser menor o igual al stock mínimo configurado
-224 |     para el producto y el estado del producto debe ser 'active'.
-225 | 
-226 |     Después construye una respuesta que contiene la cantidad total de
-227 |     productos encontrados y la información de cada producto mediante
-228 |     su método to_dict().
-229 | 
-230 | POR QUÉ:
-231 |     Permite detectar productos que tienen un nivel de inventario bajo y
-232 |     facilita que el sistema pueda informar al usuario que necesitan
-233 |     reposición. Solo se consideran productos activos, evitando generar
-234 |     alertas para productos que ya no forman parte del inventario operativo.
-235 | 
-236 |     El acceso está protegido por el permiso 'stock:view' porque consultar
-237 |     esta información forma parte de las operaciones de visualización del
-238 |     inventario.
-239 | 
-240 | DE DÓNDE VIENE:
-241 |     Recibe una petición HTTP GET dirigida a /api/stock/alerts. No necesita
-242 |     parámetros adicionales porque las condiciones de alerta se obtienen
-243 |     directamente de los valores almacenados en cada producto.
-244 | 
-245 | A DÓNDE VA:
-246 |     Consulta los productos que cumplen las condiciones de alerta y devuelve
-247 |     una respuesta JSON con el número de productos encontrados y la lista
-248 |     de productos afectados, utilizando código HTTP 200.
-249 | """
-250 | @stock_bp.route('/alerts', methods=['GET'])
-251 | @require_scope('stock:view')
-252 | def get_alerts():
-253 | 
-254 |     alert_products = Product.query.filter(
-255 |         Product.qty <= Product.min_stock,
-256 |         Product.status == 'active'
-257 |     ).all()
-258 | 
-259 |     return jsonify([{
-260 |         "alert_count": len(alert_products),
-261 |         "products": [p.to_dict() for p in alert_products]
-262 |     }]), 200
+159 |     A partir de StockMovement.query construye dinámicamente una consulta.
+160 |     Cada filtro se agrega únicamente cuando el usuario lo proporciona.
+161 | 
+162 |     Las fechas se convierten desde texto con formato YYYY-MM-DD a objetos
+163 |     datetime. Si una fecha no tiene el formato esperado, el filtro se
+164 |     ignora.
+165 | 
+166 |     Finalmente, los movimientos se ordenan de forma descendente por fecha,
+167 |     de manera que los registros más recientes aparezcan primero. Cada
+168 |     movimiento se transforma a un diccionario mediante to_dict() antes
+169 |     de enviarse como JSON.
+170 | 
+171 | POR QUÉ:
+172 |     Permite consultar y auditar los cambios realizados sobre el inventario
+173 |     sin necesidad de acceder directamente a la base de datos. Los filtros
+174 |     permiten localizar movimientos específicos por producto, tipo de
+175 |     operación, usuario o período de tiempo.
+176 | 
+177 |     El permiso 'stock:view' evita que cualquier usuario pueda consultar
+178 |     información del historial sin la autorización correspondiente.
+179 | 
+180 | DE DÓNDE VIENE:
+181 |     Recibe una petición HTTP GET dirigida a /api/stock/history.
+182 |     Los criterios de búsqueda, si existen, llegan como parámetros de
+183 |     consulta en la URL.
+184 | 
+185 | A DÓNDE VA:
+186 |     Consulta los registros StockMovement almacenados en la base de datos,
+187 |     los convierte a diccionarios mediante to_dict() y devuelve una lista
+188 |     JSON con código HTTP 200.
+189 | """
+190 | @stock_bp.route('/history', methods=['GET'])
+191 | @require_scope('stock:view')
+192 | def get_history():
+193 |     product_id = request.args.get('product_id', type=int)
+194 |     movement_type = request.args.get('type')
+195 |     user = request.args.get('user')
+196 | 
+197 |     date_from = request.args.get('date_from')
+198 |     date_to = request.args.get('date_to')
+199 | 
+200 |     query = StockMovement.query
+201 | 
+202 |     if product_id:
+203 |         query = query.filter_by(product_id=product_id)
+204 |     if movement_type:
+205 |         query = query.filter_by(type=movement_type)
+206 |     if user:
+207 |         query = query.filter_by(user=user)
+208 |     if date_from:
+209 |         try:
+210 |             query = query.filter(StockMovement.date >= datetime.strptime(date_from, '%Y-%m-%d'))
+211 |         except ValueError:
+212 |             pass
+213 |     if date_to:
+214 |         try:
+215 |             query = query.filter(StockMovement.date <= datetime.strptime(date_to + ' 23:59:59', '%Y-%m-%d %H:%M:%S'))
+216 |         except ValueError:
+217 |             pass
+218 | 
+219 |     movements = query.order_by(StockMovement.date.desc()).all()
+220 |     return jsonify([m.to_dict() for m in movements]), 200
+221 | 
+222 | """
+223 | QUÉ:
+224 |     Obtiene los productos activos cuyo stock actual se encuentra en el
+225 |     nivel mínimo establecido o por debajo de este, generando así una
+226 |     consulta de productos que requieren atención.
+227 | 
+228 | CÓMO:
+229 |     Consulta la tabla de productos utilizando dos condiciones:
+230 |     la cantidad actual debe ser menor o igual al stock mínimo configurado
+231 |     para el producto y el estado del producto debe ser 'active'.
+232 | 
+233 |     Después construye una respuesta que contiene la cantidad total de
+234 |     productos encontrados y la información de cada producto mediante
+235 |     su método to_dict().
+236 | 
+237 | POR QUÉ:
+238 |     Permite detectar productos que tienen un nivel de inventario bajo y
+239 |     facilita que el sistema pueda informar al usuario que necesitan
+240 |     reposición. Solo se consideran productos activos, evitando generar
+241 |     alertas para productos que ya no forman parte del inventario operativo.
+242 | 
+243 |     El acceso está protegido por el permiso 'stock:view' porque consultar
+244 |     esta información forma parte de las operaciones de visualización del
+245 |     inventario.
+246 | 
+247 | DE DÓNDE VIENE:
+248 |     Recibe una petición HTTP GET dirigida a /api/stock/alerts. No necesita
+249 |     parámetros adicionales porque las condiciones de alerta se obtienen
+250 |     directamente de los valores almacenados en cada producto.
+251 | 
+252 | A DÓNDE VA:
+253 |     Consulta los productos que cumplen las condiciones de alerta y devuelve
+254 |     una respuesta JSON con el número de productos encontrados y la lista
+255 |     de productos afectados, utilizando código HTTP 200.
+256 | """
+257 | @stock_bp.route('/alerts', methods=['GET'])
+258 | @require_scope('stock:view')
+259 | def get_alerts():
+260 | 
+261 |     alert_products = Product.query.filter(
+262 |         Product.qty <= Product.min_stock,
+263 |         Product.status == 'active'
+264 |     ).all()
+265 | 
+266 |     return jsonify([{
+267 |         "alert_count": len(alert_products),
+268 |         "products": [p.to_dict() for p in alert_products]
+269 |     }]), 200
 
 ####################################################################################################
 # FILE: app/telemetry.py   (420 lines)
@@ -10319,7 +10351,7 @@ Files included (in this order):
 35 |     op.drop_table('products')
 
 ####################################################################################################
-# FILE: observability/alertmanager/alertmanager.yml   (68 lines)
+# FILE: observability/alertmanager/alertmanager.yml   (71 lines)
 ####################################################################################################
  1 | # configuracion del archivo completo. determina el tiempo de resolucion de alertas, la ruta de las alertas y los receptores 
  2 | # para cada equipo y severidad.
@@ -10333,62 +10365,65 @@ Files included (in this order):
 10 |   group_interval: 5m #indica el tiempo que debe pasar antes de volver a notificar sobre cambios dentro de un grupo existente.
 11 |   repeat_interval: 1h #indica el tiempo que debe pasar antes de repetir una notificación de una alerta que continúa activa.
 12 |   routes:
-13 |       #Se busca las alertas de severity=critical y team=security, las manda al receptor security-critical y se repite cada 30 minutos
-14 |     - match: {severity: critical, team: security}
-15 |       receiver: security-critical
-16 |       repeat_interval: 30m
-17 | 
-18 |       #Se busca las alertas de severity=critical y team=infra, las manda al receptor infra-critical y se repite cada 30 minutos
-19 |     - match: {severity: critical, team: infra}
-20 |       receiver: infra-critical
-21 | 
-22 |       #Se busca las alertas de severity=critical y team=backend, las manda al receptor backend-critical y se repite cada 30 minutos
-23 |     - match: {severity: critical, team: backend}
-24 |       receiver: backend-critical
-25 | 
-26 |       #Se busca las alertas de team=backend, las manda al receptor backend-team
-27 |     - match: {team: backend}
-28 |       receiver: backend-team
-29 | 
-30 |       #Se busca las alertas de team=security, las manda al receptor security-team
-31 |     - match: {team: security}
-32 |       receiver: security-team
-33 | 
-34 |       #Se busca las alertas de team=infra, las manda al receptor infra-team
-35 |     - match: {team: infra}
-36 |       receiver: infra-team
-37 | 
-38 | #aqui se definen el destino de las notificaciones
-39 | #aqui no hay ningun webhook configurado. 
-40 | receivers:
-41 |   - name: default
-42 |     webhook_configs: []
-43 | 
-44 |   - name: infra-team
+13 |       # Se busca las alertas de severity=critical y team=security, las manda al receptor security-critical 
+14 |       # y se repite cada 30 minutos
+15 |     - match: {severity: critical, team: security}
+16 |       receiver: security-critical
+17 |       repeat_interval: 30m
+18 | 
+19 |       # Se busca las alertas de severity=critical y team=infra, las manda al receptor infra-critical y se 
+20 |       # repite cada 30 minutos
+21 |     - match: {severity: critical, team: infra}
+22 |       receiver: infra-critical
+23 | 
+24 |       # Se busca las alertas de severity=critical y team=backend, las 
+25 |       # manda al receptor backend-critical y se repite cada 30 minutos
+26 |     - match: {severity: critical, team: backend}
+27 |       receiver: backend-critical
+28 | 
+29 |       #Se busca las alertas de team=backend, las manda al receptor backend-team
+30 |     - match: {team: backend}
+31 |       receiver: backend-team
+32 | 
+33 |       #Se busca las alertas de team=security, las manda al receptor security-team
+34 |     - match: {team: security}
+35 |       receiver: security-team
+36 | 
+37 |       #Se busca las alertas de team=infra, las manda al receptor infra-team
+38 |     - match: {team: infra}
+39 |       receiver: infra-team
+40 | 
+41 | #aqui se definen el destino de las notificaciones
+42 | #aqui no hay ningun webhook configurado. 
+43 | receivers:
+44 |   - name: default
 45 |     webhook_configs: []
 46 | 
-47 |   - name: infra-critical
+47 |   - name: infra-team
 48 |     webhook_configs: []
 49 | 
-50 |   - name: backend-team
+50 |   - name: infra-critical
 51 |     webhook_configs: []
 52 | 
-53 |   - name: backend-critical
+53 |   - name: backend-team
 54 |     webhook_configs: []
 55 | 
-56 |   - name: security-team
+56 |   - name: backend-critical
 57 |     webhook_configs: []
 58 | 
-59 |   - name: security-critical
+59 |   - name: security-team
 60 |     webhook_configs: []
 61 | 
-62 | #Aqui se define que cuando haya una alerta de critical y otra de warning del mismo grupo la alerta de warning se silenciara.
-63 | inhibit_rules:
-64 |   - source_match:
-65 |       severity: critical
-66 |     target_match:
-67 |       severity: warning
-68 |     equal: [alert_group]
+62 |   - name: security-critical
+63 |     webhook_configs: []
+64 | 
+65 | #Aqui se define que cuando haya una alerta de critical y otra de warning del mismo grupo la alerta de warning se silenciara.
+66 | inhibit_rules:
+67 |   - source_match:
+68 |       severity: critical
+69 |     target_match:
+70 |       severity: warning
+71 |     equal: [alert_group]
 
 ####################################################################################################
 # FILE: observability/alloy/config.alloy   (105 lines)
@@ -11148,7 +11183,7 @@ Files included (in this order):
 171 | }
 
 ####################################################################################################
-# FILE: observability/grafana/provisioning/dashboards/json/security.json   (288 lines)
+# FILE: observability/grafana/provisioning/dashboards/json/security.json   (180 lines)
 ####################################################################################################
   1 | {
   2 |   "id": null,
@@ -11183,11 +11218,11 @@ Files included (in this order):
  31 |   },
  32 |   "panels": [
  33 |     {
- 34 |       "id": 1,
+ 34 |       "id": 7,
  35 |       "type": "stat",
- 36 |       "title": "Fallos de autenticación (req/s)",
+ 36 |       "title": "Logins fallidos en Keycloak (últimos 15m)",
  37 |       "gridPos": {
- 38 |         "h": 5,
+ 38 |         "h": 8,
  39 |         "w": 8,
  40 |         "x": 0,
  41 |         "y": 0
@@ -11203,8 +11238,8 @@ Files included (in this order):
  51 |                 "value": null
  52 |               },
  53 |               {
- 54 |                 "color": "red",
- 55 |                 "value": 1
+ 54 |                 "color": "orange",
+ 55 |                 "value": 5
  56 |               }
  57 |             ]
  58 |           }
@@ -11212,232 +11247,124 @@ Files included (in this order):
  60 |       },
  61 |       "targets": [
  62 |         {
- 63 |           "expr": "sum(rate(auth_failures_total[5m])) or vector(0)",
- 64 |           "legendFormat": "fallos/s",
+ 63 |           "expr": "round(sum(increase(loki_process_custom_keycloak_login_failures_total[15m]))) or vector(0)",
+ 64 |           "legendFormat": "logins fallidos",
  65 |           "refId": "A"
  66 |         }
  67 |       ]
  68 |     },
  69 |     {
- 70 |       "id": 2,
- 71 |       "type": "stat",
- 72 |       "title": "Tokens inválidos (últimos 15m)",
+ 70 |       "id": 8,
+ 71 |       "type": "timeseries",
+ 72 |       "title": "Logins fallidos por motivo (Keycloak)",
  73 |       "gridPos": {
- 74 |         "h": 5,
- 75 |         "w": 8,
+ 74 |         "h": 8,
+ 75 |         "w": 16,
  76 |         "x": 8,
  77 |         "y": 0
  78 |       },
  79 |       "datasource": "${DS_PROMETHEUS}",
- 80 |       "fieldConfig": {
- 81 |         "defaults": {
- 82 |           "thresholds": {
- 83 |             "mode": "absolute",
- 84 |             "steps": [
- 85 |               {
- 86 |                 "color": "green",
- 87 |                 "value": null
- 88 |               },
- 89 |               {
- 90 |                 "color": "orange",
- 91 |                 "value": 50
- 92 |               }
- 93 |             ]
- 94 |           }
- 95 |         }
- 96 |       },
- 97 |       "targets": [
- 98 |         {
- 99 |           "expr": "round(increase(invalid_tokens_total[15m]))",
-100 |           "legendFormat": "tokens inválidos",
-101 |           "refId": "A"
-102 |         }
-103 |       ]
-104 |     },
-105 |     {
-106 |       "id": 3,
-107 |       "type": "stat",
-108 |       "title": "IPs con más de 20 fallos (10m)",
-109 |       "gridPos": {
-110 |         "h": 5,
-111 |         "w": 8,
-112 |         "x": 16,
-113 |         "y": 0
-114 |       },
-115 |       "datasource": "${DS_PROMETHEUS}",
-116 |       "fieldConfig": {
-117 |         "defaults": {
-118 |           "thresholds": {
-119 |             "mode": "absolute",
-120 |             "steps": [
-121 |               {
-122 |                 "color": "green",
-123 |                 "value": null
-124 |               },
-125 |               {
-126 |                 "color": "red",
-127 |                 "value": 1
-128 |               }
-129 |             ]
-130 |           }
-131 |         }
-132 |       },
-133 |       "targets": [
-134 |         {
-135 |           "expr": "count(sum by(source_ip) (increase(auth_failures_total[10m])) > 20) or vector(0)",
-136 |           "legendFormat": "IPs sospechosas",
-137 |           "refId": "A"
-138 |         }
-139 |       ]
-140 |     },
-141 |     {
-142 |       "id": 4,
-143 |       "type": "timeseries",
-144 |       "title": "Fallos de autenticación en el tiempo",
-145 |       "gridPos": {
-146 |         "h": 8,
-147 |         "w": 12,
-148 |         "x": 0,
-149 |         "y": 5
-150 |       },
-151 |       "datasource": "${DS_PROMETHEUS}",
-152 |       "targets": [
-153 |         {
-154 |           "expr": "sum(rate(auth_failures_total[5m])) or vector(0)",
-155 |           "legendFormat": "fallos/s",
-156 |           "refId": "A"
-157 |         }
-158 |       ]
-159 |     },
-160 |     {
-161 |       "id": 5,
-162 |       "type": "timeseries",
-163 |       "title": "Tokens inválidos en el tiempo",
-164 |       "gridPos": {
-165 |         "h": 8,
-166 |         "w": 12,
-167 |         "x": 12,
-168 |         "y": 5
-169 |       },
-170 |       "datasource": "${DS_PROMETHEUS}",
-171 |       "targets": [
-172 |         {
-173 |           "expr": "round(increase(invalid_tokens_total[15m]))",
-174 |           "legendFormat": "tokens inválidos / 15m",
-175 |           "refId": "A"
-176 |         }
-177 |       ]
-178 |     },
-179 |     {
-180 |       "id": 6,
-181 |       "type": "table",
-182 |       "title": "Top IPs por fallos de autenticación (10m)",
-183 |       "gridPos": {
-184 |         "h": 8,
-185 |         "w": 24,
-186 |         "x": 0,
-187 |         "y": 13
-188 |       },
-189 |       "datasource": "${DS_PROMETHEUS}",
-190 |       "targets": [
-191 |         {
-192 |           "expr": "topk(10, sum by(source_ip) (increase(auth_failures_total[10m])))",
-193 |           "legendFormat": "{{source_ip}}",
-194 |           "refId": "A",
-195 |           "format": "table",
-196 |           "instant": true
-197 |         }
-198 |       ]
-199 |     },
-200 |     {
-201 |       "id": 7,
-202 |       "type": "stat",
-203 |       "title": "Logins fallidos en Keycloak (últimos 15m)",
-204 |       "gridPos": {
-205 |         "h": 5,
-206 |         "w": 8,
-207 |         "x": 0,
-208 |         "y": 21
-209 |       },
-210 |       "datasource": "${DS_PROMETHEUS}",
-211 |       "fieldConfig": {
-212 |         "defaults": {
-213 |           "thresholds": {
-214 |             "mode": "absolute",
-215 |             "steps": [
-216 |               {
-217 |                 "color": "green",
-218 |                 "value": null
-219 |               },
-220 |               {
-221 |                 "color": "orange",
-222 |                 "value": 5
-223 |               }
-224 |             ]
-225 |           }
-226 |         }
-227 |       },
-228 |       "targets": [
-229 |         {
-230 |           "expr": "round(sum(increase(loki_process_custom_keycloak_login_failures_total[15m]))) or vector(0)",
-231 |           "legendFormat": "logins fallidos",
-232 |           "refId": "A"
-233 |         }
-234 |       ]
-235 |     },
-236 |     {
-237 |       "id": 8,
-238 |       "type": "timeseries",
-239 |       "title": "Logins fallidos por motivo (Keycloak)",
-240 |       "gridPos": {
-241 |         "h": 8,
-242 |         "w": 16,
-243 |         "x": 8,
-244 |         "y": 21
-245 |       },
-246 |       "datasource": "${DS_PROMETHEUS}",
-247 |       "targets": [
-248 |         {
-249 |           "expr": "sum by(reason) (round(increase(loki_process_custom_keycloak_login_failures_total[5m])))",
-250 |           "legendFormat": "{{reason}}",
-251 |           "refId": "A"
-252 |         }
-253 |       ]
-254 |     },
-255 |     {
-256 |       "id": 9,
-257 |       "type": "table",
-258 |       "title": "Top IPs con logins fallidos en Keycloak (10m)",
-259 |       "gridPos": {
-260 |         "h": 8,
-261 |         "w": 24,
-262 |         "x": 0,
-263 |         "y": 29
-264 |       },
-265 |       "datasource": "${DS_PROMETHEUS}",
-266 |       "targets": [
-267 |         {
-268 |           "expr": "topk(10, sum by(source_ip) (round(increase(loki_process_custom_keycloak_login_failures_total[10m]))))",
-269 |           "legendFormat": "{{source_ip}}",
-270 |           "refId": "A",
-271 |           "format": "table",
-272 |           "instant": true
-273 |         }
-274 |       ]
-275 |     }
-276 |   ],
-277 |   "annotations": {
-278 |     "list": [
-279 |       {
-280 |         "name": "Alertas de seguridad",
-281 |         "datasource": "${DS_PROMETHEUS}",
-282 |         "enable": true,
-283 |         "expr": "ALERTS{team=\"security\"}",
-284 |         "iconColor": "red"
-285 |       }
-286 |     ]
-287 |   }
-288 | }
+ 80 |       "targets": [
+ 81 |         {
+ 82 |           "expr": "sum by(reason) (round(increase(loki_process_custom_keycloak_login_failures_total[5m])))",
+ 83 |           "legendFormat": "{{reason}}",
+ 84 |           "refId": "A"
+ 85 |         }
+ 86 |       ]
+ 87 |     },
+ 88 |     {
+ 89 |       "id": 9,
+ 90 |       "type": "table",
+ 91 |       "title": "Top IPs con logins fallidos en Keycloak (10m)",
+ 92 |       "gridPos": {
+ 93 |         "h": 8,
+ 94 |         "w": 24,
+ 95 |         "x": 0,
+ 96 |         "y": 8
+ 97 |       },
+ 98 |       "datasource": "${DS_PROMETHEUS}",
+ 99 |       "targets": [
+100 |         {
+101 |           "expr": "topk(10, sum by(source_ip) (round(increase(loki_process_custom_keycloak_login_failures_total[10m]))))",
+102 |           "legendFormat": "{{source_ip}}",
+103 |           "refId": "A",
+104 |           "format": "table",
+105 |           "instant": true
+106 |         }
+107 |       ]
+108 |     },
+109 |     {
+110 |       "id": 4,
+111 |       "type": "timeseries",
+112 |       "title": "Fallos de autenticación en el tiempo",
+113 |       "gridPos": {
+114 |         "h": 8,
+115 |         "w": 12,
+116 |         "x": 0,
+117 |         "y": 16
+118 |       },
+119 |       "datasource": "${DS_PROMETHEUS}",
+120 |       "targets": [
+121 |         {
+122 |           "expr": "sum(rate(auth_failures_total[5m])) or vector(0)",
+123 |           "legendFormat": "fallos/s",
+124 |           "refId": "A"
+125 |         }
+126 |       ]
+127 |     },
+128 |     {
+129 |       "id": 5,
+130 |       "type": "timeseries",
+131 |       "title": "Tokens inválidos en el tiempo",
+132 |       "gridPos": {
+133 |         "h": 8,
+134 |         "w": 12,
+135 |         "x": 12,
+136 |         "y": 16
+137 |       },
+138 |       "datasource": "${DS_PROMETHEUS}",
+139 |       "targets": [
+140 |         {
+141 |           "expr": "round(increase(invalid_tokens_total[15m]))",
+142 |           "legendFormat": "tokens inválidos / 15m",
+143 |           "refId": "A"
+144 |         }
+145 |       ]
+146 |     },
+147 |     {
+148 |       "id": 6,
+149 |       "type": "table",
+150 |       "title": "Top IPs por fallos de autenticación (10m)",
+151 |       "gridPos": {
+152 |         "h": 8,
+153 |         "w": 24,
+154 |         "x": 0,
+155 |         "y": 24
+156 |       },
+157 |       "datasource": "${DS_PROMETHEUS}",
+158 |       "targets": [
+159 |         {
+160 |           "expr": "topk(10, sum by(source_ip) (increase(auth_failures_total[10m])))",
+161 |           "legendFormat": "{{source_ip}}",
+162 |           "refId": "A",
+163 |           "format": "table",
+164 |           "instant": true
+165 |         }
+166 |       ]
+167 |     }
+168 |   ],
+169 |   "annotations": {
+170 |     "list": [
+171 |       {
+172 |         "name": "Alertas de seguridad",
+173 |         "datasource": "${DS_PROMETHEUS}",
+174 |         "enable": true,
+175 |         "expr": "ALERTS{team=\"security\"}",
+176 |         "iconColor": "red"
+177 |       }
+178 |     ]
+179 |   }
+180 | }
 
 ####################################################################################################
 # FILE: observability/grafana/provisioning/datasources/datasources.yml   (39 lines)
