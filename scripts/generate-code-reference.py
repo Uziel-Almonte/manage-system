@@ -326,7 +326,8 @@ OBSERVABILITY CONFIGURATION (observability/)
                                   (>90%), DBPoolNearExhaustion (>90% of pool), HighErrorRate (>5% 5xx),
                                   ElevatedErrorRate (>1%), HighLatencyP95 (>1 s), HighAuthFailureRate,
                                   SpikeInvalidTokens (>50 in 15 min), AuthFailuresFromSingleIP (>20
-                                  in 10 min), TargetDown. HighErrorRate exists once only (the old duplicate
+                                  in 10 min), KeycloakFailedLogins (>5 failed Keycloak logins from one IP in 5 min),
+                                  TargetDown. HighErrorRate exists once only (the old duplicate
                                   in alerts.yml was removed).
   alertmanager/alertmanager.yml   routes alerts by severity and team to the receivers default,
                                   infra-team, backend-team, security-team and the *-critical ones.
@@ -335,11 +336,16 @@ OBSERVABILITY CONFIGURATION (observability/)
                                   stdout through the Docker socket and pushes it to Loki, labelled
                                   with `container` (flask_app, grafana...) and `service_name`
                                   (compose service). Filter in Grafana with {container="flask_app"}.
+                                  Failed Keycloak logins (wrong password happens on Keycloak's page,
+                                  Flask never sees it): Keycloak logs type="LOGIN_ERROR"; Alloy's
+                                  loki.process counts those lines and exposes
+                                  loki_process_custom_keycloak_login_failures_total{source_ip,reason}
+                                  on :12345/metrics, which Prometheus scrapes (job alloy).
   tempo/tempo.yaml, loki/loki.yaml   storage and server settings for traces and logs.
   grafana/provisioning            datasources (Prometheus, Loki, Tempo) and four dashboards:
                                   Application (latency, throughput, errors), Infrastructure (CPU,
                                   memory, DB pool), Business (products and stock movements) and
-                                  Security (authentication failures and invalid tokens).
+                                  Security (authentication failures, invalid tokens and failed Keycloak logins).
                                   Panels use increase()/rate() windows and `or vector(0)` so they
                                   show 0 instead of "No data" when nothing has failed. The Loki
                                   datasource links `traceId=<32 hex>` in Flask logs to Tempo.
@@ -819,6 +825,9 @@ PREPARE BEFORE PRESENTING (about 1 hour before; same steps as section 9 of comma
   Tabs: App :5000, Grafana :3000 (admin/admin, folder "Observability"), Prometheus :9090
   (Status > Targets: 7 up), Alertmanager :9093, Keycloak :8080 (admin/admin).
   Logs and traces: Grafana > Explore > Loki, query {container="flask_app"}, click "View Trace".
+  6. Failed-login demo: type a wrong password on the Keycloak login page 6+ times (or use the curl
+     below), wait ~1 minute: the Security dashboard shows the failed logins and KeycloakFailedLogins fires.
+       for i in $(seq 1 8); do curl -s -o /dev/null -d grant_type=password -d client_id=flask-backend -d username=kratos_boss -d password=WRONG http://localhost:8080/realms/inventory-realm/protocol/openid-connect/token; done
   Empty panel? Wait about 30 s and send more traffic.
 """)
 

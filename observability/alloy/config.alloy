@@ -60,6 +60,43 @@ discovery.relabel "docker_labels" {
 loki.source.docker "docker_logs" {
   host       = "unix:///var/run/docker.sock"
   targets    = discovery.relabel.docker_labels.output
+  forward_to = [loki.process.keycloak_failed_logins.receiver]
+}
+
+// Login con password incorrecta: ocurre en la pantalla de Keycloak, Flask nunca la ve.
+// Keycloak si la escribe en su log (type="LOGIN_ERROR", ipAddress=..., error=..., username=...),
+// asi que aqui se cuenta y se expone como metrica en el endpoint de Alloy (:12345/metrics):
+//   loki_process_custom_keycloak_login_failures_total{source_ip, reason}
+loki.process "keycloak_failed_logins" {
+  stage.match {
+    selector = "{container=\"keycloak_auth\"} |= \"LOGIN_ERROR\""
+
+    stage.regex {
+      expression = "ipAddress=\"(?P<source_ip>[^\"]*)\".*error=\"(?P<reason>[^\"]*)\""
+    }
+
+    // metric.counter lee las etiquetas del stream, por eso se suben temporalmente y se quitan despues.
+    stage.labels {
+      values = {
+        source_ip = "",
+        reason    = "",
+      }
+    }
+
+    stage.metrics {
+      metric.counter {
+        name        = "keycloak_login_failures_total"
+        description = "Intentos de login fallidos registrados por Keycloak"
+        action      = "inc"
+        match_all   = true
+      }
+    }
+
+    stage.label_drop {
+      values = ["source_ip", "reason"]
+    }
+  }
+
   forward_to = [loki.write.default.receiver]
 }
 
