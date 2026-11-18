@@ -196,6 +196,82 @@
           "instant": true
         }
       ]
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Logins fallidos en Keycloak (últimos 15m)",
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 0,
+        "y": 21
+      },
+      "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 5
+              }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "round(sum(increase(loki_process_custom_keycloak_login_failures_total[15m]))) or vector(0)",
+          "legendFormat": "logins fallidos",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Logins fallidos por motivo (Keycloak)",
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 21
+      },
+      "datasource": "${DS_PROMETHEUS}",
+      "targets": [
+        {
+          "expr": "sum by(reason) (round(increase(loki_process_custom_keycloak_login_failures_total[5m])))",
+          "legendFormat": "{{reason}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Top IPs con logins fallidos en Keycloak (10m)",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 29
+      },
+      "datasource": "${DS_PROMETHEUS}",
+      "targets": [
+        {
+          "expr": "topk(10, sum by(source_ip) (round(increase(loki_process_custom_keycloak_login_failures_total[10m]))))",
+          "legendFormat": "{{source_ip}}",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        }
+      ]
     }
   ],
   "annotations": {

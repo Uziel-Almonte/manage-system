@@ -37,11 +37,18 @@ A DÓNDE VA:
     los entrega a add_movement() mediante el parámetro data. Si no
     cumplen, la petición es rechazada antes de ejecutar la función.
 """
+# valida los datos de entrada para registrar un movimiento de stock
 class StockMovementSchema(Schema):
+    # define lo que se espera de cada campo y las restricciones que deben cumplir
+    # product_id es un entero obligatorio entre 1 y 2_147_483_647
     product_id = fields.Integer(required=True, validate=validate.Range(min=1, max=2_147_483_647))
+    # type es una cadena obligatoria que solo puede ser 'entry' o 'exit'
     type = fields.String(required=True, validate=validate.OneOf(['entry', 'exit']))
+    # qty_change es un entero obligatorio entre 1 y 2_147_483_647
     qty_change = fields.Integer(required=True, validate=validate.Range(min=1, max=2_147_483_647))
+    # notes es una cadena opcional con un valor predeterminado
     notes = fields.String(load_default='')
+    # user es una cadena opcional con un valor predeterminado
     user = fields.String(load_default='system')
 
 stock_bp = Blueprint('stock', 'stock', url_prefix='/api/stock', description="Endpoints for stock operations")

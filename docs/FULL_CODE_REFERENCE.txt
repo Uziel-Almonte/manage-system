@@ -1,6 +1,6 @@
 ====================================================================================================
 MANAGE-SYSTEM - COMPLETE CODE REFERENCE
-Generated 2026-11-17 by scripts/generate-code-reference.py
+Generated 2026-11-18 by scripts/generate-code-reference.py
 ====================================================================================================
 This single text file documents the whole project: every Python function and class (with its
 docstring, line range, decorators and signature), the tests, the CI/CD pipelines, Docker and
@@ -25,7 +25,7 @@ CONTENTS
    9. Testing strategy and how to run everything
   10. Appendix - full source of every file, with line numbers
 
-Size: 20 application modules (3445 lines), 18 test modules (3076 lines), 114 files in the appendix.
+Size: 20 application modules (3445 lines), 18 test modules (3076 lines), 115 files in the appendix.
 
 
 ====================================================================================================
@@ -2248,6 +2248,95 @@ generate_openapi_spec.py   (27 lines)
 -------------------------------------
   (no functions or classes)
 
+scripts/generate-code-reference.py   (845 lines)
+------------------------------------------------
+  Functions and classes: 21
+
+  [function] tracked_files   (lines 25-27)
+    def tracked_files() -> list[str]
+    (no docstring or comment in the source; see its code in the appendix)
+
+  [function] read   (lines 30-31)
+    def read(rel: str) -> str
+    (no docstring or comment in the source; see its code in the appendix)
+
+  [function] nlines   (lines 34-35)
+    def nlines(rel: str) -> int
+    (no docstring or comment in the source; see its code in the appendix)
+
+  [function] h1   (lines 38-40)
+    def h1(title: str) -> str
+    (no docstring or comment in the source; see its code in the appendix)
+
+  [function] h2   (lines 43-44)
+    def h2(title: str) -> str
+    (no docstring or comment in the source; see its code in the appendix)
+
+  [function] wrap   (lines 47-52)
+    def wrap(text: str, indent: str='') -> str
+    (no docstring or comment in the source; see its code in the appendix)
+
+  [function] leading_doc   (lines 447-469)
+    def leading_doc(rel: str, node: ast.AST, tree: ast.AST, src: str) -> str | None
+    Documentation written just above a def as a bare string literal or comment block.
+
+  [function] sig_of   (lines 472-476)
+    def sig_of(node: ast.AST) -> str
+    (no docstring or comment in the source; see its code in the appendix)
+
+  [function] doc_block   (lines 479-483)
+    def doc_block(doc: str | None, indent: str) -> str
+    (no docstring or comment in the source; see its code in the appendix)
+
+  [function] walk_defs   (lines 486-496)
+    def walk_defs(tree: ast.AST)
+    Yield (qualified_name, node, depth) for every function and class.
+
+      [function] walk_defs.visit   (lines 488-495)
+        def visit(node, prefix, depth)
+        (documentation written above the function in the source:)
+        Yield (qualified_name, node, depth) for every function and class.
+
+  [function] module_docstring_and_globals   (lines 499-506)
+    def module_docstring_and_globals(tree: ast.Module, src: str) -> list[str]
+    (no docstring or comment in the source; see its code in the appendix)
+
+  [function] python_inventory   (lines 509-552)
+    def python_inventory(files: list[str]) -> str
+    (no docstring or comment in the source; see its code in the appendix)
+
+  [function] test_inventory   (lines 555-588)
+    def test_inventory(files: list[str]) -> str
+    (no docstring or comment in the source; see its code in the appendix)
+
+  [function] shell_inventory   (lines 591-611)
+    def shell_inventory(files: list[str]) -> str
+    (no docstring or comment in the source; see its code in the appendix)
+
+  [function] migrations_inventory   (lines 614-629)
+    def migrations_inventory(files: list[str]) -> str
+    (no docstring or comment in the source; see its code in the appendix)
+
+  [function] templates_inventory   (lines 632-650)
+    def templates_inventory(files: list[str]) -> str
+    (no docstring or comment in the source; see its code in the appendix)
+
+  [function] realm_summary   (lines 653-673)
+    def realm_summary() -> str
+    (no docstring or comment in the source; see its code in the appendix)
+
+  [function] appendix_files   (lines 682-693)
+    def appendix_files(all_files: list[str]) -> list[str]
+    (no docstring or comment in the source; see its code in the appendix)
+
+  [function] appendix   (lines 696-705)
+    def appendix(files: list[str]) -> str
+    (no docstring or comment in the source; see its code in the appendix)
+
+  [function] main   (lines 708-841)
+    def main() -> None
+    (no docstring or comment in the source; see its code in the appendix)
+
 scripts/generate-presentation-docs.py   (487 lines)
 ---------------------------------------------------
   Functions and classes: 11
@@ -2411,7 +2500,8 @@ OBSERVABILITY CONFIGURATION (observability/)
                                   (>90%), DBPoolNearExhaustion (>90% of pool), HighErrorRate (>5% 5xx),
                                   ElevatedErrorRate (>1%), HighLatencyP95 (>1 s), HighAuthFailureRate,
                                   SpikeInvalidTokens (>50 in 15 min), AuthFailuresFromSingleIP (>20
-                                  in 10 min), TargetDown. HighErrorRate exists once only (the old duplicate
+                                  in 10 min), KeycloakFailedLogins (>5 failed Keycloak logins from one IP in 5 min),
+                                  TargetDown. HighErrorRate exists once only (the old duplicate
                                   in alerts.yml was removed).
   alertmanager/alertmanager.yml   routes alerts by severity and team to the receivers default,
                                   infra-team, backend-team, security-team and the *-critical ones.
@@ -2420,11 +2510,16 @@ OBSERVABILITY CONFIGURATION (observability/)
                                   stdout through the Docker socket and pushes it to Loki, labelled
                                   with `container` (flask_app, grafana...) and `service_name`
                                   (compose service). Filter in Grafana with {container="flask_app"}.
+                                  Failed Keycloak logins (wrong password happens on Keycloak's page,
+                                  Flask never sees it): Keycloak logs type="LOGIN_ERROR"; Alloy's
+                                  loki.process counts those lines and exposes
+                                  loki_process_custom_keycloak_login_failures_total{source_ip,reason}
+                                  on :12345/metrics, which Prometheus scrapes (job alloy).
   tempo/tempo.yaml, loki/loki.yaml   storage and server settings for traces and logs.
   grafana/provisioning            datasources (Prometheus, Loki, Tempo) and four dashboards:
                                   Application (latency, throughput, errors), Infrastructure (CPU,
                                   memory, DB pool), Business (products and stock movements) and
-                                  Security (authentication failures and invalid tokens).
+                                  Security (authentication failures, invalid tokens and failed Keycloak logins).
                                   Panels use increase()/rate() windows and `or vector(0)` so they
                                   show 0 instead of "No data" when nothing has failed. The Loki
                                   datasource links `traceId=<32 hex>` in Flask logs to Tempo.
@@ -2538,6 +2633,9 @@ PREPARE BEFORE PRESENTING (about 1 hour before; same steps as section 9 of comma
   Tabs: App :5000, Grafana :3000 (admin/admin, folder "Observability"), Prometheus :9090
   (Status > Targets: 7 up), Alertmanager :9093, Keycloak :8080 (admin/admin).
   Logs and traces: Grafana > Explore > Loki, query {container="flask_app"}, click "View Trace".
+  6. Failed-login demo: type a wrong password on the Keycloak login page 6+ times (or use the curl
+     below), wait ~1 minute: the Security dashboard shows the failed logins and KeycloakFailedLogins fires.
+       for i in $(seq 1 8); do curl -s -o /dev/null -d grant_type=password -d client_id=flask-backend -d username=kratos_boss -d password=WRONG http://localhost:8080/realms/inventory-realm/protocol/openid-connect/token; done
   Empty panel? Wait about 30 s and send more traffic.
 
 
@@ -2604,16 +2702,16 @@ Files included (in this order):
   - migrations/versions/b76fc13a9c4a_create_audit_logs_table.py  (38 lines)
   - migrations/versions/c1fba7c68b3b_create_products_table.py  (35 lines)
   - observability/alertmanager/alertmanager.yml  (68 lines)
-  - observability/alloy/config.alloy  (68 lines)
+  - observability/alloy/config.alloy  (105 lines)
   - observability/grafana/provisioning/dashboards/dashboards.yml  (11 lines)
   - observability/grafana/provisioning/dashboards/json/application.json  (274 lines)
   - observability/grafana/provisioning/dashboards/json/business.json  (176 lines)
   - observability/grafana/provisioning/dashboards/json/infrastructure.json  (171 lines)
-  - observability/grafana/provisioning/dashboards/json/security.json  (212 lines)
+  - observability/grafana/provisioning/dashboards/json/security.json  (288 lines)
   - observability/grafana/provisioning/datasources/datasources.yml  (39 lines)
   - observability/loki/loki.yaml  (52 lines)
   - observability/prometheus/prometheus.yml  (41 lines)
-  - observability/prometheus/rules/alerts.rules.yml  (122 lines)
+  - observability/prometheus/rules/alerts.rules.yml  (133 lines)
   - observability/prometheus/rules/alerts.yml  (14 lines)
   - observability/tempo/tempo.yaml  (32 lines)
   - openapi_spec.json  (494 lines)
@@ -2623,6 +2721,7 @@ Files included (in this order):
   - scripts/ci-http-check.sh  (41 lines)
   - scripts/ci-verify-e2e-ready.sh  (24 lines)
   - scripts/cloudflare-tunnel.sh  (319 lines)
+  - scripts/generate-code-reference.py  (845 lines)
   - scripts/generate-presentation-docs.py  (487 lines)
   - scripts/jenkins-docker.sh  (7 lines)
   - scripts/prepare-keycloak-e2e.sh  (73 lines)
@@ -10292,76 +10391,113 @@ Files included (in this order):
 68 |     equal: [alert_group]
 
 ####################################################################################################
-# FILE: observability/alloy/config.alloy   (68 lines)
+# FILE: observability/alloy/config.alloy   (105 lines)
 ####################################################################################################
- 1 | // Receive OTLP traces and logs from the Flask app.
- 2 | // este es el receptor otpl(OpenTelemetry protocol) y habre edpoints para que otras aplicaciones puedan enviar telemetría a Alloy mediante OpenTelemetry.
- 3 | // Aqui se recibe informacion de tanto tempo como de loki 
- 4 | otelcol.receiver.otlp "default" {
- 5 |   grpc {
- 6 |     endpoint = "0.0.0.0:4317"
- 7 |   }
- 8 | 
- 9 |   http {
-10 |     endpoint = "0.0.0.0:4318"
-11 |   }
-12 | 
-13 |   output {
-14 |     traces = [otelcol.exporter.otlp.tempo.input]
-15 |     logs   = [otelcol.exporter.loki.default.input]
-16 |   }
-17 | }
-18 | 
-19 | otelcol.exporter.otlp "tempo" {
-20 |   client {
-21 |     endpoint = "tempo:4317"
-22 |     tls {
-23 |       insecure             = true
-24 |       insecure_skip_verify = true
-25 |     }
-26 |   }
-27 | }
-28 | 
-29 | otelcol.exporter.loki "default" {
-30 |   forward_to = [loki.write.default.receiver]
-31 | }
-32 | 
-33 | loki.write "default" {
-34 |   endpoint {
-35 |     url = "http://loki:3100/loki/api/v1/push"
-36 |   }
-37 | }
-38 | 
-39 | // Ship Docker container stdout logs to Loki (structured Flask logs).
-40 | discovery.docker "containers" {
-41 |   host = "unix:///var/run/docker.sock"
-42 | }
-43 | 
-44 | // Etiquetas para poder filtrar en Grafana: {container="flask_app"}, {service_name="web"}.
-45 | discovery.relabel "docker_labels" {
-46 |   targets = discovery.docker.containers.targets
-47 | 
-48 |   rule {
-49 |     source_labels = ["__meta_docker_container_name"]
-50 |     regex         = "/(.*)"
-51 |     target_label  = "container"
-52 |   }
-53 | 
-54 |   rule {
-55 |     source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
-56 |     target_label  = "service_name"
-57 |   }
-58 | }
-59 | 
-60 | loki.source.docker "docker_logs" {
-61 |   host       = "unix:///var/run/docker.sock"
-62 |   targets    = discovery.relabel.docker_labels.output
-63 |   forward_to = [loki.write.default.receiver]
-64 | }
-65 | 
-66 | logging {
-67 |   level = "info"
-68 | }
+  1 | // Receive OTLP traces and logs from the Flask app.
+  2 | // este es el receptor otpl(OpenTelemetry protocol) y habre edpoints para que otras aplicaciones puedan enviar telemetría a Alloy mediante OpenTelemetry.
+  3 | // Aqui se recibe informacion de tanto tempo como de loki 
+  4 | otelcol.receiver.otlp "default" {
+  5 |   grpc {
+  6 |     endpoint = "0.0.0.0:4317"
+  7 |   }
+  8 | 
+  9 |   http {
+ 10 |     endpoint = "0.0.0.0:4318"
+ 11 |   }
+ 12 | 
+ 13 |   output {
+ 14 |     traces = [otelcol.exporter.otlp.tempo.input]
+ 15 |     logs   = [otelcol.exporter.loki.default.input]
+ 16 |   }
+ 17 | }
+ 18 | 
+ 19 | otelcol.exporter.otlp "tempo" {
+ 20 |   client {
+ 21 |     endpoint = "tempo:4317"
+ 22 |     tls {
+ 23 |       insecure             = true
+ 24 |       insecure_skip_verify = true
+ 25 |     }
+ 26 |   }
+ 27 | }
+ 28 | 
+ 29 | otelcol.exporter.loki "default" {
+ 30 |   forward_to = [loki.write.default.receiver]
+ 31 | }
+ 32 | 
+ 33 | loki.write "default" {
+ 34 |   endpoint {
+ 35 |     url = "http://loki:3100/loki/api/v1/push"
+ 36 |   }
+ 37 | }
+ 38 | 
+ 39 | // Ship Docker container stdout logs to Loki (structured Flask logs).
+ 40 | discovery.docker "containers" {
+ 41 |   host = "unix:///var/run/docker.sock"
+ 42 | }
+ 43 | 
+ 44 | // Etiquetas para poder filtrar en Grafana: {container="flask_app"}, {service_name="web"}.
+ 45 | discovery.relabel "docker_labels" {
+ 46 |   targets = discovery.docker.containers.targets
+ 47 | 
+ 48 |   rule {
+ 49 |     source_labels = ["__meta_docker_container_name"]
+ 50 |     regex         = "/(.*)"
+ 51 |     target_label  = "container"
+ 52 |   }
+ 53 | 
+ 54 |   rule {
+ 55 |     source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+ 56 |     target_label  = "service_name"
+ 57 |   }
+ 58 | }
+ 59 | 
+ 60 | loki.source.docker "docker_logs" {
+ 61 |   host       = "unix:///var/run/docker.sock"
+ 62 |   targets    = discovery.relabel.docker_labels.output
+ 63 |   forward_to = [loki.process.keycloak_failed_logins.receiver]
+ 64 | }
+ 65 | 
+ 66 | // Login con password incorrecta: ocurre en la pantalla de Keycloak, Flask nunca la ve.
+ 67 | // Keycloak si la escribe en su log (type="LOGIN_ERROR", ipAddress=..., error=..., username=...),
+ 68 | // asi que aqui se cuenta y se expone como metrica en el endpoint de Alloy (:12345/metrics):
+ 69 | //   loki_process_custom_keycloak_login_failures_total{source_ip, reason}
+ 70 | loki.process "keycloak_failed_logins" {
+ 71 |   stage.match {
+ 72 |     selector = "{container=\"keycloak_auth\"} |= \"LOGIN_ERROR\""
+ 73 | 
+ 74 |     stage.regex {
+ 75 |       expression = "ipAddress=\"(?P<source_ip>[^\"]*)\".*error=\"(?P<reason>[^\"]*)\""
+ 76 |     }
+ 77 | 
+ 78 |     // metric.counter lee las etiquetas del stream, por eso se suben temporalmente y se quitan despues.
+ 79 |     stage.labels {
+ 80 |       values = {
+ 81 |         source_ip = "",
+ 82 |         reason    = "",
+ 83 |       }
+ 84 |     }
+ 85 | 
+ 86 |     stage.metrics {
+ 87 |       metric.counter {
+ 88 |         name        = "keycloak_login_failures_total"
+ 89 |         description = "Intentos de login fallidos registrados por Keycloak"
+ 90 |         action      = "inc"
+ 91 |         match_all   = true
+ 92 |       }
+ 93 |     }
+ 94 | 
+ 95 |     stage.label_drop {
+ 96 |       values = ["source_ip", "reason"]
+ 97 |     }
+ 98 |   }
+ 99 | 
+100 |   forward_to = [loki.write.default.receiver]
+101 | }
+102 | 
+103 | logging {
+104 |   level = "info"
+105 | }
 
 ####################################################################################################
 # FILE: observability/grafana/provisioning/dashboards/dashboards.yml   (11 lines)
@@ -11012,7 +11148,7 @@ Files included (in this order):
 171 | }
 
 ####################################################################################################
-# FILE: observability/grafana/provisioning/dashboards/json/security.json   (212 lines)
+# FILE: observability/grafana/provisioning/dashboards/json/security.json   (288 lines)
 ####################################################################################################
   1 | {
   2 |   "id": null,
@@ -11212,20 +11348,96 @@ Files included (in this order):
 196 |           "instant": true
 197 |         }
 198 |       ]
-199 |     }
-200 |   ],
-201 |   "annotations": {
-202 |     "list": [
-203 |       {
-204 |         "name": "Alertas de seguridad",
-205 |         "datasource": "${DS_PROMETHEUS}",
-206 |         "enable": true,
-207 |         "expr": "ALERTS{team=\"security\"}",
-208 |         "iconColor": "red"
-209 |       }
-210 |     ]
-211 |   }
-212 | }
+199 |     },
+200 |     {
+201 |       "id": 7,
+202 |       "type": "stat",
+203 |       "title": "Logins fallidos en Keycloak (últimos 15m)",
+204 |       "gridPos": {
+205 |         "h": 5,
+206 |         "w": 8,
+207 |         "x": 0,
+208 |         "y": 21
+209 |       },
+210 |       "datasource": "${DS_PROMETHEUS}",
+211 |       "fieldConfig": {
+212 |         "defaults": {
+213 |           "thresholds": {
+214 |             "mode": "absolute",
+215 |             "steps": [
+216 |               {
+217 |                 "color": "green",
+218 |                 "value": null
+219 |               },
+220 |               {
+221 |                 "color": "orange",
+222 |                 "value": 5
+223 |               }
+224 |             ]
+225 |           }
+226 |         }
+227 |       },
+228 |       "targets": [
+229 |         {
+230 |           "expr": "round(sum(increase(loki_process_custom_keycloak_login_failures_total[15m]))) or vector(0)",
+231 |           "legendFormat": "logins fallidos",
+232 |           "refId": "A"
+233 |         }
+234 |       ]
+235 |     },
+236 |     {
+237 |       "id": 8,
+238 |       "type": "timeseries",
+239 |       "title": "Logins fallidos por motivo (Keycloak)",
+240 |       "gridPos": {
+241 |         "h": 8,
+242 |         "w": 16,
+243 |         "x": 8,
+244 |         "y": 21
+245 |       },
+246 |       "datasource": "${DS_PROMETHEUS}",
+247 |       "targets": [
+248 |         {
+249 |           "expr": "sum by(reason) (round(increase(loki_process_custom_keycloak_login_failures_total[5m])))",
+250 |           "legendFormat": "{{reason}}",
+251 |           "refId": "A"
+252 |         }
+253 |       ]
+254 |     },
+255 |     {
+256 |       "id": 9,
+257 |       "type": "table",
+258 |       "title": "Top IPs con logins fallidos en Keycloak (10m)",
+259 |       "gridPos": {
+260 |         "h": 8,
+261 |         "w": 24,
+262 |         "x": 0,
+263 |         "y": 29
+264 |       },
+265 |       "datasource": "${DS_PROMETHEUS}",
+266 |       "targets": [
+267 |         {
+268 |           "expr": "topk(10, sum by(source_ip) (round(increase(loki_process_custom_keycloak_login_failures_total[10m]))))",
+269 |           "legendFormat": "{{source_ip}}",
+270 |           "refId": "A",
+271 |           "format": "table",
+272 |           "instant": true
+273 |         }
+274 |       ]
+275 |     }
+276 |   ],
+277 |   "annotations": {
+278 |     "list": [
+279 |       {
+280 |         "name": "Alertas de seguridad",
+281 |         "datasource": "${DS_PROMETHEUS}",
+282 |         "enable": true,
+283 |         "expr": "ALERTS{team=\"security\"}",
+284 |         "iconColor": "red"
+285 |       }
+286 |     ]
+287 |   }
+288 | }
 
 ####################################################################################################
 # FILE: observability/grafana/provisioning/datasources/datasources.yml   (39 lines)
@@ -11372,7 +11584,7 @@ Files included (in this order):
 41 |       - targets: ["postgres_exporter:9187"]
 
 ####################################################################################################
-# FILE: observability/prometheus/rules/alerts.rules.yml   (122 lines)
+# FILE: observability/prometheus/rules/alerts.rules.yml   (133 lines)
 ####################################################################################################
   1 | groups:
   2 |     #agrupamos las reglas de alerta en un grupo llamado "manage-system"
@@ -11496,6 +11708,17 @@ Files included (in this order):
 120 |         annotations:
 121 |           summary: "Múltiples fallos de auth desde una misma IP"
 122 |           description: "La IP {{ $labels.source_ip }} generó {{ $value }} fallos de autenticación en 10 minutos."
+123 | 
+124 |         #declaramos una alerta llamada KeycloakFailedLogins que se activara cuando una misma IP falle mas de 5 logins en Keycloak en 5 minutos (posible fuerza bruta). La metrica sale de los logs de Keycloak via Alloy.
+125 |       - alert: KeycloakFailedLogins
+126 |         expr: sum by(source_ip) (increase(loki_process_custom_keycloak_login_failures_total[5m])) > 5
+127 |         for: 0m
+128 |         labels:
+129 |           severity: critical
+130 |           team: security
+131 |         annotations:
+132 |           summary: "Muchos logins fallidos en Keycloak"
+133 |           description: "La IP {{ $labels.source_ip }} falló {{ $value | printf \"%.0f\" }} logins en los últimos 5 minutos."
 
 ####################################################################################################
 # FILE: observability/prometheus/rules/alerts.yml   (14 lines)
@@ -12529,6 +12752,855 @@ Files included (in this order):
 317 |     exit 1
 318 |     ;;
 319 | esac
+
+####################################################################################################
+# FILE: scripts/generate-code-reference.py   (845 lines)
+####################################################################################################
+  1 | #!/usr/bin/env python3
+  2 | """Build docs/FULL_CODE_REFERENCE.txt: a plain-text reference of the whole project.
+  3 | 
+  4 | Hand-written explanations live in the NARRATIVE_* constants below. The function
+  5 | inventory, the test inventory, the Keycloak realm summary and the full-source
+  6 | appendix are generated from the real files, so they cannot drift from the code.
+  7 | 
+  8 | Run from the project root:  python3 scripts/generate-code-reference.py
+  9 | """
+ 10 | from __future__ import annotations
+ 11 | 
+ 12 | import ast
+ 13 | import json
+ 14 | import re
+ 15 | import subprocess
+ 16 | import textwrap
+ 17 | from datetime import date
+ 18 | from pathlib import Path
+ 19 | 
+ 20 | ROOT = Path(__file__).resolve().parent.parent
+ 21 | OUT = ROOT / "docs" / "FULL_CODE_REFERENCE.txt"
+ 22 | W = 100  # wrap width
+ 23 | 
+ 24 | 
+ 25 | def tracked_files() -> list[str]:
+ 26 |     out = subprocess.run(["git", "ls-files"], cwd=ROOT, capture_output=True, text=True, check=True)
+ 27 |     return sorted(out.stdout.splitlines())
+ 28 | 
+ 29 | 
+ 30 | def read(rel: str) -> str:
+ 31 |     return (ROOT / rel).read_text(encoding="utf-8", errors="replace")
+ 32 | 
+ 33 | 
+ 34 | def nlines(rel: str) -> int:
+ 35 |     return len(read(rel).splitlines())
+ 36 | 
+ 37 | 
+ 38 | def h1(title: str) -> str:
+ 39 |     bar = "=" * W
+ 40 |     return f"\n\n{bar}\n{title}\n{bar}\n"
+ 41 | 
+ 42 | 
+ 43 | def h2(title: str) -> str:
+ 44 |     return f"\n{title}\n{'-' * len(title)}\n"
+ 45 | 
+ 46 | 
+ 47 | def wrap(text: str, indent: str = "") -> str:
+ 48 |     paras = [p.strip() for p in text.strip().split("\n\n")]
+ 49 |     return "\n\n".join(
+ 50 |         textwrap.fill(" ".join(p.split()), width=W, initial_indent=indent, subsequent_indent=indent)
+ 51 |         for p in paras
+ 52 |     )
+ 53 | 
+ 54 | 
+ 55 | # --------------------------------------------------------------------------------------
+ 56 | # Hand-written narrative
+ 57 | # --------------------------------------------------------------------------------------
+ 58 | 
+ 59 | NARRATIVE_OVERVIEW = """
+ 60 | manage-system is an inventory management web application. Users sign in through Keycloak
+ 61 | (OpenID Connect), manage products, record stock movements (entries and exits), and managers
+ 62 | can read reports, an audit trail, and administer user accounts. The same business logic is
+ 63 | available in two ways: server-rendered web pages (Flask + Jinja2 + HTMX) and a JSON REST API
+ 64 | protected by JWT bearer tokens with an OpenAPI/Swagger description.
+ 65 | 
+ 66 | Around the application there is a complete quality and operations pipeline: automated tests
+ 67 | (unit, API contract, data/migration, end-to-end browser, load), three CI systems (GitHub
+ 68 | Actions, Jenkins, SonarCloud analysis), a staging stack with a security scan, and an
+ 69 | observability stack (Prometheus, Grafana, Loki, Tempo, Alloy, Alertmanager).
+ 70 | 
+ 71 | TECHNOLOGY STACK
+ 72 |   Language / framework   Python 3.12, Flask, Flask-Smorest (blueprints + OpenAPI), Marshmallow
+ 73 |   Database               PostgreSQL 16 via SQLAlchemy 2 / Flask-SQLAlchemy, Flask-Migrate (Alembic)
+ 74 |   Authentication         Keycloak 24 (realm "inventory-realm"), Authlib (browser login), PyJWT (API)
+ 75 |   Front end              Jinja2 templates, HTMX for partial page updates, no separate SPA
+ 76 |   Telemetry              OpenTelemetry (traces), prometheus_client (metrics), JSON logs
+ 77 |   Tests                  pytest, pytest-cov, Schemathesis, Playwright, k6
+ 78 |   Containers             Docker, Docker Compose
+ 79 |   CI / quality           GitHub Actions, Jenkins, SonarCloud, pip-audit, OWASP ZAP
+ 80 | """
+ 81 | 
+ 82 | NARRATIVE_ARCH = r"""
+ 83 |                          +---------------------------+
+ 84 |    Browser  ------------>|  Flask app  (app/main.py) |<------------ API clients (Bearer JWT)
+ 85 |    (HTML pages, HTMX)    |  port 5000                |
+ 86 |                          |  UI routes + /api/* APIs  |
+ 87 |                          +-----+-----------+---------+
+ 88 |                                |           |
+ 89 |                   SQLAlchemy   |           | OIDC login, JWKS, admin API
+ 90 |                                v           v
+ 91 |                         +-----------+   +--------------------+
+ 92 |                         | Postgres  |   | Keycloak 24        |
+ 93 |                         | port 5432 |   | port 8080          |
+ 94 |                         +-----------+   | realm inventory-   |
+ 95 |                                         | realm              |
+ 96 |                                         +--------------------+
+ 97 | 
+ 98 |    Telemetry from Flask:   /metrics (Prometheus scrape)  +  OTLP traces -> Alloy -> Tempo;  stdout logs -> Alloy -> Loki
+ 99 |    Dashboards and alerts:  Prometheus -> Alertmanager;  Grafana reads Prometheus, Loki, Tempo
+100 | """
+101 | 
+102 | NARRATIVE_FLOWS = """
+103 | FLOW 1 - Browser login (OpenID Connect authorization code flow)
+104 |   1. The user opens any protected page. The login_required decorator finds no "user" in the Flask
+105 |      session and redirects to /auth/login-page, which shows a button.
+106 |   2. The button goes to /auth/login. Authlib builds the callback URL (/auth/callback) and
+107 |      redirects the browser to Keycloak's authorization endpoint.
+108 |   3. The user types credentials at Keycloak. Keycloak redirects back to /auth/callback with a code.
+109 |   4. callback() exchanges the code for tokens (authorize_access_token), reads the ID-token user
+110 |      info, decodes the access token WITHOUT verifying the signature (it came straight from
+111 |      Keycloak over the back channel and is only used to read role names) and keeps only the realm
+112 |      roles that contain ":" (for example product:manage). These are stored in the session as
+113 |      user_scopes. The user is redirected to "/".
+114 |   5. From now on, require_ui_scope("x:y") checks user_scopes before sensitive pages. A missing
+115 |      scope produces a flash message and a redirect to the home page.
+116 |   6. /auth/logout clears the session and redirects to Keycloak's logout endpoint, which then
+117 |      returns the browser to the app.
+118 | 
+119 | FLOW 2 - API call with a JWT
+120 |   1. The client obtains a token from Keycloak (password grant, or through the admin UI).
+121 |   2. It sends "Authorization: Bearer <token>". require_jwt downloads Keycloak's public keys once
+122 |      (JWKS), caches them in a module variable, finds the key by the token's "kid" header, and
+123 |      verifies the RS256 signature and expiry.
+124 |   3. require_scope("product:view") then checks that the role exists in realm_access.roles.
+125 |      Missing header/invalid token -> 401, expired -> 401, wrong role -> 403.
+126 |   4. In tests (app.config["TESTING"] = True) both decorators are bypassed and a fake claim set
+127 |      with every role is injected, so API tests do not need Keycloak.
+128 | 
+129 | FLOW 3 - Creating a product
+130 |   UI: POST /products reads the HTML form, requires name, SKU and price, rejects a duplicate SKU,
+131 |       converts numbers, inserts a Product, commits, bumps the products_created_total counter and
+132 |       refreshes the products_total gauge, and flashes a success message.
+133 |   API: POST /api/products validates the JSON with the same rules and returns 201 with the new
+134 |       product, or 400 for a missing field or duplicate SKU.
+135 |   Either way the SQLAlchemy "after_insert" listener writes an AuditLog row (see Flow 5).
+136 | 
+137 | FLOW 4 - Recording a stock movement
+138 |   The movement type must be "entry" or "exit" and the quantity a positive integer. An exit is
+139 |   rejected when it would take the quantity below zero. Otherwise the product quantity changes,
+140 |   a StockMovement row records previous and new quantity, user and notes, and the transaction is
+141 |   committed. stock_movements_total{type,product} is incremented. Changing a product's quantity
+142 |   through the product edit form or PUT /api/products/<id> creates a movement automatically
+143 |   (register_qty_change_movement).
+144 | 
+145 | FLOW 5 - Audit trail
+146 |   audit/listeners.py registers SQLAlchemy listeners on Product and StockMovement for
+147 |   after_insert, after_update and after_delete. Each listener builds an AuditLog row containing
+148 |   the table, record id, action (INSERT/UPDATE/DELETE), old and new values as JSON, the acting user
+149 |   (from the session or request context) and a timestamp. Rows for other tables are ignored, and
+150 |   an update that changed nothing is skipped. The managers' /audit page and /api/audit read them.
+151 | 
+152 | FLOW 6 - User administration
+153 |   Only users with user:manage reach /users and /api/users. The app never stores users itself:
+154 |   keycloak_admin.py logs in to Keycloak as the master-realm admin (password grant against
+155 |   admin-cli), then calls Keycloak's admin REST API to list, create, read users, list realm roles
+156 |   and replace a user's application roles. After a role change it logs the user out of all
+157 |   sessions so the new permissions apply at the next login.
+158 | 
+159 | ROLES AND PERMISSIONS (realm roles that the application understands)
+160 |   group:employee, group:manager         broad groups
+161 |   product:view, product:manage          read / write products
+162 |   stock:view,   stock:manage            read / write stock movements
+163 |   report:view                           reports page and /api/reports
+164 |   audit:view                            audit page and /api/audit
+165 |   user:manage                           user administration
+166 |   alice_worker (employee) can see products and stock. kratos_boss (manager) additionally sees
+167 |   reports, audit and users.
+168 | """
+169 | 
+170 | MODULE_PURPOSE = {
+171 |     "app/main.py": """
+172 | Application entry point and the whole server-rendered UI. It creates the Flask app, wires the
+173 | ProxyFix middleware (so URLs are correct behind a reverse proxy or tunnel), CORS, the secret key
+174 | and database URL from environment variables, the OpenAPI settings, the OAuth client, SQLAlchemy,
+175 | Flask-Migrate, telemetry and metrics, registers every API blueprint, and defines the HTML routes
+176 | (dashboard, products, stock, reports, audit, users, health). The helper functions are named after
+177 | the page they serve; each one reads query parameters or a form, queries SQLAlchemy and renders a
+178 | Jinja2 template (or an HTMX partial when the HX-Request header is present).""",
+179 |     "app/database.py": "Creates the single shared Flask-SQLAlchemy object (db). Every model and the app import it.",
+180 |     "app/telemetry.py": """
+181 | Observability plumbing. Defines the Prometheus counters and gauges used by the business code,
+182 | a JSON log formatter that adds trace and request ids, per-request hooks that time requests and set
+183 | a correlation id, OpenTelemetry tracing set-up (enabled only when OTEL_ENABLED=true), and the
+184 | /metrics endpoint with request count, latency and database-pool gauges.""",
+185 |     "app/auth/middleware.py": """
+186 | Authentication and authorization decorators. require_jwt / require_scope protect the JSON API
+187 | (Bearer JWT verified with Keycloak's public keys). login_required / require_ui_scope protect the
+188 | web pages using the Flask session. All four are bypassed when app.config["TESTING"] is true.""",
+189 |     "app/auth/views.py": "OAuth wiring and the /auth routes: login page, login redirect, callback, logout.",
+190 |     "app/auth/keycloak_admin.py": """
+191 | Thin client for Keycloak's Admin REST API and token endpoint: URL/realm/env helpers, admin token,
+192 | list/get/create users, realm roles, replace a user's roles, issue a user token for the demo
+193 | panel, and a summary formatter. Errors are raised as KeycloakAdminError carrying an HTTP status.""",
+194 |     "app/products/models.py": "Product table: id, name, SKU (unique), description, category, price, quantity, minimum stock, status.",
+195 |     "app/products/views.py": "JSON API for products under /api/products: list (search, category, sort, paging), create, read, update, delete.",
+196 |     "app/stock/models.py": "StockMovement table: product, user, type (entry/exit), previous and new quantity, notes, date.",
+197 |     "app/stock/services.py": "Helpers that create StockMovement rows (register_stock_movement, register_qty_change_movement). They add to the session but never commit.",
+198 |     "app/stock/views.py": "JSON API under /api/stock: record a movement, query history with filters, and list low-stock alerts.",
+199 |     "app/audit/models.py": "AuditLog table: table name, record id, action, old and new JSON values, user, timestamp.",
+200 |     "app/audit/listeners.py": "SQLAlchemy event listeners that write AuditLog rows whenever a Product or StockMovement is inserted, updated or deleted.",
+201 |     "app/audit/views.py": "JSON API under /api/audit: list with filters and paging, plus lookups by product id and by movement id.",
+202 |     "app/reports/views.py": "JSON API under /api/reports: GET /critical-stock (products at or below minimum stock), GET /top-products (highest quantities) and GET /recent-movements (latest stock movements). Protected by the report:view scope.",
+203 |     "app/users/views.py": "JSON API under /api/users for Keycloak user administration: list, create, read, replace roles, issue token.",
+204 |     "app/__init__.py": "Empty package marker.",
+205 |     "app/audit/__init__.py": "Empty package marker.",
+206 |     "app/reports/__init__.py": "Empty package marker.",
+207 |     "app/users/__init__.py": "Empty package marker.",
+208 | }
+209 | 
+210 | TEMPLATE_PURPOSE = {
+211 |     "app/templates/base.html": "Master layout: head, navigation sidebar (items hidden by role), flash messages, HTMX script. Every page extends it.",
+212 |     "app/templates/login.html": "Login page with the 'Continuar con Keycloak' button.",
+213 |     "app/templates/index.html": "Dashboard: totals, low/critical stock counts, last five movements.",
+214 |     "app/templates/products/index.html": "Products page shell with search box and sortable table container.",
+215 |     "app/templates/products/partials/table.html": "Product table plus pagination; replaced in place by HTMX on search/sort/delete.",
+216 |     "app/templates/products/form.html": "Create / edit product form (product=None means create).",
+217 |     "app/templates/stock/history.html": "Stock movement history page with filters.",
+218 |     "app/templates/stock/partials/history_table.html": "History table fragment returned for HTMX requests.",
+219 |     "app/templates/stock/update.html": "Form to record an entry or exit.",
+220 |     "app/templates/stock/partials/product_info.html": "Fragment showing the selected product's current stock inside the movement form.",
+221 |     "app/templates/reports/index.html": "Reports page: critical products, top products, recent movements.",
+222 |     "app/templates/audit/index.html": "Audit log page with table/action/record filters.",
+223 |     "app/templates/audit/partials/audit_table.html": "Audit table fragment for HTMX.",
+224 |     "app/templates/users/index.html": "User list and, right after creation, the issued JWT.",
+225 |     "app/templates/users/form.html": "Create-user form with role checkboxes.",
+226 |     "app/templates/users/detail.html": "One user: roles editor and the 'issue JWT' form.",
+227 | }
+228 | 
+229 | NARRATIVE_CI = """
+230 | GITHUB ACTIONS - .github/workflows/ci.yml  (workflow name "CI")
+231 |   Triggers: every push and every pull request to main or dev. A concurrency group cancels an older
+232 |   run of the same branch when a new one starts. Shared environment: Python 3.12, a CI Postgres
+233 |   user/password/database, DATABASE_URL, FLASK_APP and PYTHONPATH.
+234 |   Jobs (a job lists "needs" when it waits for others):
+235 |     build              checkout, set up Python with pip cache, install requirements, verify that
+236 |                        "from app.main import app" imports.
+237 |     unit-tests         (needs build) pytest on tests/test_products.py and tests/test_stock.py,
+238 |                        uploads a report artifact.
+239 |     api-tests          (needs build) Schemathesis contract tests (tests/test_contract.py), artifact.
+240 |     integration-tests  (needs build) starts a Postgres service container, runs "flask db upgrade",
+241 |                        then pytest on tests/data (migrations and the duplicate-SKU rule), artifact.
+242 |     coverage           (needs unit, api, integration) Postgres service, migrations, whole non-E2E suite
+243 |                        with --cov, uploads coverage.xml as an artifact.
+244 |     e2e                (needs unit, api) brings up the CI compose stack (Postgres, Keycloak, Flask),
+245 |                        waits for Keycloak and Flask, applies migrations, resets the Keycloak test
+246 |                        user passwords, installs Playwright and runs the 4 browser tests, uploads the
+247 |                        report, dumps logs on failure and always stops the stack.
+248 |     security           (needs build) pip-audit against requirements.txt, uploads the audit.
+249 |     docker-build       (needs unit, api, integration) builds the application image.
+250 | 
+251 | GITHUB ACTIONS - .github/workflows/sonarcloud.yml  (workflow name "SonarCloud")
+252 |   Manual only (workflow_dispatch). Starts a Postgres service, installs dependencies, runs
+253 |   migrations, runs the non-E2E tests with "--cov=. --cov-report=xml" (the "." makes file paths
+254 |   in coverage.xml start with "app/", which is what SonarCloud needs to match files), then runs
+255 |   the SonarSource scan action pinned to a commit (v8.5.0) with SONAR_TOKEN from repository
+256 |   secrets. Project key, organization and exclusions come from sonar-project.properties.
+257 |   NOTE: SonarCloud's free plan only shows the main branch, and Automatic Analysis must be OFF
+258 |   in the SonarCloud project, otherwise the scan fails with "running CI analysis while Automatic
+259 |   Analysis is enabled".
+260 | 
+261 | SONAR CONFIGURATION - sonar-project.properties
+262 |   organization uziel-almonte, project key Uziel-Almonte_manage-system, sources = app, tests = tests,
+263 |   Python 3.12, coverage from coverage.xml. Excluded from analysis: __pycache__, E2E tests, Alembic
+264 |   migrations and the Keycloak realm export (it contains development signing keys). Excluded from
+265 |   coverage only: scripts/, generate_openapi_spec.py, tests/ and migrations/.
+266 | 
+267 | JENKINS - Jenkinsfile (declarative pipeline, any agent)
+268 |   Options: no concurrent builds, 60-minute timeout. Environment: image name manage-system with the
+269 |   build number as tag, a per-build compose project name, CI database URL, paths to the docker and
+270 |   docker-compose binaries inside the Jenkins container, and HOST_MOUNT (the host path to mount
+271 |   into sibling containers, because Jenkins itself runs in Docker).
+272 |   Stages, in order:
+273 |     1. Checkout                     checkout scm.
+274 |     2. Build                        docker build of the image, then a smoke import of app.main.
+275 |     3. Prepare CI                   scripts/ci-free-host-ports.sh frees ports 5000/8080/5432.
+276 |     4. Tests (parallel)             Unit tests; API / contract tests; Data / migration tests (starts
+277 |                                     a CI Postgres, runs "flask db upgrade" and tests/data, always
+278 |                                     tears the project down).
+279 |     5. Coverage                     CI Postgres, migrations, whole non-E2E suite with coverage XML.
+280 |     6. Security                     pip-audit inside the built image.
+281 |     7. E2E                          CI compose stack, waits, migrations, Keycloak user preparation,
+282 |                                     Playwright tests.
+283 |     8. Full stack + k6 smoke        creates .env from .env.example if missing, brings up the full
+284 |                                     docker-compose.yml stack, waits for services, migrates, prepares
+285 |                                     Keycloak users, runs scripts/verify-stack.sh and a k6 smoke test.
+286 |     9. Docker image                 tags the build as manage-system:ci.
+287 |   Post (always): tears down every compose project it created so nothing is left behind.
+288 |   Jenkins itself is defined by jenkins/Dockerfile (Jenkins LTS + Docker CLI + Compose + plugins),
+289 |   jenkins/plugins.txt, jenkins/casc.yaml (Configuration as Code: users and the job "manage-system")
+290 |   and jenkins/jenkins-entrypoint.sh. It is started with "docker compose --profile jenkins up -d
+291 |   --build jenkins" on http://localhost:8090.
+292 | """
+293 | 
+294 | NARRATIVE_INFRA = """
+295 | DOCKERFILE (application image)
+296 |   Starts from python:3.12-slim, sets /app as the working directory, copies requirements.txt first
+297 |   (so the dependency layer is cached), installs requirements without a pip cache, copies the rest
+298 |   of the project, exposes port 5000 and starts "flask --app app.main run --host=0.0.0.0 --port=5000".
+299 | 
+300 | docker-compose.yml  (local / demo stack)
+301 |   web (flask_app :5000)        the app; depends on db and keycloak.
+302 |   db (postgres_db :5432)       PostgreSQL 16 with the postgres_data volume.
+303 |   keycloak (keycloak_auth :8080)  Keycloak 24 "start-dev --import-realm"; imports
+304 |                                keycloak/realm-export.json on the first start; uses Postgres.
+305 |   e2e                          Playwright container, profile "e2e" (not started by default).
+306 |   zap                          OWASP ZAP baseline scan, profile "security".
+307 |   pip-audit                    dependency audit container, profile "security".
+308 |   prometheus :9090, postgres_exporter :9187, node-exporter :9100, tempo :3200, loki :3100,
+309 |   grafana :3000, alertmanager :9093, alloy :4317/:4318/:12345   the observability stack.
+310 |   jenkins (jenkins_ci :8090)   profile "jenkins".
+311 |   Named volumes: postgres_data, prometheus_data, tempo_data, loki_data, grafana_data, alloy_data,
+312 |   jenkins_home. "docker compose down" keeps them; "down -v" DELETES them (this is why users and
+313 |   products disappear after "down -v" or after the full test script).
+314 | 
+315 | docker-compose.staging.yml   Same application from the BUILT image under Gunicorn, with health
+316 |   checks and a separate Keycloak database (keycloak-db-init creates it), plus the observability
+317 |   stack and a ZAP baseline scan. Run through scripts/run-staging-qa.sh.
+318 | docker-compose.ci.yml        Small stack used by CI: db, keycloak-db-init, keycloak and web.
+319 | docker-compose.sonar.yml     Local SonarQube (community) on :9000 with its own volumes.
+320 | 
+321 | OBSERVABILITY CONFIGURATION (observability/)
+322 |   prometheus/prometheus.yml       scrape jobs: prometheus, tempo, loki, alloy, flask, node_exporter,
+323 |                                   postgres_exporter. rules/alerts.rules.yml defines the alerts; rules/alerts.yml
+324 |                                   only holds TargetDown (up == 0 for 1 min, team infra).
+325 |   Alert rules                     HighCPUUsage (>85%), CriticalCPUUsage (>95%), HighMemoryUsage
+326 |                                   (>90%), DBPoolNearExhaustion (>90% of pool), HighErrorRate (>5% 5xx),
+327 |                                   ElevatedErrorRate (>1%), HighLatencyP95 (>1 s), HighAuthFailureRate,
+328 |                                   SpikeInvalidTokens (>50 in 15 min), AuthFailuresFromSingleIP (>20
+329 |                                   in 10 min), KeycloakFailedLogins (>5 failed Keycloak logins from one IP in 5 min),
+330 |                                   TargetDown. HighErrorRate exists once only (the old duplicate
+331 |                                   in alerts.yml was removed).
+332 |   alertmanager/alertmanager.yml   routes alerts by severity and team to the receivers default,
+333 |                                   infra-team, backend-team, security-team and the *-critical ones.
+334 |   alloy/config.alloy              Grafana Alloy receives OTLP traces from Flask (ports 4317 gRPC, 4318
+335 |                                   HTTP) and forwards them to Tempo. It also tails every container's
+336 |                                   stdout through the Docker socket and pushes it to Loki, labelled
+337 |                                   with `container` (flask_app, grafana...) and `service_name`
+338 |                                   (compose service). Filter in Grafana with {container="flask_app"}.
+339 |                                   Failed Keycloak logins (wrong password happens on Keycloak's page,
+340 |                                   Flask never sees it): Keycloak logs type="LOGIN_ERROR"; Alloy's
+341 |                                   loki.process counts those lines and exposes
+342 |                                   loki_process_custom_keycloak_login_failures_total{source_ip,reason}
+343 |                                   on :12345/metrics, which Prometheus scrapes (job alloy).
+344 |   tempo/tempo.yaml, loki/loki.yaml   storage and server settings for traces and logs.
+345 |   grafana/provisioning            datasources (Prometheus, Loki, Tempo) and four dashboards:
+346 |                                   Application (latency, throughput, errors), Infrastructure (CPU,
+347 |                                   memory, DB pool), Business (products and stock movements) and
+348 |                                   Security (authentication failures, invalid tokens and failed Keycloak logins).
+349 |                                   Panels use increase()/rate() windows and `or vector(0)` so they
+350 |                                   show 0 instead of "No data" when nothing has failed. The Loki
+351 |                                   datasource links `traceId=<32 hex>` in Flask logs to Tempo.
+352 |   Metrics behaviour               products_total is refreshed at every /metrics scrape (so it is
+353 |                                   right after a restart). Every 401 from the JWT middleware raises
+354 |                                   invalid_tokens_total and auth_failures_total{source_ip}.
+355 | 
+356 | ENVIRONMENT VARIABLES (names only - see .env.example; real values are never committed)
+357 |   Database      POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, DATABASE_URL
+358 |   Flask         FLASK_SECRET_KEY, FLASK_APP
+359 |   Keycloak      KEYCLOAK_USER / KEYCLOAK_PASSWORD (master admin), KEYCLOAK_REALM_URL,
+360 |                 KEYCLOAK_CLIENT_ID, KEYCLOAK_CLIENT_SECRET, KEYCLOAK_TOKEN_CLIENT_ID,
+361 |                 KEYCLOAK_AUTHORIZE_URL, KEYCLOAK_TOKEN_URL, KEYCLOAK_USERINFO_URL,
+362 |                 KEYCLOAK_JWKS_URL, KEYCLOAK_ISSUER, KEYCLOAK_LOGOUT_BASE,
+363 |                 KEYCLOAK_ADMIN_API_URL, KEYCLOAK_ADMIN_TOKEN_URL
+364 |   Telemetry     OTEL_ENABLED and related OTLP settings
+365 |   Grafana       GRAFANA_ADMIN_USER, GRAFANA_ADMIN_PASSWORD
+366 |   Important: Keycloak reads KEYCLOAK_ADMIN / KEYCLOAK_ADMIN_PASSWORD only the FIRST time it creates
+367 |   its database. Changing them later does nothing until the volume is deleted.
+368 | """
+369 | 
+370 | NARRATIVE_TESTING = """
+371 | TEST LAYERS
+372 |   Unit / API tests (SQLite in memory, auth bypassed)
+373 |     tests/test_products.py, test_stock.py, test_users.py, test_ui_routes.py, test_api_edge_cases.py
+374 |   Keycloak client tests (HTTP mocked)             tests/test_keycloak_admin.py
+375 |   Auth and security tests (real JWT checks with a locally generated RSA key)
+376 |                                                   tests/test_auth_security.py
+377 |   API contract tests (Schemathesis reads the OpenAPI spec and fuzzes every endpoint)
+378 |                                                   tests/test_contract.py
+379 |   Data / migration tests (need real PostgreSQL)   tests/data/
+380 |   End-to-end browser tests (Playwright, need the whole stack)   tests/e2e/
+381 |   Load tests (k6)                                 tests/k6/smoke-test.js, load-test.js, stress-test.js
+382 |   Coverage: 197 non-E2E tests, 98% of app/ lines locally (95.6% on SonarCloud after exclusions).
+383 | 
+384 | HOW THE FIXTURES WORK (tests/conftest.py)
+385 |   The "app" fixture sets DATABASE_URL to sqlite in memory BEFORE importing app.main, turns on
+386 |   TESTING, creates all tables, yields the app inside an app context, then drops everything.
+387 |   "app_client" is Flask's test client built on it. Because TESTING is true, the auth decorators are
+388 |   bypassed; test_auth_security.py flips TESTING off to exercise the real checks.
+389 | 
+390 | SCRIPTS (scripts/)
+391 |   Each script's header comment is quoted in the generated section below. In short:
+392 |   run-full-test-suite.sh   whole matrix locally (build, tests, coverage, audit, E2E, full stack, k6).
+393 |                            WARNING: its cleanup runs "down -v" and deletes the demo data.
+394 |   run-staging-qa.sh        staging stack + browser tests + ZAP report.
+395 |   verify-stack.sh          health-checks every service, dashboards, datasources and a token + API call.
+396 |   prepare-keycloak-e2e.sh  sets the demo users' passwords to password123 via kcadm.
+397 |   wait-for-services.sh / wait-for-keycloak-realm.py / ci-http-check.sh / ci-verify-e2e-ready.sh /
+398 |   ci-free-host-ports.sh    readiness waits and port clean-up used by CI.
+399 |   cloudflare-tunnel.sh     free public URLs for the app, Keycloak and Grafana (trycloudflare.com).
+400 |   run-sonar-scan.sh        local SonarQube scan.   run-security-scan.sh   ZAP/security scan.
+401 |   start-observability.sh   starts only the observability containers.
+402 |   jenkins-docker.sh        helper to run Jenkins in Docker.
+403 |   generate-presentation-docs.py, generate-code-reference.py   documentation generators.
+404 | """
+405 | 
+406 | # --------------------------------------------------------------------------------------
+407 | # Generated sections
+408 | # --------------------------------------------------------------------------------------
+409 | 
+410 | 
+411 | FUNC_NOTES = {
+412 |     "app/audit/models.py:AuditLog.to_dict": "Returns the audit row as a JSON-friendly dict (timestamp as ISO string).",
+413 |     "app/products/models.py:Product.to_dict": "Returns the product as a dict for JSON responses (price converted from Decimal to float).",
+414 |     "app/stock/models.py:StockMovement.to_dict": "Returns the movement as a dict for JSON responses (date as ISO string).",
+415 |     "app/auth/keycloak_admin.py:KeycloakAdminError.__init__": "Stores the message and the HTTP status code to answer with (default 500).",
+416 |     "app/auth/middleware.py:require_jwt.decorated": "The wrapper that runs instead of the view: bypass in TESTING, read the Bearer header, find the key by kid, verify RS256 signature and expiry, store claims in request.user_claims, answer 401/500 on failure.",
+417 |     "app/auth/middleware.py:require_scope.decorator": "Receives the view function and returns the wrapped version (decorator factory step).",
+418 |     "app/auth/middleware.py:require_scope.decorator.decorated_function": "Runs after require_jwt: reads realm_access.roles from the claims and answers 403 if the required scope is missing.",
+419 |     "app/auth/middleware.py:login_required.decorated_function": "Web-page guard: bypass in TESTING; redirect to /auth/login-page when the session has no user; otherwise set g.user and continue.",
+420 |     "app/auth/middleware.py:require_ui_scope.decorator": "Receives the view function and returns the wrapped version (decorator factory step).",
+421 |     "app/auth/middleware.py:require_ui_scope.decorator.decorated_function": "Checks session user_scopes; on a missing permission flashes an access-denied message and redirects home with status 303.",
+422 |     "app/telemetry.py:_register_request_hooks": "Registers before_request / after_request hooks: set correlation and trace ids on g, then add them to the response headers and log the request.",
+423 |     "app/telemetry.py:init_metrics._pool": "Returns the SQLAlchemy connection pool (inside an app context) for the pool gauges.",
+424 |     "scripts/wait-for-keycloak-realm.py:main": "Polls Keycloak's realm endpoint until it answers or a timeout expires; exit code 0 means ready.",
+425 |     "scripts/generate-presentation-docs.py:read_snippet": "Reads a few lines of a source file to quote in the generated presentation.",
+426 |     "scripts/generate-presentation-docs.py:setup_styles": "Defines fonts and paragraph styles for the Word documents.",
+427 |     "scripts/generate-presentation-docs.py:add_title": "Adds a title paragraph to the document.",
+428 |     "scripts/generate-presentation-docs.py:add_h": "Adds a heading.",
+429 |     "scripts/generate-presentation-docs.py:add_p": "Adds a normal paragraph.",
+430 |     "scripts/generate-presentation-docs.py:add_bullets": "Adds a bulleted list.",
+431 |     "scripts/generate-presentation-docs.py:add_code": "Adds a monospaced code block.",
+432 |     "scripts/generate-presentation-docs.py:add_page_break": "Inserts a page break.",
+433 |     "scripts/generate-presentation-docs.py:build_uziel_doc": "Builds the application-core presentation (.docx).",
+434 |     "scripts/generate-presentation-docs.py:build_erick_doc": "Builds the quality-and-observability presentation (.docx).",
+435 |     "scripts/generate-presentation-docs.py:main": "Builds both presentation documents.",
+436 |     "app/audit/models.py:AuditLog": "Database table audit_logs: one row per audited change (table_name, record_id, action INSERT/UPDATE/DELETE, old_values and new_values as JSON, user, timestamp).",
+437 |     "app/products/models.py:Product": "Database table products: name, unique SKU, description, category, price (Numeric 10,2), qty, min_stock, status ('active' by default).",
+438 |     "app/products/views.py:ProductSchema": "Marshmallow schema for POST /api/products: name (1-100 chars), sku (1-50) and price are required; description, category (max 50), qty and min_stock (default 0, range checked) and status (active or inactive, default active) are optional.",
+439 |     "app/products/views.py:ProductUpdateSchema": "Marshmallow schema for PUT /api/products/<id>: same fields, all optional (partial update).",
+440 |     "app/stock/models.py:StockMovement": "Database table stock_movements: product_id (foreign key, cascade delete), user, type, prev_qty, new_qty, notes, date. Relationship Product.movements.",
+441 |     "app/stock/views.py:get_history": "GET /api/stock/history. Optional filters product_id, type, user, date_from, date_to (YYYY-MM-DD; unparseable dates are ignored). Returns movements newest first. Needs stock:view.",
+442 |     "app/stock/views.py:get_alerts": "GET /api/stock/alerts. Finds active products whose quantity is at or below min_stock and returns a one-element list holding {alert_count, products}. Needs stock:view.",
+443 |     "app/stock/views.py:add_movement": "POST /api/stock/movement (needs stock:manage). The StockMovementSchema validates product_id, type (entry/exit) and qty_change (1 to 2,147,483,647). Unknown product -> 404; exit larger than stock or invalid type -> 400. Otherwise updates the product quantity, adds a StockMovement row, commits, updates the stock metric and returns the movement with 201.",
+444 | }
+445 | 
+446 | 
+447 | def leading_doc(rel: str, node: ast.AST, tree: ast.AST, src: str) -> str | None:
+448 |     """Documentation written just above a def as a bare string literal or comment block."""
+449 |     parent = None
+450 |     for p in ast.walk(tree):
+451 |         if node in getattr(p, "body", []):
+452 |             parent = p
+453 |             break
+454 |     if parent is not None:
+455 |         body = parent.body
+456 |         i = body.index(node)
+457 |         if i > 0:
+458 |             prev = body[i - 1]
+459 |             if (isinstance(prev, ast.Expr) and isinstance(getattr(prev, "value", None), ast.Constant)
+460 |                     and isinstance(prev.value.value, str) and node.lineno - prev.end_lineno <= 2):
+461 |                 return prev.value.value
+462 |     lines = src.splitlines()
+463 |     top = node.lineno - 1 - len(node.decorator_list)
+464 |     block = []
+465 |     j = top - 1
+466 |     while j >= 0 and lines[j].lstrip().startswith("#"):
+467 |         block.append(lines[j].lstrip("# ").rstrip())
+468 |         j -= 1
+469 |     return "\n".join(reversed(block)) if block else None
+470 | 
+471 | 
+472 | def sig_of(node: ast.AST) -> str:
+473 |     args = ast.unparse(node.args) if hasattr(node, "args") else ""
+474 |     ret = f" -> {ast.unparse(node.returns)}" if getattr(node, "returns", None) else ""
+475 |     prefix = "async def" if isinstance(node, ast.AsyncFunctionDef) else "def"
+476 |     return f"{prefix} {node.name}({args}){ret}"
+477 | 
+478 | 
+479 | def doc_block(doc: str | None, indent: str) -> str:
+480 |     if not doc:
+481 |         return f"{indent}(no docstring)\n"
+482 |     lines = [ln.rstrip() for ln in textwrap.dedent(doc).strip().splitlines()]
+483 |     return "".join(f"{indent}{ln}\n" if ln else "\n" for ln in lines)
+484 | 
+485 | 
+486 | def walk_defs(tree: ast.AST):
+487 |     """Yield (qualified_name, node, depth) for every function and class."""
+488 |     def visit(node, prefix, depth):
+489 |         for child in ast.iter_child_nodes(node):
+490 |             if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+491 |                 q = f"{prefix}{child.name}"
+492 |                 yield q, child, depth
+493 |                 yield from visit(child, q + ".", depth + 1)
+494 |             else:
+495 |                 yield from visit(child, prefix, depth)
+496 |     yield from visit(tree, "", 0)
+497 | 
+498 | 
+499 | def module_docstring_and_globals(tree: ast.Module, src: str) -> list[str]:
+500 |     notes = []
+501 |     for node in tree.body:
+502 |         if isinstance(node, ast.Assign) and node.col_offset == 0:
+503 |             seg = ast.get_source_segment(src, node) or ""
+504 |             first = seg.splitlines()[0] if seg else ""
+505 |             notes.append(f"  line {node.lineno}: {first[:90]}")
+506 |     return notes
+507 | 
+508 | 
+509 | def python_inventory(files: list[str]) -> str:
+510 |     out = []
+511 |     for rel in files:
+512 |         src = read(rel)
+513 |         total = len(src.splitlines())
+514 |         try:
+515 |             tree = ast.parse(src)
+516 |         except SyntaxError as e:  # pragma: no cover
+517 |             out.append(h2(f"{rel}  (could not parse: {e})"))
+518 |             continue
+519 |         out.append(h2(f"{rel}   ({total} lines)"))
+520 |         purpose = MODULE_PURPOSE.get(rel)
+521 |         if purpose:
+522 |             out.append(wrap(purpose) + "\n")
+523 |         defs = list(walk_defs(tree))
+524 |         if not defs:
+525 |             out.append("  (no functions or classes)\n")
+526 |             continue
+527 |         out.append(f"  Functions and classes: {len(defs)}\n")
+528 |         for qname, node, depth in defs:
+529 |             ind = "  " + "    " * depth
+530 |             kind = "class" if isinstance(node, ast.ClassDef) else "function"
+531 |             end = getattr(node, "end_lineno", node.lineno)
+532 |             out.append(f"\n{ind}[{kind}] {qname}   (lines {node.lineno}-{end})\n")
+533 |             if kind == "function":
+534 |                 for dec in node.decorator_list:
+535 |                     out.append(f"{ind}  @{ast.unparse(dec)}\n")
+536 |                 out.append(f"{ind}  {sig_of(node)}\n")
+537 |             elif node.bases:
+538 |                 out.append(f"{ind}  class {node.name}({', '.join(ast.unparse(b) for b in node.bases)})\n")
+539 |             doc = ast.get_docstring(node)
+540 |             if doc:
+541 |                 out.append(doc_block(doc, ind + "  "))
+542 |             else:
+543 |                 lead = leading_doc(rel, node, tree, src)
+544 |                 note = FUNC_NOTES.get(f"{rel}:{qname}")
+545 |                 if lead:
+546 |                     out.append(f"{ind}  (documentation written above the function in the source:)\n")
+547 |                     out.append(doc_block(lead, ind + "  "))
+548 |                 if note:
+549 |                     out.append(f"{ind}  Summary: {note}\n")
+550 |                 if not lead and not note:
+551 |                     out.append(f"{ind}  (no docstring or comment in the source; see its code in the appendix)\n")
+552 |     return "".join(out)
+553 | 
+554 | 
+555 | def test_inventory(files: list[str]) -> str:
+556 |     out = []
+557 |     total_tests = 0
+558 |     for rel in files:
+559 |         src = read(rel)
+560 |         tree = ast.parse(src)
+561 |         out.append(h2(f"{rel}   ({len(src.splitlines())} lines)"))
+562 |         md = ast.get_docstring(tree)
+563 |         if md:
+564 |             out.append(wrap(md, "  ") + "\n")
+565 |         count = 0
+566 |         for q, node, depth in walk_defs(tree):
+567 |             if isinstance(node, ast.ClassDef):
+568 |                 out.append(f"\n  [class] {q}\n")
+569 |                 continue
+570 |             is_test = node.name.startswith("test_")
+571 |             is_fixture = any("fixture" in ast.unparse(d) for d in node.decorator_list)
+572 |             if not (is_test or is_fixture):
+573 |                 continue
+574 |             tag = "test" if is_test else "fixture"
+575 |             count += is_test
+576 |             decs = [ast.unparse(d) for d in node.decorator_list if not d.__class__.__name__ == "Name"]
+577 |             doc = ast.get_docstring(node)
+578 |             first = (doc or "").strip().splitlines()[0] if doc else ""
+579 |             human = node.name.replace("test_", "", 1).replace("_", " ")
+580 |             out.append(f"    [{tag}] {q}   (lines {node.lineno}-{getattr(node, 'end_lineno', node.lineno)})\n")
+581 |             for d in decs:
+582 |                 if d.startswith("pytest.mark") or d.startswith("patch"):
+583 |                     out.append(f"        {'@' + d[:120]}\n")
+584 |             out.append(f"        {first if first else 'Checks: ' + human}\n")
+585 |         total_tests += count
+586 |         out.append(f"\n  Tests in this file: {count}\n")
+587 |     out.append(f"\nTOTAL test functions listed (parametrized cases count once): {total_tests}\n")
+588 |     return "".join(out)
+589 | 
+590 | 
+591 | def shell_inventory(files: list[str]) -> str:
+592 |     out = []
+593 |     for rel in files:
+594 |         src = read(rel)
+595 |         lines = src.splitlines()
+596 |         out.append(h2(f"{rel}   ({len(lines)} lines)"))
+597 |         header = []
+598 |         for ln in lines[1:40]:
+599 |             if ln.startswith("#"):
+600 |                 header.append(ln.lstrip("# ").rstrip())
+601 |             elif header:
+602 |                 break
+603 |         if header:
+604 |             out.append("  Purpose (from the script's own header):\n")
+605 |             out.extend(f"    {h}\n" for h in header)
+606 |         funcs = [(i + 1, m.group(1)) for i, ln in enumerate(lines)
+607 |                  if (m := re.match(r"^\s*(?:function\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*\(\)\s*\{", ln))]
+608 |         if funcs:
+609 |             out.append("  Shell functions:\n")
+610 |             out.extend(f"    line {n}: {name}()\n" for n, name in funcs)
+611 |     return "".join(out)
+612 | 
+613 | 
+614 | def migrations_inventory(files: list[str]) -> str:
+615 |     out = []
+616 |     for rel in files:
+617 |         src = read(rel)
+618 |         rev = re.search(r"^revision\s*=\s*['\"](\w+)", src, re.M)
+619 |         down = re.search(r"^down_revision\s*=\s*(.+)$", src, re.M)
+620 |         doc = ast.get_docstring(ast.parse(src)) or ""
+621 |         ops = re.findall(r"op\.(create_table|drop_table|add_column|drop_column|create_foreign_key|"
+622 |                          r"drop_constraint|create_index|drop_index|alter_column)\(\s*['\"]?([\w_]*)", src)
+623 |         out.append(h2(rel))
+624 |         out.append(f"  revision {rev.group(1) if rev else '?'}   down_revision {down.group(1).strip() if down else '?'}\n")
+625 |         if doc:
+626 |             out.append(f"  {doc.splitlines()[0]}\n")
+627 |         if ops:
+628 |             out.append("  operations: " + "; ".join(f"{a} {b}".strip() for a, b in ops) + "\n")
+629 |     return "".join(out)
+630 | 
+631 | 
+632 | def templates_inventory(files: list[str]) -> str:
+633 |     out = []
+634 |     for rel in files:
+635 |         src = read(rel)
+636 |         ext = re.search(r"{%\s*extends\s+['\"]([^'\"]+)", src)
+637 |         blocks = re.findall(r"{%\s*block\s+(\w+)", src)
+638 |         out.append(h2(f"{rel}   ({len(src.splitlines())} lines)"))
+639 |         out.append(f"  {TEMPLATE_PURPOSE.get(rel, '')}\n")
+640 |         if ext:
+641 |             out.append(f"  extends: {ext.group(1)}\n")
+642 |         if blocks:
+643 |             out.append(f"  blocks: {', '.join(blocks)}\n")
+644 |         ctx = sorted(set(re.findall(r"{{\s*([a-zA-Z_][\w]*)", src)) - {"url_for", "loop", "super"})
+645 |         if ctx:
+646 |             out.append(f"  variables used: {', '.join(ctx[:20])}\n")
+647 |         hx = sorted(set(re.findall(r"hx-(?:get|post|put|delete|target|swap|trigger)", src)))
+648 |         if hx:
+649 |             out.append(f"  HTMX attributes: {', '.join(hx)}\n")
+650 |     return "".join(out)
+651 | 
+652 | 
+653 | def realm_summary() -> str:
+654 |     realms = json.loads(read("keycloak/realm-export.json"))
+655 |     if isinstance(realms, dict):
+656 |         realms = [realms]
+657 |     out = [f"  File: keycloak/realm-export.json ({nlines('keycloak/realm-export.json')} lines, NOT reproduced "
+658 |            "in the appendix\n  because it contains development signing keys). Keycloak imports it on first "
+659 |            "start. It holds\n  two realms: master (Keycloak's own admin realm) and inventory-realm (this app).\n"]
+660 |     for data in realms:
+661 |         out.append(f"\n  Realm: {data.get('realm')}   enabled: {data.get('enabled')}   "
+662 |                    f"sslRequired: {data.get('sslRequired')}\n")
+663 |         out.append("  Clients:\n")
+664 |         for c in data.get("clients", []):
+665 |             out.append(f"    - {c['clientId']:<24} public={c.get('publicClient')}  "
+666 |                        f"standardFlow={c.get('standardFlowEnabled')}  "
+667 |                        f"directGrants={c.get('directAccessGrantsEnabled')}\n")
+668 |         roles = [r["name"] for r in data.get("roles", {}).get("realm", [])]
+669 |         out.append("  Realm roles: " + ", ".join(roles) + "\n")
+670 |         out.append("  Users in the export:\n")
+671 |         for u in data.get("users", []):
+672 |             out.append(f"    - {u['username']:<14} roles: {', '.join(u.get('realmRoles', []))}\n")
+673 |     return "".join(out)
+674 | 
+675 | 
+676 | APPENDIX_EXT = {".py", ".sh", ".yml", ".yaml", ".js", ".html", ".alloy", ".ini", ".properties", ".txt"}
+677 | APPENDIX_NAMES = {"Dockerfile", "Jenkinsfile", ".env.example", ".gitignore", "TODO"}
+678 | APPENDIX_SKIP_PREFIX = ("docs/", "reports/", "security-reports/", "htmlcov/", ".tools/", "tests/e2e/screenshots/")
+679 | APPENDIX_SKIP = {"commands.txt"}
+680 | 
+681 | 
+682 | def appendix_files(all_files: list[str]) -> list[str]:
+683 |     keep = []
+684 |     for f in all_files:
+685 |         if f.startswith(APPENDIX_SKIP_PREFIX) or f in APPENDIX_SKIP:
+686 |             continue
+687 |         p = Path(f)
+688 |         if f == "keycloak/realm-export.json":
+689 |             continue
+690 |         if p.suffix in APPENDIX_EXT or p.name in APPENDIX_NAMES or p.name.startswith("Dockerfile") \
+691 |                 or f.startswith("observability/") and p.suffix == ".json" or f == "openapi_spec.json":
+692 |             keep.append(f)
+693 |     return keep
+694 | 
+695 | 
+696 | def appendix(files: list[str]) -> str:
+697 |     out = []
+698 |     for rel in files:
+699 |         text = read(rel)
+700 |         lines = text.splitlines()
+701 |         out.append(f"\n{'#' * W}\n# FILE: {rel}   ({len(lines)} lines)\n{'#' * W}\n")
+702 |         width = len(str(len(lines)))
+703 |         for i, ln in enumerate(lines, 1):
+704 |             out.append(f"{i:>{width}} | {ln}\n")
+705 |     return "".join(out)
+706 | 
+707 | 
+708 | def main() -> None:
+709 |     files = tracked_files()
+710 |     py_app = [f for f in files if f.startswith("app/") and f.endswith(".py")]
+711 |     py_tests = [f for f in files if f.startswith("tests/") and f.endswith(".py") and not f.endswith("__init__.py")]
+712 |     py_scripts = [f for f in files if (f.startswith("scripts/") or f == "generate_openapi_spec.py")
+713 |                   and f.endswith(".py")]
+714 |     sh_scripts = [f for f in files if f.startswith("scripts/") and f.endswith(".sh")] + \
+715 |                  [f for f in files if f == "jenkins/jenkins-entrypoint.sh"]
+716 |     migrations = [f for f in files if f.startswith("migrations/versions/") and f.endswith(".py")]
+717 |     templates = [f for f in files if f.startswith("app/templates/")]
+718 |     k6 = [f for f in files if f.startswith("tests/k6/") and f.endswith(".js")]
+719 |     app_loc = sum(nlines(f) for f in py_app)
+720 |     test_loc = sum(nlines(f) for f in py_tests)
+721 |     appx = appendix_files(files)
+722 | 
+723 |     out = []
+724 |     out.append("=" * W + "\n")
+725 |     out.append("MANAGE-SYSTEM - COMPLETE CODE REFERENCE\n")
+726 |     out.append(f"Generated {date.today().isoformat()} by scripts/generate-code-reference.py\n")
+727 |     out.append("=" * W + "\n")
+728 |     out.append(wrap("""
+729 | This single text file documents the whole project: every Python function and class (with its
+730 | docstring, line range, decorators and signature), the tests, the CI/CD pipelines, Docker and
+731 | observability configuration, and - in the appendix - the complete source of every code and
+732 | configuration file with line numbers. Sections 1 to 3 and 7 to 9 are written by hand; the
+733 | inventories are generated from the code. Function descriptions are quoted from the project's own
+734 | docstrings, which are written in Spanish with six headings: "Qué hace" (what it does), "Por qué
+735 | lo hace" (why), "Cómo lo hace" (how), "De dónde viene" (where the input comes from), "A dónde va"
+736 | (where the output goes) and "Librerías externas" (external libraries used).
+737 | Not reproduced: keycloak/realm-export.json (contains development keys; summarised in section 8),
+738 | the Markdown docs under docs/, generated reports and binary files.
+739 | """))
+740 |     out.append("\n\nCONTENTS\n")
+741 |     for n, t in enumerate([
+742 |         "Overview, architecture and main flows",
+743 |         "Application code - every module, function and class",
+744 |         "Templates (HTML)",
+745 |         "Database models and migrations",
+746 |         "Tests - every test function, fixtures, E2E and load tests",
+747 |         "Scripts and helper programs",
+748 |         "CI/CD - GitHub Actions, SonarCloud, Jenkins",
+749 |         "Docker, Compose, Keycloak realm, observability, environment",
+750 |         "Testing strategy and how to run everything",
+751 |         "Appendix - full source of every file, with line numbers",
+752 |     ], 1):
+753 |         out.append(f"  {n:>2}. {t}\n")
+754 |     out.append(f"\nSize: {len(py_app)} application modules ({app_loc} lines), {len(py_tests)} test modules "
+755 |                f"({test_loc} lines), {len(appx)} files in the appendix.\n")
+756 | 
+757 |     out.append(h1("1. OVERVIEW, ARCHITECTURE AND MAIN FLOWS"))
+758 |     out.append(NARRATIVE_OVERVIEW)
+759 |     out.append(h2("Architecture"))
+760 |     out.append(NARRATIVE_ARCH)
+761 |     out.append(h2("Main flows, step by step"))
+762 |     out.append(NARRATIVE_FLOWS)
+763 | 
+764 |     out.append(h1("2. APPLICATION CODE - EVERY MODULE, FUNCTION AND CLASS"))
+765 |     out.append(python_inventory(py_app))
+766 | 
+767 |     out.append(h1("3. TEMPLATES (HTML)"))
+768 |     out.append(wrap("Jinja2 templates rendered by app/main.py and app/auth/views.py. Pages extend "
+769 |                     "base.html. Partials (under partials/) are returned alone for HTMX requests so only "
+770 |                     "the table or panel is replaced without reloading the page.") + "\n")
+771 |     out.append(templates_inventory(templates))
+772 | 
+773 |     out.append(h1("4. DATABASE MODELS AND MIGRATIONS"))
+774 |     out.append(wrap("The models are documented in section 2 (app/products/models.py, app/stock/models.py, "
+775 |                     "app/audit/models.py). Tables: products, stock_movements (foreign key to products with "
+776 |                     "cascade delete) and audit_logs. Alembic migrations, in order of creation:") + "\n")
+777 |     out.append(migrations_inventory(sorted(migrations)))
+778 |     out.append(h2("migrations/env.py, alembic.ini and script template"))
+779 |     out.append("  Standard Flask-Migrate/Alembic environment: it reads the database URL from the Flask app and\n"
+780 |                "  runs migrations online or offline. Full source is in the appendix.\n")
+781 | 
+782 |     out.append(h1("5. TESTS - EVERY TEST FUNCTION"))
+783 |     out.append(test_inventory(py_tests))
+784 |     out.append(h2("k6 load tests (JavaScript)"))
+785 |     for f in k6:
+786 |         out.append(f"  {f}  ({nlines(f)} lines) - see the appendix for the full script.\n")
+787 | 
+788 |     out.append(h1("6. SCRIPTS AND HELPER PROGRAMS"))
+789 |     out.append(h2("Shell scripts"))
+790 |     out.append(shell_inventory(sorted(sh_scripts)))
+791 |     out.append(h2("Python helper programs"))
+792 |     out.append(python_inventory(sorted(py_scripts)))
+793 | 
+794 |     out.append(h1("7. CI/CD - GITHUB ACTIONS, SONARCLOUD, JENKINS"))
+795 |     out.append(NARRATIVE_CI)
+796 | 
+797 |     out.append(h1("8. DOCKER, COMPOSE, KEYCLOAK REALM, OBSERVABILITY, ENVIRONMENT"))
+798 |     out.append(NARRATIVE_INFRA)
+799 |     out.append(h2("Keycloak realm summary (generated from keycloak/realm-export.json)"))
+800 |     out.append(realm_summary())
+801 | 
+802 |     out.append(h1("9. TESTING STRATEGY AND HOW TO RUN EVERYTHING"))
+803 |     out.append(NARRATIVE_TESTING)
+804 |     out.append(wrap("""
+805 | Quick commands. Coverage without a database: create a venv, install requirements.txt, then run
+806 | DATABASE_URL=sqlite:///:memory: pytest tests/ -m "not e2e" --ignore=tests/e2e --ignore=tests/data
+807 | --cov=app --cov-report=term-missing. Start the demo: docker compose up -d, then
+808 | docker compose exec web flask db upgrade. Stop it keeping data: docker compose down. See
+809 | commands.txt for the complete presentation checklist.
+810 | """) + "\n")
+811 |     out.append("""
+812 | PREPARE BEFORE PRESENTING (about 1 hour before; same steps as section 9 of commands.txt)
+813 |   Never run "docker compose down -v" or scripts/run-full-test-suite.sh beforehand: both delete the
+814 |   Keycloak users and the data.
+815 |   1. docker compose up -d ; docker compose exec web flask db upgrade ; bash scripts/verify-stack.sh
+816 |   2. If login fails: bash scripts/prepare-keycloak-e2e.sh (restores kratos_boss / alice_worker).
+817 |   3. Sign in at http://localhost:5000 as kratos_boss / password123, create a product and make a few
+818 |      stock movements, then repeat a minute later. Rate/increase panels need two Prometheus scrapes
+819 |      (about 30 s), and counters restart from zero whenever the web container restarts.
+820 |   4. Click around for a minute or two to build traffic.
+821 |   5. Security demo: 30 requests with a bad token from one IP
+822 |        for i in $(seq 1 30); do curl -s -o /dev/null -H "Authorization: Bearer bad" localhost:5000/api/products; done
+823 |      This fills the Security dashboard and fires SpikeInvalidTokens and AuthFailuresFromSingleIP
+824 |      (they route to the security receivers in Alertmanager and clear on their own).
+825 |   Tabs: App :5000, Grafana :3000 (admin/admin, folder "Observability"), Prometheus :9090
+826 |   (Status > Targets: 7 up), Alertmanager :9093, Keycloak :8080 (admin/admin).
+827 |   Logs and traces: Grafana > Explore > Loki, query {container="flask_app"}, click "View Trace".
+828 |   6. Failed-login demo: type a wrong password on the Keycloak login page 6+ times (or use the curl
+829 |      below), wait ~1 minute: the Security dashboard shows the failed logins and KeycloakFailedLogins fires.
+830 |        for i in $(seq 1 8); do curl -s -o /dev/null -d grant_type=password -d client_id=flask-backend -d username=kratos_boss -d password=WRONG http://localhost:8080/realms/inventory-realm/protocol/openid-connect/token; done
+831 |   Empty panel? Wait about 30 s and send more traffic.
+832 | """)
+833 | 
+834 |     out.append(h1("10. APPENDIX - FULL SOURCE OF EVERY FILE, WITH LINE NUMBERS"))
+835 |     out.append("Files included (in this order):\n")
+836 |     out.extend(f"  - {f}  ({nlines(f)} lines)\n" for f in appx)
+837 |     out.append(appendix(appx))
+838 | 
+839 |     OUT.write_text("".join(out), encoding="utf-8")
+840 |     n = len(OUT.read_text().splitlines())
+841 |     print(f"wrote {OUT.relative_to(ROOT)}: {n} lines, {OUT.stat().st_size // 1024} KiB")
+842 | 
+843 | 
+844 | if __name__ == "__main__":
+845 |     main()
 
 ####################################################################################################
 # FILE: scripts/generate-presentation-docs.py   (487 lines)

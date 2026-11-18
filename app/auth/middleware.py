@@ -28,7 +28,7 @@ def get_keycloak_public_keys():
         # se optiene de KEYCLOAK_REALM_URL y se construye la URL de los certificados
         realm_url = os.environ.get('KEYCLOAK_REALM_URL')
         if not realm_url:
-            # si al ginal no se consiguio de ninguna de las dos da un error de que se debe configurar ambos. 
+            # si al final no se consiguio de ninguna de las dos da un error de que se debe configurar ambos. 
             raise ValueError("KEYCLOAK_JWKS_URL or KEYCLOAK_REALM_URL must be set")
         certs_url = f"{realm_url}/protocol/openid-connect/certs"
     try:
@@ -52,7 +52,7 @@ def get_keycloak_public_keys():
 def require_jwt(f):
     """
     Qué hace: protege una vista exigiendo un JWT Bearer válido.
-    Por qué lo hace: para asegurar que las rutas de API solo respondan a solicitudes autenticadas.
+    Por qué lo hace: para asegurar que las rutas de API solo respondan a solicitudes autorizadas.
     Cómo lo hace: lee el header Authorization, obtiene la clave pública por `kid` y decodifica el token.
     De dónde viene: el token llega en el encabezado HTTP de la solicitud entrante.
     A dónde va: las claims decodificadas se guardan en `request.user_claims` para el resto del flujo.
@@ -60,9 +60,11 @@ def require_jwt(f):
     """
     @wraps(f)
     def decorated(*args, **kwargs):
+        # variable global para almacenar las claves publicas de keycloak y 
+        # no tener que descargarlas cada vez que se hace una peticion.
         global _public_keys
 
-        # Bypass for unit tests
+        # pase completo en caso de pruebas unitarias para evitar la verificación de JWT
         if current_app.config.get('TESTING'):
             request.user_claims = {
                 "realm_access": {
@@ -70,28 +72,38 @@ def require_jwt(f):
                 }
             }
             return f(*args, **kwargs)
-        
+        #obtenemos el header de autorizacion de la peticion y verificamos que sea un Bearer token
         auth_header = request.headers.get("Authorization", None)
+        #verificamos que el header no este vacio y que empiece con bearer
+        # si no cumple se da como fallido y se registra el intento fallido de auteticacion.
         if not auth_header or not auth_header.startswith("Bearer "):
             record_invalid_token()
             record_auth_failure(request.remote_addr)
             return jsonify({"message": "Missing or invalid authorization header"}), 401
 
+        # una vez verificado que el header es valido se obtiene el token del header.
         token = auth_header.split(" ")[1]
 
         try:
+            # verificamos que la variable global creada esta vacia
             if _public_keys is None:
+                # si esta vacia se llama la funcion de get_keycloak_public_keys() 
+                # para obtener las claves publicas de keycloak y guardarlas en la variable global.
                 _public_keys = get_keycloak_public_keys()
             
             # Extract the unverified header to get the kid
             unverified_header = jwt.get_unverified_header(token)
             kid = unverified_header.get('kid')
-            
+
+            # verificamos que el kid exista y que este en las claves publicas obtenidas de keycloak
             if not kid or kid not in _public_keys:
+                # si no existe el kid o no esta en las claves publicas se registra el intento 
+                # fallido de autenticacion y se retorna un error 401.
                 record_invalid_token()
                 record_auth_failure(request.remote_addr)
                 return jsonify({"message": "Invalid token header or key not found"}), 401
 
+            # obtenemos la clave publica correspondiente al kid del token
             public_key = _public_keys[kid]
 
             # Decode the payload securely
@@ -102,7 +114,8 @@ def require_jwt(f):
                 options={"verify_aud": False}
             )
             
-            # Attach the decoded payload to the request context
+            # se guardan las claims decodificadas en request.user_claims para que
+            #  puedan ser usadas en la vista protegida.
             request.user_claims = payload
             
         except jwt.ExpiredSignatureError:

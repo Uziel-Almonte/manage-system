@@ -20,16 +20,19 @@ MANAGEABLE_ROLES = [
     'user:manage',
 ]
 
-
+# clase para dar un error personalizado cuando hay un fallo en la comunicación 
+# con Keycloak o en la lógica de administración
 class KeycloakAdminError(Exception):
-    """Error controlado para operaciones fallidas contra la API de Keycloak."""
-
+    # se inicializa con un mensaje y un codigo de estado HTTP opcional 
+    # por defecto 500)
     def __init__(self, message: str, status_code: int = 500):
+        # se llama al constructor de la clase base Exception con el mensaje
         super().__init__(message)
+        # se guardan el codigo de estado y el mensaje en atributos de la instancia
         self.status_code = status_code
         self.message = message
 
-
+# definimos la funcion _admin_base_url() para obtener la URL base del API de administración de Keycloak
 def _admin_base_url() -> str:
     """
     Qué hace: resuelve la URL base del API de administración de Keycloak.
@@ -39,12 +42,17 @@ def _admin_base_url() -> str:
     A dónde va: se usa como base para construir las rutas de administración.
     Librerías externas: aquí no interviene una librería externa; solo `os.getenv`.
     """
+    # retornamos la URL base del API de administración de Keycloak, 
+    # priorizando la variable de entorno KEYCLOAK_ADMIN_API_URL
     return os.getenv(
+        # si existe la variable de entorno KEYCLOAK_ADMIN_API_URL
         'KEYCLOAK_ADMIN_API_URL',
+        # si no existe, usamos KEYCLOAK_INTERNAL_URL con un valor por defecto y si 
+        # no existe, usamos http://keycloak_auth:8080/admin
         os.getenv('KEYCLOAK_INTERNAL_URL', 'http://keycloak_auth:8080') + '/admin',
-    ).rstrip('/')
+    ).rstrip('/')# eliminamos cualquier barra final para evitar errores de concatenación de rutas
 
-
+# devuelve el nombre del realm configurado en el entorno o un valor por defecto
 def _realm() -> str:
     """
     Qué hace: obtiene el nombre del realm configurado.
@@ -54,6 +62,7 @@ def _realm() -> str:
     A dónde va: se inserta en todas las URLs de administración del realm.
     Librerías externas: no usa librerías externas; solo configuración del entorno.
     """
+    # busca la variable de entorno KEYCLOAK_REALM y si no existe, devuelve 'inventory-realm' como valor por defecto
     return os.getenv('KEYCLOAK_REALM', 'inventory-realm')
 
 

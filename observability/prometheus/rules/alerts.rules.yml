@@ -120,3 +120,14 @@ groups:
         annotations:
           summary: "Múltiples fallos de auth desde una misma IP"
           description: "La IP {{ $labels.source_ip }} generó {{ $value }} fallos de autenticación en 10 minutos."
+
+        #declaramos una alerta llamada KeycloakFailedLogins que se activara cuando una misma IP falle mas de 5 logins en Keycloak en 5 minutos (posible fuerza bruta). La metrica sale de los logs de Keycloak via Alloy.
+      - alert: KeycloakFailedLogins
+        expr: sum by(source_ip) (increase(loki_process_custom_keycloak_login_failures_total[5m])) > 5
+        for: 0m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "Muchos logins fallidos en Keycloak"
+          description: "La IP {{ $labels.source_ip }} falló {{ $value | printf \"%.0f\" }} logins en los últimos 5 minutos."

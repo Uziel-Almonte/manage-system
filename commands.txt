@@ -292,6 +292,12 @@ Generate data so every Grafana panel has something to show:
      This raises SpikeInvalidTokens and AuthFailuresFromSingleIP in
      Alertmanager (they clear on their own after a few minutes).
 
+  5. Failed logins (wrong password on the Keycloak login page, 6+ times,
+     or with curl). Wait about a minute: the Security dashboard shows
+     "Logins fallidos en Keycloak" and the KeycloakFailedLogins alert fires.
+
+        for i in $(seq 1 8); do curl -s -o /dev/null -d grant_type=password -d client_id=flask-backend -d username=kratos_boss -d password=WRONG http://localhost:8080/realms/inventory-realm/protocol/openid-connect/token; done
+
 Tabs to have open:
 
     App            http://localhost:5000    kratos_boss / password123
