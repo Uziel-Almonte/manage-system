@@ -5,12 +5,11 @@ All commands assume you are in the project folder:
 
     cd /home/thewanderer/manage-system
 
-This machine does not have Docker. In every new terminal, run this once
-so the docker command talks to Podman:
+This machine has real Docker now (not Podman). Do NOT set DOCKER_HOST.
+If you get "permission denied" on the docker socket, run this once in the
+terminal:
 
-    export PATH="$HOME/.local/bin:$PATH"
-    export DOCKER_HOST="unix://${XDG_RUNTIME_DIR}/podman/podman.sock"
-    export DOCKER_SOCK="${XDG_RUNTIME_DIR}/podman/podman.sock"
+    newgrp docker
 
 .env is already in the project folder. You do not need to copy it again.
 
@@ -18,8 +17,10 @@ so the docker command talks to Podman:
 1. Open the app (no tests)
 --------------------------
 
-    docker compose up -d --build
+    docker compose up -d
     docker compose exec web flask db upgrade
+
+(Use "docker compose up -d --build" only if you changed code.)
 
 Then open:
 
@@ -255,3 +256,131 @@ about 98% of app/). From the project folder:
 
 New test files: tests/test_ui_routes.py, tests/test_keycloak_admin.py,
 tests/test_auth_security.py, tests/test_api_edge_cases.py.
+
+
+9. Prepare before presenting (do this 1 hour before)
+----------------------------------------------------
+
+Tonight: commit and push everything.
+
+    git add -A && git commit -m "Fix observability stack, add code reference" && git push
+
+Never use "docker compose down -v" or scripts/run-full-test-suite.sh
+before presenting: both delete the users and data.
+
+Start the stack and check it:
+
+    docker compose up -d
+    docker compose exec web flask db upgrade
+    bash scripts/verify-stack.sh
+
+If login fails (users missing), restore them:
+
+    bash scripts/prepare-keycloak-e2e.sh
+
+Generate data so every Grafana panel has something to show:
+
+  1. Open http://localhost:5000 and sign in as kratos_boss / password123.
+  2. Create a product, then make a few stock movements (entries and
+     exits). Repeat them a minute later: rate and increase panels need
+     two Prometheus scrapes (about 30 seconds) to show values.
+  3. Click around the app for a minute or two to build traffic.
+  4. Security panels and alerts (30 bad-token requests from one IP):
+
+        for i in $(seq 1 30); do curl -s -o /dev/null -H "Authorization: Bearer bad" localhost:5000/api/products; done
+
+     This raises SpikeInvalidTokens and AuthFailuresFromSingleIP in
+     Alertmanager (they clear on their own after a few minutes).
+
+Tabs to have open:
+
+    App            http://localhost:5000    kratos_boss / password123
+    Grafana        http://localhost:3000    admin / admin
+                   (folder "Observability": 4 dashboards)
+    Prometheus     http://localhost:9090    Status > Targets (7 up), Alerts
+    Alertmanager   http://localhost:9093
+    Keycloak       http://localhost:8080    admin / admin
+
+Logs and traces (Grafana > Explore):
+
+    Loki   {container="flask_app"}     click "View Trace" on a line to open Tempo
+
+If a panel looks empty: wait about 30 seconds and send more traffic. After a
+restart the rate-based panels show 0 until two scrapes have happened.
+
+
+10. Presentation day (quick reference)
+--------------------------------------
+
+Everything is stopped and the data is kept. Never use "down -v" or
+the full test suite before presenting: both delete the users and data.
+
+Start (about 15 minutes before):
+
+    cd ~/manage-system
+    newgrp docker                       # only if "permission denied"
+    docker compose up -d
+    docker compose exec web flask db upgrade
+
+Wait about 30 seconds, then check Keycloak answers (expect 200):
+
+    curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/realms/inventory-realm
+
+Quick health check of every service (optional):
+
+    bash scripts/verify-stack.sh
+
+Logins:
+
+    Keycloak admin   http://localhost:8080   admin / admin
+    kratos_boss      password123 (manager)
+    alice_worker     password123 (employee)
+
+Warm-up: sign in once as kratos_boss, then sign out.
+
+Show coverage (98% of app/):
+
+    xdg-open htmlcov/index.html
+
+Stop at the end (keeps the data):
+
+    docker compose down
+
+
+11. Public demo URL (Cloudflare tunnel, free, no account)
+---------------------------------------------------------
+
+Gives the app, Keycloak and Grafana random https://*.trycloudflare.com
+addresses. localhost keeps working. The stack must be up first.
+
+    docker compose up -d
+    bash scripts/cloudflare-tunnel.sh           # prints the public URLs
+    bash scripts/cloudflare-tunnel.sh status    # show them again
+
+Open the "App (share this)" URL and log in as kratos_boss / password123.
+
+The URLs change every time you start it. They only work while this PC is
+on, awake and online. Keep the terminal you started it in open.
+
+WARNING: it also exposes the Keycloak admin console (admin / admin) to
+anyone who has the link. Do not post the URLs publicly. Always stop it
+when you are done:
+
+    bash scripts/cloudflare-tunnel.sh stop
+
+That removes the tunnels and puts Keycloak back to localhost only.
+Check nothing is left running:
+
+    pgrep -a cloudflared      # should print nothing
+
+
+12. Turn everything off
+-----------------------
+
+    bash scripts/cloudflare-tunnel.sh stop      # only if a tunnel is running
+    docker compose down                         # keeps the data
+
+Optional extras, only if you started them:
+
+    docker compose -f docker-compose.sonar.yml -p manage-system-sonar down
+    docker compose --profile jenkins down

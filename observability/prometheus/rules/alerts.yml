@@ -2,20 +2,13 @@ groups:
     #agrupamos las reglas de alerta en un grupo llamado "manage-system"
   - name: manage-system
     rules:
-        #declaramos una alerta llamada HighErrorRate que se activara cuando la tasa de errores HTTP 5xx en Flask supere el 10% durante 2 minutos.
-      - alert: HighErrorRate
-        expr: rate(flask_http_request_total{status=~"5.."}[5m]) > 0.1
-        for: 2m
-        labels:
-          severity: warning
-        annotations:
-          summary: High HTTP 5xx error rate on Flask
-
+        # (la alerta HighErrorRate vive solo en alerts.rules.yml; tenerla duplicada con otra expresion causaba conflicto)
         #declaramos una alerta llamada TargetDown que se activara cuando un objetivo de Prometheus esté inactivo durante más de 1 minuto.
       - alert: TargetDown
         expr: up == 0
         for: 1m
         labels:
           severity: critical
+          team: infra
         annotations:
           summary: "Prometheus target {{ $labels.job }} is down"

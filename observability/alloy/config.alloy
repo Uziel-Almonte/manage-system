@@ -41,9 +41,25 @@ discovery.docker "containers" {
   host = "unix:///var/run/docker.sock"
 }
 
+// Etiquetas para poder filtrar en Grafana: {container="flask_app"}, {service_name="web"}.
+discovery.relabel "docker_labels" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service_name"
+  }
+}
+
 loki.source.docker "docker_logs" {
   host       = "unix:///var/run/docker.sock"
-  targets    = discovery.docker.containers.targets
+  targets    = discovery.relabel.docker_labels.output
   forward_to = [loki.write.default.receiver]
 }
 

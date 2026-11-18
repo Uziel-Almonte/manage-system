@@ -2,19 +2,29 @@
   "id": null,
   "uid": "application-dashboard",
   "title": "Aplicación - Latencia, Throughput y Errores",
-  "tags": ["backend", "prometheus", "day38"],
+  "tags": [
+    "backend",
+    "prometheus",
+    "day38"
+  ],
   "timezone": "browser",
   "schemaVersion": 39,
   "version": 1,
   "refresh": "30s",
-  "time": { "from": "now-6h", "to": "now" },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
   "templating": {
     "list": [
       {
         "name": "DS_PROMETHEUS",
         "type": "datasource",
         "query": "prometheus",
-        "current": { "text": "Prometheus", "value": "Prometheus" },
+        "current": {
+          "text": "Prometheus",
+          "value": "Prometheus"
+        },
         "label": "Datasource"
       }
     ]
@@ -24,18 +34,36 @@
       "id": 1,
       "type": "stat",
       "title": "Throughput (req/s)",
-      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
       "datasource": "${DS_PROMETHEUS}",
-      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        }
+      },
       "targets": [
-        { "expr": "sum(rate(flask_http_request_total[5m]))", "legendFormat": "req/s", "refId": "A" }
+        {
+          "expr": "sum(rate(flask_http_request_total[5m]))",
+          "legendFormat": "req/s",
+          "refId": "A"
+        }
       ]
     },
     {
       "id": 2,
       "type": "stat",
       "title": "Tasa de error 5xx (%)",
-      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
       "datasource": "${DS_PROMETHEUS}",
       "fieldConfig": {
         "defaults": {
@@ -43,16 +71,25 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "orange", "value": 1 },
-              { "color": "red", "value": 5 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
             ]
           }
         }
       },
       "targets": [
         {
-          "expr": "(sum(rate(flask_http_request_total{status=~\"5..\"}[5m])) / sum(rate(flask_http_request_total[5m]))) * 100",
+          "expr": "((sum(rate(flask_http_request_total{status=~\"5..\"}[5m])) or vector(0)) / sum(rate(flask_http_request_total[5m]))) * 100",
           "legendFormat": "error %",
           "refId": "A"
         }
@@ -62,7 +99,12 @@
       "id": 3,
       "type": "stat",
       "title": "Latencia p95 (s)",
-      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
       "datasource": "${DS_PROMETHEUS}",
       "fieldConfig": {
         "defaults": {
@@ -70,9 +112,18 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "orange", "value": 1 },
-              { "color": "red", "value": 2 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
             ]
           }
         }
@@ -89,9 +140,18 @@
       "id": 4,
       "type": "stat",
       "title": "Latencia p50 (s)",
-      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
       "datasource": "${DS_PROMETHEUS}",
-      "fieldConfig": { "defaults": { "unit": "s" } },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      },
       "targets": [
         {
           "expr": "histogram_quantile(0.50, sum(rate(flask_http_request_duration_seconds_bucket[5m])) by (le))",
@@ -104,9 +164,18 @@
       "id": 5,
       "type": "timeseries",
       "title": "Throughput por código de estado",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 5
+      },
       "datasource": "${DS_PROMETHEUS}",
-      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        }
+      },
       "targets": [
         {
           "expr": "sum by(status) (rate(flask_http_request_total[5m]))",
@@ -119,7 +188,12 @@
       "id": 6,
       "type": "timeseries",
       "title": "Tasa de error 5xx en el tiempo",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 5
+      },
       "datasource": "${DS_PROMETHEUS}",
       "fieldConfig": {
         "defaults": {
@@ -127,16 +201,25 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "orange", "value": 1 },
-              { "color": "red", "value": 5 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
             ]
           }
         }
       },
       "targets": [
         {
-          "expr": "(sum(rate(flask_http_request_total{status=~\"5..\"}[5m])) / sum(rate(flask_http_request_total[5m]))) * 100",
+          "expr": "((sum(rate(flask_http_request_total{status=~\"5..\"}[5m])) or vector(0)) / sum(rate(flask_http_request_total[5m]))) * 100",
           "legendFormat": "error %",
           "refId": "A"
         }
@@ -146,9 +229,18 @@
       "id": 7,
       "type": "timeseries",
       "title": "Latencia p50/p95/p99",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 13 },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
       "datasource": "${DS_PROMETHEUS}",
-      "fieldConfig": { "defaults": { "unit": "s" } },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      },
       "targets": [
         {
           "expr": "histogram_quantile(0.50, sum(rate(flask_http_request_duration_seconds_bucket[5m])) by (le))",

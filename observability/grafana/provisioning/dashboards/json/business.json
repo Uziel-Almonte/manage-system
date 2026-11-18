@@ -3,19 +3,29 @@
   "uid": "business-dashboard",
   "title": "Negocio - Productos y Movimientos de Stock",
   "description": "OJO: usa nombres de métricas asumidos (products_created_total, stock_movements_total, products_total). Ajusta las queries si tu app expone otros nombres.",
-  "tags": ["business", "prometheus", "day38"],
+  "tags": [
+    "business",
+    "prometheus",
+    "day38"
+  ],
   "timezone": "browser",
   "schemaVersion": 39,
   "version": 1,
   "refresh": "1m",
-  "time": { "from": "now-24h", "to": "now" },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
   "templating": {
     "list": [
       {
         "name": "DS_PROMETHEUS",
         "type": "datasource",
         "query": "prometheus",
-        "current": { "text": "Prometheus", "value": "Prometheus" },
+        "current": {
+          "text": "Prometheus",
+          "value": "Prometheus"
+        },
         "label": "Datasource"
       }
     ]
@@ -25,55 +35,98 @@
       "id": 1,
       "type": "stat",
       "title": "Productos totales",
-      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
       "datasource": "${DS_PROMETHEUS}",
       "targets": [
-        { "expr": "products_total", "legendFormat": "productos", "refId": "A" }
+        {
+          "expr": "products_total",
+          "legendFormat": "productos",
+          "refId": "A"
+        }
       ]
     },
     {
       "id": 2,
       "type": "stat",
       "title": "Productos agregados (últimas 24h)",
-      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
       "datasource": "${DS_PROMETHEUS}",
       "targets": [
-        { "expr": "sum(increase(products_created_total[24h]))", "legendFormat": "agregados", "refId": "A" }
+        {
+          "expr": "round(sum(increase(products_created_total[24h])))",
+          "legendFormat": "agregados",
+          "refId": "A"
+        }
       ]
     },
     {
       "id": 3,
       "type": "stat",
       "title": "Movimientos de stock (últimas 24h)",
-      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
       "datasource": "${DS_PROMETHEUS}",
       "targets": [
-        { "expr": "sum(stock_movements_total)", "legendFormat": "movimientos", "refId": "A" }
+        {
+          "expr": "round(sum(increase(stock_movements_total[24h])))",
+          "legendFormat": "movimientos",
+          "refId": "A"
+        }
       ]
     },
     {
       "id": 4,
       "type": "stat",
       "title": "Ratio entradas/salidas (24h)",
-      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
       "datasource": "${DS_PROMETHEUS}",
       "targets": [
-        {          
-          "expr": "sum(stock_movements_total{type=\"entry\"}) / sum(stock_movements_total{type=\"exit\"})",
+        {
+          "expr": "sum(increase(stock_movements_total{type=\"entry\"}[24h])) / (sum(increase(stock_movements_total{type=\"exit\"}[24h])) > 0)",
           "legendFormat": "entradas/salidas",
           "refId": "A"
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "N/A"
+        },
+        "overrides": []
+      }
     },
     {
       "id": 5,
       "type": "timeseries",
       "title": "Productos agregados en el tiempo",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 5
+      },
       "datasource": "${DS_PROMETHEUS}",
       "targets": [
         {
-          "expr": "increase(products_created_total[1h])",
+          "expr": "round(sum(increase(products_created_total[1h])))",
           "legendFormat": "productos/hora",
           "refId": "A"
         }
@@ -83,11 +136,16 @@
       "id": 6,
       "type": "timeseries",
       "title": "Movimientos de stock por tipo",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 5
+      },
       "datasource": "${DS_PROMETHEUS}",
       "targets": [
         {
-          "expr": "sum by(type) (stock_movements_total)",
+          "expr": "sum by(type) (round(increase(stock_movements_total[1h])))",
           "legendFormat": "{{type}}",
           "refId": "A"
         }
@@ -97,11 +155,16 @@
       "id": 7,
       "type": "table",
       "title": "Movimientos de stock por producto (top 10)",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 13 },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
       "datasource": "${DS_PROMETHEUS}",
       "targets": [
         {
-          "expr": "topk(10, sum by(product) (sum(increase(stock_movements_total[24h]))))",
+          "expr": "topk(10, sum by(product) (round(increase(stock_movements_total[24h]))))",
           "legendFormat": "{{product}}",
           "refId": "A",
           "format": "table",
